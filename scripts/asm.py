@@ -4,6 +4,8 @@ import pathlib
 from enum import Enum
 from dataclasses import dataclass
 
+import isa
+
 
 # Tokens have a type and value.
 class TokenType(Enum):

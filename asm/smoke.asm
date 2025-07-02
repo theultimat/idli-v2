@@ -1,5 +1,5 @@
     .include "test-wrapper.asm"
 
 
-main:
+test_main:
     j       lr      # return

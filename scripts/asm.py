@@ -1,31 +1,15 @@
 import argparse
 import pathlib
+import sys
 
-from enum import Enum
-from dataclasses import dataclass
+from lark import Lark, Token
+from lark.exceptions import (
+    UnexpectedCharacters,
+    UnexpectedInput,
+    UnexpectedToken,
+)
 
 import isa
-
-
-# Tokens have a type and value.
-class TokenType(Enum):
-    LABEL = 0
-    COMMA = 1
-    NUMBER = 2
-    CHAR = 3
-    STRING = 4
-    PLUS = 5
-    MINUS = 6
-    COND = 7
-    ABS_TARGET = 8
-    REL_TARGET = 9
-    IDENTIFIER = 10
-    DIRECTIVE = 11
-
-@dataclass
-class Token:
-    dtype: TokenType
-    value: str
 
 
 # Print with specified indentation if verbose enabled.
@@ -35,237 +19,216 @@ def log(args, *vals):
         print(*vals)
 
 
-# Lex a single line into tokens.
-def lex_line(args, line, path_dir, prefix):
-    log(args, '- Lexing line:', line)
+# Print an error and exit.
+def abort(prefix, *args):
+    print('\033[1;91merror\033[0m: ', end='', file=sys.stderr)
+    print(f'{prefix}:', *args, file=sys.stderr)
+    sys.exit(1)
+
+
+# Parse a directive.
+def parse_directive(args, tree, dir_path, prefix, labels, items):
+    if tree.data == 'directive_include':
+        inc_path = dir_path/tree.children[0].children[0]
+        return parse(args, inc_path, prefix, labels, items)
+
+    abort(prefix, f'Unsupported directive: {tree.data}')
+
+
+# Parse a label declaration. If the label is local (i.e. only numeric) then
+# we can have multiple definitions, otherwise we must be unique.
+def parse_label(args, name, items, labels, prefix):
+    # Determine the address.
+    addr = 0
+    for i in items.values():
+        addr += i.size()
+
+    log(args, f'* Adding label "{name}" at address {addr}.')
+
+    # If this is the first time we've seen a label with this name then create
+    # it and return.
+    if name not in labels:
+        labels[name] = [addr]
+        return
+
+    # Otherwise we need to check that this is a local label as these can be
+    # defined multiple times.
+    if not name.isdigit():
+        abort(prefix, 'Multiple instances of global label:', name)
+
+    labels[name].append(addr)
+
+
+# Convert a single character into an integer.
+def parse_char(prefix, c):
+    # If the first character is a backslash then we have an escape code and
+    # otherwise we should take the value literally.
+    if c[0] == '\\':
+        if c[1] == '0':
+            c = '\0'
+        elif c[1] == 't':
+            c = '\t'
+        elif c[1] == 'n':
+            c = '\n'
+        elif c[1] in '\"\'':
+            c = c[1]
+        else:
+            abort(prefix, f'Invalid escape code for character: {c}')
+
+    return ord(c)
+
+
+# Parse a single instruction.
+def parse_instr(args, tree, prefix, need_conds, items):
+    mnem = tree.children[0].value
+    op_pattern = tree.data.split('_', 1)[-1]
+    ops = {}
+
+    # Parse optional condition suffix.
+    tokens = tree.children[1:]
+    cond_state = None
+    if tokens and isinstance(tokens[0], Token) and tokens[0].type == 'COND':
+        if not need_conds:
+            abort(prefix, 'Found unexpected condition.')
+
+        cond_state = int(tokens[0].value == '.t')
+        tokens = tokens[1:]
+    elif need_conds:
+        abort(prefix, 'Expected condition suffix but none found.')
+
+    # Parse the operands.
+    if op_pattern != 'none':
+        for op, token in zip(op_pattern, tokens):
+            if op in 'abrs':
+                ops[op] = isa.REGS[token.value]
+            elif op == 'c':
+                # Get the underlying token from the rule(s).
+                token = token.children[0]
+                if not isinstance(token, Token):
+                    token = token.children[0]
+
+                if token.type == 'REGISTER':
+                    ops[op] = isa.REGS[token.value]
+
+                    if ops[op] == isa.REGS['sp']:
+                        abort(prefix, 'Cannot use SP in C operand.')
+                elif token.type == 'LABEL_REF':
+                    # Labels will be resolved later after parsing is done.
+                    ops[op] = isa.REGS['sp']
+                    ops['imm'] = token.value
+                elif token.type == 'CHAR_LETTER':
+                    ops[op] = isa.REGS['sp']
+                    ops['imm'] = parse_char(prefix, token.value)
+                else:
+                    abort(prefix, f'Unexpected token for C: {token.type}')
+            elif op == 'm':
+                ops[op] = int(token.value)
+                if ops[op] < 1 or ops[op] > 7:
+                    abort(prefix, f'Bad value for CEX count: {ops[op]}')
+            else:
+                abort(prefix, f'Unexpected operand type: {op}')
+
+    # Detect and substitute synonym with the real instruction.
+    if mnem in isa.SYNONYMS:
+        mnem, extra_ops = isa.SYNONYMS[mnem]
+        ops.update(extra_ops)
+
+    instr = isa.Instruction(mnem, ops)
+    log(args, f'* Adding instruction: {instr.print(cond_state)}')
+
+    # Check if we need to check for conditionals following this instruction.
+    new_conds = instr.num_cond()
+    if new_conds:
+        log(args, f'* Next {new_conds} instruction(s) should be predicated.')
+
+        # Can't nest conditionals.
+        if need_conds:
+            abort(prefix, 'Cannot nest conditional state.')
+
+    items[prefix] = instr
+    return new_conds
+
+
+# Parse a single line of an input file.
+def parse_line(args, line, dir_path, prefix, need_conds, labels, items):
+    log(args, '*', line)
     args.indent += 1
 
-    tokens = []
+    # Generate syntax tree using parser.
+    parse_error = None
+    try:
+        tree = args.parser.parse(line)
+    except UnexpectedInput as e:
+        parse_error = str(e)
 
-    next_token = ''
-    next_type = None
+    if parse_error:
+        abort(prefix, parse_error)
 
-    # Add a new token to the list.
-    def push(dtype, value):
-        log(args, f'* {dtype}: {value}')
-        tokens.append(Token(dtype, value))
+    # Remove the start and line rules to get to the actual contents of the line
+    # that we're interested in parsing.
+    trees = next(tree.find_data('line')).children
 
-    # Add a token to the list if it's defined.
-    def try_push(dtype, value):
-        if dtype != None:
-            push(dtype, value)
+    # Iterate through the trees for the line and parse based on the rule.
+    for tree in trees:
+        if tree.data == 'directive':
+            parse_directive(
+                args,
+                tree.children[0],
+                dir_path,
+                prefix,
+                labels,
+                items,
+            )
+        elif tree.data == 'label':
+            # Updates labels inline rather than returning.
+            parse_label(args, tree.children[0].value, items, labels, prefix)
+        elif tree.data == 'instr':
+            new_conds  = parse_instr(
+                args,
+                tree.children[0],
+                prefix,
+                need_conds,
+                items,
+            )
 
-    for c in line:
-        # Continue parsing a string, adding characters and accounting for an
-        # escaped quote.
-        if next_type == TokenType.STRING:
-            if c == '"' and (not next_token or next_token[-1] != '\\'):
-                push(next_type, next_token)
-                next_type = None
-                continue
-
-            next_token += c
-            continue
-
-        # Continue parsing character, expecting only a single item accounting
-        # for escapes.
-        if next_type == TokenType.CHAR:
-            if c == '\'' and (not next_token or next_token[-1] != '\\'):
-                if not next_token:
-                    raise Exception(f'{prefix}: Empty char')
-
-                escaped = next_token[0] == '\\' and len(next_token) == 2
-                if not escaped and len(next_token) != 1:
-                    raise Exception(f'{prefix}: Char too long: {next_token}')
-
-                push(next_type, next_token)
-                next_type = None
-                continue
-
-            next_token += c
-            continue
-
-        # Continue parsing a condition code for predicated execution.
-        if next_type == TokenType.COND:
-            if c not in 'tf':
-                raise Exception(f'{prefix}: Invalid condition code: {c}')
-
-            push(next_type, c)
-            next_type = None
-            continue
-
-        # Start of a comment -> no more tokens.
-        if c == '#':
-            try_push(next_type, next_token)
-            next_type = None
-            break
-
-        # Start of a reference to a label.
-        if c in '$@':
-            try_push(next_type, next_token)
-            next_type = {
-                '$': TokenType.ABS_TARGET,
-                '@': TokenType.REL_TARGET,
-            }[c]
-            next_token = ''
-            continue
-
-        # Start of a string.
-        if c == '"':
-            try_push(next_type, next_token)
-            next_type = TokenType.STRING
-            next_token = ''
-            continue
-
-        # Start of a character.
-        if c == '\'':
-            try_push(next_type, next_token)
-            next_type = TokenType.CHAR
-            next_token = ''
-            continue
-
-        # Comma, plus, and minus characters.
-        if c in ',+-':
-            try_push(next_type, next_token)
-            next_type = {
-                ',': TokenType.COMMA,
-                '+': TokenType.PLUS,
-                '-': TokenType.MINUS,
-            }[c]
-            push(next_type, c)
-            next_type = None
-            continue
-
-        # Colon indicates end of a label name if after a number of identifier.
-        if c == ':':
-            if next_type not in (TokenType.NUMBER, TokenType.IDENTIFIER):
-                raise Exception(f'{prefix}: Label missing name')
-
-            push(TokenType.LABEL, next_token)
-            next_type = None
-            continue
-
-        # Dot indicates start of directive or a condition depending on whether
-        # we're in an identifier or not.
-        if c == '.':
-            try_push(next_type, next_token)
-
-            if next_type == TokenType.IDENTIFIER:
-                next_type = TokenType.COND
-                next_token = ''
-                continue
-
-            if next_type is not None:
-                raise Exception(f'{prefix}: Unexpected dot character')
-
-            next_type = TokenType.DIRECTIVE
-            next_token = ''
-            continue
-
-        # Skip whitespace.
-        if c.isspace():
-            try_push(next_type, next_token)
-            next_type = None
-            continue
-
-        # An alphanumeric value or underscore could be either the start of an
-        # identifier/number or part way through something else.
-        if c.isalnum() or c == '_':
-            if next_type is None:
-                if c.isdigit():
-                    next_type = TokenType.NUMBER
-                else:
-                    next_type = TokenType.IDENTIFIER
-
-                next_token = c
-                continue
-
-            # Only accept valid hex characters (and for the 0x prefix) if the
-            # token is a number.
-            if next_type == TokenType.NUMBER:
-                if not c.isdigit() and c.lower() not in 'abcdefx':
-                    raise Exception(f'{prefix}: Cannot add "{c}" to number')
-
-                next_token += c
-                continue
-
-            # If we're not in an appropriate token type then complain, but if
-            # we are then just add it to the value.
-            if next_type not in (
-                TokenType.IDENTIFIER,
-                TokenType.DIRECTIVE,
-                TokenType.ABS_TARGET,
-                TokenType.REL_TARGET,
-            ):
-                raise Exception(
-                    f'{prefix}: Cannot add "{c}" to token of '
-                    f'type {next_type}: "{next_token}"'
-                )
-
-            next_token += c
-            continue
-
-        # Nothing matched so we have an unexpected character.
-        raise Exception(f'{prefix}: Unexpected character: "{c}"')
-
-    # If we're mid string or character at the end of the line then we're
-    # missing a close quote so complain.
-    if next_type in (TokenType.STRING, TokenType.CHAR):
-        raise Exception(
-            f'{prefix}: Unfinshed token at end of line: '
-            f'type={next_type} value="{next_token}"'
-        )
-
-    # Close off any unfinished token.
-    try_push(next_type, next_token)
-
-    # We should have found at least one token.
-    if not tokens:
-        raise Exception(f'{prefix}: Failed to find any tokens!')
-
-    # Special check for an include file directive as we'll want to replace the
-    # current line's tokens with the contents of the file.
-    if tokens[0].dtype == TokenType.DIRECTIVE and tokens[0].value == 'include':
-        if tokens[1].dtype != TokenType.STRING:
-            raise Exception(f'{prefix}: Missing path for include.')
-        if len(tokens) != 2:
-            raise Exception(f'{prefix}: Junk at end of include.')
-
-        inc_path = path_dir/tokens[1].value
-        log(args, '- Including file:', inc_path)
-
-        tokens = lex(args, inc_path, prefix)
-    else:
-        tokens = {prefix: tokens}
+            # Remove conditional or set new one if found.
+            if need_conds:
+                need_conds -= 1
+            if new_conds:
+                need_conds = new_conds
+        else:
+            abort(prefix, f'Unrecognised rule: {tree.data}')
 
     args.indent -= 1
-    return tokens
+    return need_conds
 
 
-# Lex the input file line by line into tokens. Returns tokens per-line.
-def lex(args, path, prefix=''):
-    log(args, '- Lexing file:', path)
+# Parse input file.
+def parse(args, path, prefix='', labels={}, items={}):
+    log(args, '* Parse file:', path)
     args.indent += 1
 
-    tokens = {}
+    if not path.is_file():
+        abort(prefix, 'Cannot open file:', path)
+
+    need_conds = 0
     with open(path, 'r') as f:
         for i, line in enumerate(f):
             if not (line := line.strip()):
                 continue
 
-            new_tokens = lex_line(
+            need_conds = parse_line(
                 args,
                 line,
                 path.parent,
-                f'{prefix}{path}:{i + 1}: ',
+                f'{prefix}{path}:{i + 1}',
+                need_conds,
+                labels,
+                items,
             )
 
-            assert all(k not in tokens for k in new_tokens), new_tokens
-            tokens.update(new_tokens)
-
     args.indent -= 1
-
-    return tokens
+    return items, labels
 
 
 # Parse command line arguments.
@@ -294,6 +257,14 @@ def parse_args():
         help='Path to output file.',
     )
 
+    parser.add_argument(
+        '-g',
+        '--grammar',
+        type=pathlib.Path,
+        default='scripts/idli.lark',
+        help='Path to grammar file.',
+    )
+
     args = parser.parse_args()
 
     if not args.input.is_file():
@@ -301,6 +272,13 @@ def parse_args():
 
     if not args.output.parent.is_dir():
         raise Exception(f'Bad output directory: {args.output}')
+
+    if not args.grammar.is_file():
+        raise Exception(f'Bad grammar file: {args.grammar}')
+
+    # Load grammar file to create parser.
+    with open(args.grammar, 'r') as f:
+        args.parser = Lark(f.read())
 
     # Stuff the logging indentation into args so we don't have to deal with
     # passing it around everywhere manually.
@@ -311,4 +289,4 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    tokens = lex(args, args.input)
+    parse(args, args.input)

@@ -1,0 +1,174 @@
+# Grammar for a single line of an assembly file.
+
+start: line
+
+line: label
+    | label? instr
+    | directive
+
+instr: instr_abc
+     | instr_rsb
+     | instr_ab
+     | instr_a
+     | instr_bc
+     | instr_ac
+     | instr_c
+     | instr_n
+     | instr_nc
+     | instr_m
+     | instr_none
+
+instr_abc: ABC_OP COND? REGISTER "," REGISTER "," c
+
+instr_ab: AB_OP COND? REGISTER "," REGISTER
+
+instr_a: A_OP COND? REGISTER
+
+instr_rsb: RSB_OP COND? REGISTER ".." REGISTER "," REGISTER
+
+instr_bc: BC_OP COND? REGISTER ", " c
+
+instr_ac: AC_OP COND? REGISTER "," c
+
+instr_c: C_OP COND? c
+
+instr_n: N_OP COND? PIN
+
+instr_nc: NC_OP COND? PIN "," c
+
+instr_m: M_OP INT
+
+instr_none: NONE_OP COND?
+
+c: REGISTER | IMMEDIATE | LABEL_REF | char
+
+label: LABEL_NAME ":"
+
+label_ref: LABEL_REF
+
+char: "'" CHAR_LETTER "'"
+
+string: "\"" STRING "\""
+
+directive: directive_include
+         | directive_space
+         | directive_int
+
+directive_include: ".include" string
+
+directive_space: ".space" INT
+
+directive_int: ".int" IMMEDIATE
+
+PIN: "0".."3"
+
+LABEL_NAME: NAME | INT+
+
+COND: "." ("t" | "f")
+
+LABEL_REF: ("$" | "@") (NAME | (INT+ ("b" | "f")))
+
+IMMEDIATE: SIGNED_INT
+         | ["+" | "-"] "0x" HEXDIGIT+
+         | "0b" ("0" | "1")+
+
+CHAR_LETTER: (/[^\\'"]/ | /\\[nt'"]/ )
+
+STRING: CHAR_LETTER+
+
+REGISTER: "r0"
+        | "r1"
+        | "r2"
+        | "r3"
+        | "r4"
+        | "r5"
+        | "r6"
+        | "r7"
+        | "r8"
+        | "r9"
+        | "r10"
+        | "r11"
+        | "r12"
+        | "r13"
+        | "r14"
+        | "r15"
+        | "zr"
+        | "lr"
+        | "sp"
+
+ABC_OP: "add"
+      | "sub"
+      | "and"
+      | "andn"
+      | "or"
+      | "xor"
+      | "ld"
+      | "st"
+
+RSB_OP: "ldm" | "stm"
+
+AB_OP: "ld+"
+     | "st+"
+     | "+ld"
+     | "+st"
+     | "ld-"
+     | "st-"
+     | "-ld"
+     | "-st"
+     | "inc"
+     | "dec"
+     | "srl"
+     | "sra"
+     | "ror"
+     | "rol"
+     | "not"
+
+A_OP: "urx" | "getp"
+
+BC_OP: "eq"
+     | "ne"
+     | "lt"
+     | "ltu"
+     | "ge"
+     | "geu"
+     | "bit"
+     | "eqx"
+     | "nex"
+     | "ltx"
+     | "ltux"
+     | "gex"
+     | "geux"
+     | "bitx"
+
+AC_OP: "addpc"
+     | "mov"
+
+C_OP: "b"
+    | "j"
+    | "bl"
+    | "jl"
+    | "utx"
+    | "carry"
+    | "putp"
+
+N_OP: "inp"
+    | "inpx"
+    | "in"
+    | "outp"
+
+NC_OP: "out"
+
+M_OP: "cex"
+
+NONE_OP: "ret"
+       | "nop"
+
+%import common.WS
+%import common.SH_COMMENT -> COMMENT
+%import common.INT
+%import common.SIGNED_INT
+%import common.HEXDIGIT
+%import common.CNAME -> NAME
+
+%ignore WS
+%ignore COMMENT

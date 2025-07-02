@@ -231,6 +231,68 @@ def parse(args, path, prefix='', labels={}, items={}):
     return items, labels
 
 
+# Resolve labels to hold the correct immediate value.
+def resolve_labels(args, items, labels):
+    if not labels:
+        return
+
+    log(args, '* Resolving labels...')
+    args.indent += 1
+
+    pc = 0
+    for prefix, item in items.items():
+        if not isinstance(ref := item.ops.get('imm'), str):
+            pc += item.size()
+            continue
+
+        # Get the label name, accounting for forward/backward for locals.
+        name = ref[1:]
+        search = None
+        if name[:-1].isdigit() and name[-1] in 'fb':
+            search = name[-1]
+            name = name[:-1]
+
+        label = labels.get(name)
+
+        if label is None:
+            print(labels)
+            abort(prefix, f'Reference to undefined label: {name}')
+
+        # Absolute references set the PC directly.
+        if ref[0] == '$':
+            if len(label) > 1:
+                addrs = ', '.join(hex(x) for _, x in label)
+                abort(
+                    prefix,
+                    f'Cannot make absolute reference to "{name}" '
+                    f'with multiple definitions: {addrs}'
+                )
+            if search:
+                abort(prefix, 'Cannot make local absolute reference.')
+
+            item.ops['imm'] = label[0]
+        else:
+            # Search forwards or backwards for the relative reference based on
+            # the current PC.
+            if search == 'f':
+                for addr in label:
+                    if addr > pc:
+                        break
+            else:
+                for addr in reversed(label):
+                    if addr <= pc:
+                        break
+
+            # Determine the relative reference accounting for the PC being one
+            # beyond in the real machine due to pipelining.
+            item.ops['imm'] = addr - (pc + 1)
+
+        log(args, f'* Reference at 0x{pc}: {ref} ->', hex(item.ops["imm"]))
+        pc += item.size()
+
+    args.indent -= 1
+
+
 # Parse command line arguments.
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -289,4 +351,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    parse(args, args.input)
+    items, labels = parse(args, args.input)
+    resolve_labels(args, items, labels)

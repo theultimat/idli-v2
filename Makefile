@@ -4,8 +4,8 @@ SCRIPT_ROOT := scripts
 ASM_ROOT    := asm
 
 
-PYTHON := python3
-PIP    := pip3
+PYTHON := python
+PIP    := pip
 
 
 # Set to enable debug logging where available.

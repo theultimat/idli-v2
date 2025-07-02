@@ -138,3 +138,79 @@ ENCODINGS = {
     # Set conditional execution state for the following instructions.
     'cex':      '11100000mmmmmmmm',     # cond(*m)
 }
+
+OPCODES = {
+    k: int(''.join(x if x in '01' else '0' for x in v), 2)
+    for k, v in ENCODINGS.items()
+}
+
+OPCODE_MASKS = {
+    k: int(''.join('1' if x in '01' else '0' for x in v), 2)
+    for k, v in ENCODINGS.items()
+}
+
+
+# Mapping from synonym mnemonic to real instruction and operand substitutions.
+# Operands that aren't listed are assumed to be copied over directly.
+SYNONYMS = {
+    'mov':  ('add', {'b': REGS['zr']}),
+    'ret':  ('j', {'c': REGS['lr']}),
+    'nop':  ('add', {'a': REGS['zr'], 'b': REGS['zr'], 'c': REGS['zr']}),
+}
+
+
+# Represents a single instruction.
+class Instruction:
+    def __init__(self, mnem, ops):
+        self.mnem = mnem
+        self.ops = ops
+
+    # Cond state appends the .t/.f to the mnemonic based on the current state of
+    # frontend.
+    def print(self, cond_state=None):
+        name = self.mnem
+
+        if cond_state is not None:
+            name += '.t' if cond_state & 1 else '.f'
+
+        # Operands will have been added to the dict in order so we can just
+        # iterate through them for printing.
+        ops = []
+        for k, v in self.ops.items():
+            if k in 'abrs':
+                ops.append(REGS_INV[v])
+            elif k in 'nm':
+                ops.append(str(v))
+            elif k == 'imm':
+                ops.append(hex(v) if isinstance(v, int) else v)
+            elif k == 'c':
+                if v != REGS['sp']:
+                    ops.append(REGS_INV[v])
+            else:
+                raise Exception(f'Invalid operand: {k}={v}')
+
+        # Operands are typically separated by commas except for the register
+        # ranges, so handle this case before the join.
+        if 'r' in self.ops:
+            ops = [f'{ops[0]}..{ops[1]}'] + ops[2:]
+
+        return f'{name} {", ".join(ops)}'
+
+    def __str__(self):
+        return self.print()
+
+    # How many instructions following this one that will be predicated after
+    # running this instruction. The only instructions that set this are cmpx
+    # and cex, with the former always being 1 and the latter being the value of
+    # the m operand.
+    def num_cond(self):
+        CMPX = set(['eqx', 'nex', 'ltx', 'ltux', 'gex', 'geux', 'bitx', 'inpx'])
+
+        if self.mnem in CMPX:
+            return 1
+        return self.ops.get('m', 0)
+
+    # Number of 16b chunks the instruction takes up. This will be 1 in all cases
+    # except when an immediate is present.
+    def size(self):
+        return 1 + int('imm' in self.ops)

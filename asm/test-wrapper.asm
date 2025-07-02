@@ -15,7 +15,7 @@ test_init:
     mov     lr, zr
     mov     sp, zr
     nex     zr, zr          # clear predicate and cond state
-    nop
+    nop.t
     jl      $test_main      # jump to main test program
     utx     '@'             # send end of test message
     utx     '@'
@@ -30,7 +30,7 @@ test_init:
 
 test_recv_array:            # r1 = data, r2 = max_n
     urx     r3              # n = uart()
-    ltux    r2, r3          # p = max_n < n
+    ltu     r2, r3          # p = max_n < n
     cex     2               # if p:
     not.t   r1, zr          #   out = -1
     j.t     lr              #   return out

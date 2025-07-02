@@ -2,4 +2,4 @@
 
 
 main:
-    j       lt      # return
+    j       lr      # return

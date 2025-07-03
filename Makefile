@@ -51,7 +51,7 @@ OBJDUMP := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/objdump.py
 
 asm: venv $(ASM_BINS)
 
-$(BUILD_ROOT)/%.out: %.asm $(WRAPPER) $(VENV)
+$(BUILD_ROOT)/%.out: %.asm $(ASM_WRAPPER) $(VENV)
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
 	$(OBJDUMP) $@ > $@.txt

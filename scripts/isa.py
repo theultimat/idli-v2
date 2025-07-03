@@ -88,31 +88,31 @@ ENCODINGS = {
     'not':      '1010aaaabbbb1110',     # a = ~b
 
     # Receive from UART.
-    'urx':      '1010aaaa00001110',     # a = uart()
+    'urx':      '1010aaaa00001111',     # a = uart()
 
     # Get predicate register.
-    'getp':     '1010aaaa00011110',     # a = p
+    'getp':     '1010aaaa00011111',     # a = p
 
     # Compare or read pin into predicate.
     'eq':       '10110000bbbbcccc',     # p = b == c
     'ne':       '10110001bbbbcccc',     # p = b != c
-    'lt':       '10100010bbbbcccc',     # p = b < c
-    'ltu':      '10100011bbbbcccc',     # p = b < c
-    'ge':       '10100100bbbbcccc',     # p = b >= c
-    'geu':      '10100101bbbbcccc',     # p = b >= c
-    'bit':      '10100110bbbbcccc',     # p = (b >> c) & 1
-    'inp':      '10100111??nn????',     # p = pin(n)
+    'lt':       '10110010bbbbcccc',     # p = b < c
+    'ltu':      '10110011bbbbcccc',     # p = b < c
+    'ge':       '10110100bbbbcccc',     # p = b >= c
+    'geu':      '10110101bbbbcccc',     # p = b >= c
+    'bit':      '10110110bbbbcccc',     # p = (b >> c) & 1
+    'inp':      '10110111??nn????',     # p = pin(n)
 
     # Comparison as above, but only run the following instruction if the value
     # written to p is true.
     'eqx':      '10111000bbbbcccc',     # p = eq(b, c); cond(t)
     'nex':      '10111001bbbbcccc',     # p = ne(b, c); cond(t)
-    'ltx':      '10101010bbbbcccc',     # p = lt(b, c); cond(t)
-    'ltux':     '10101011bbbbcccc',     # p = ltu(b, c); cond(t)
-    'gex':      '10101100bbbbcccc',     # p = ge(b, c); cond(t)
-    'geux':     '10101101bbbbcccc',     # p = geu(b, c); cond(t)
-    'bitx':     '10101110bbbbcccc',     # p = bit(b, c); cond(t)
-    'inpx':     '10101111??nn????',     # p = inp(n); cond(t)
+    'ltx':      '10111010bbbbcccc',     # p = lt(b, c); cond(t)
+    'ltux':     '10111011bbbbcccc',     # p = ltu(b, c); cond(t)
+    'gex':      '10111100bbbbcccc',     # p = ge(b, c); cond(t)
+    'geux':     '10111101bbbbcccc',     # p = geu(b, c); cond(t)
+    'bitx':     '10111110bbbbcccc',     # p = bit(b, c); cond(t)
+    'inpx':     '10111111??nn????',     # p = inp(n); cond(t)
 
     # Add value to program counter.
     'addpc':    '1100aaaa0000cccc',     # a = pc + c

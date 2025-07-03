@@ -46,12 +46,14 @@ ASM_BINS    := $(patsubst %.asm,$(BUILD_ROOT)/%.out,$(ASM_SOURCES))
 
 AS_DEBUG := $(if $(DEBUG),--verbose,)
 
-AS := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/asm.py $(AS_DEBUG)
+AS      := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/asm.py $(AS_DEBUG)
+OBJDUMP := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/objdump.py
 
 asm: venv $(ASM_BINS)
 
 $(BUILD_ROOT)/%.out: %.asm $(WRAPPER) $(VENV)
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
+	$(OBJDUMP) $@ > $@.txt
 
 .PHONY: asm

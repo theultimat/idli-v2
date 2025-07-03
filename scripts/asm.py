@@ -86,13 +86,19 @@ def parse_instr(args, tree, prefix, need_conds, items):
 
     # Parse optional condition suffix.
     tokens = tree.children[1:]
-    cond_state = None
+    cond = None
     if tokens and isinstance(tokens[0], Token) and tokens[0].type == 'COND':
         if not need_conds:
             abort(prefix, 'Found unexpected condition.')
 
-        cond_state = int(tokens[0].value == '.t')
+        cond = tokens[0].value
         tokens = tokens[1:]
+
+        # If the previous instruction was a compare and set cond state then
+        # this instruction must be T not F.
+        if items and (prev := next(reversed(items.values())).mnem) != 'cex':
+            if cond != '.t':
+                abort(prefix, 'Follower of compare and cond must be .t!')
     elif need_conds:
         abort(prefix, 'Expected condition suffix but none found.')
 
@@ -133,8 +139,8 @@ def parse_instr(args, tree, prefix, need_conds, items):
         mnem, extra_ops = isa.SYNONYMS[mnem]
         ops.update(extra_ops)
 
-    instr = isa.Instruction(mnem, ops)
-    log(args, f'* Adding instruction: {instr.print(cond_state)}')
+    instr = isa.Instruction(mnem, ops, cond=cond)
+    log(args, f'* Adding instruction: {instr}')
 
     # Check if we need to check for conditionals following this instruction.
     new_conds = instr.num_cond()
@@ -353,3 +359,5 @@ if __name__ == '__main__':
     args = parse_args()
     items, labels = parse(args, args.input)
     resolve_labels(args, items, labels)
+
+    # TODO write out the binary

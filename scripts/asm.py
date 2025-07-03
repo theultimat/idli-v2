@@ -299,6 +299,27 @@ def resolve_labels(args, items, labels):
     args.indent -= 1
 
 
+# Write encodings to file.
+def encode(args, path, items):
+    log(args, '- Writing output file:', path)
+
+    mem_size = 0
+    prefixes = list(items.keys())
+    items = list(items.values())
+
+    with open(path, 'wb') as f:
+        for i, item in enumerate(items):
+            try:
+                f.write(item.encode(followers=items[i + 1:]))
+            except Exception as e:
+                abort(prefixes[i], 'Encoding failed: {e}')
+
+            mem_size += item.size()
+
+    if mem_size >= 64 * 1024:
+        abort(path, f'Binary is too large: {mem_size}')
+
+
 # Parse command line arguments.
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -359,5 +380,4 @@ if __name__ == '__main__':
     args = parse_args()
     items, labels = parse(args, args.input)
     resolve_labels(args, items, labels)
-
-    # TODO write out the binary
+    encode(args, args.output, items)

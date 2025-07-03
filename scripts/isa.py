@@ -1,3 +1,6 @@
+import struct
+
+
 # 16x16b general purpose registers, some with special meanings:
 #   - r0 is also known as zr, the zero regiters. Writes are ignored and reads
 #     always return zero.
@@ -210,3 +213,48 @@ class Instruction:
     # except when an immediate is present.
     def size(self):
         return 1 + int('imm' in self.ops)
+
+    # Encode the instruction into raw bytes. Followers is a list of instructions
+    # following this one that is used to calculate the mask to encode for M.
+    def encode(self, followers=[]):
+        bits = ENCODINGS[self.mnem].replace('?', '0')
+
+        # Replace bits of the encoding with the operand values.
+        for k, v in self.ops.items():
+            # Immediates are encoded as the 16b following the instruction so
+            # there's nothing to encode at this stage.
+            if k == 'imm':
+                continue
+
+            # M must be calculated using the followers by checking their conds.
+            # It is encoded as a sequence of 1 and 0 indicating T and F followed
+            # by a final 1 value indicating the end of the mask.
+            if k == 'm':
+                if len(followers) < v:
+                    raise Exception(f'Not enough followers to calculate M')
+
+                mask = 1 << v
+                for i in range(v):
+                    if followers[i].cond is None:
+                        raise Exception(f'Missing cond: {followers[i]}')
+                    bit = int(followers[i].cond == '.t')
+                    mask |= bit << i
+
+                v = mask
+
+            # Convert the value into a bit string and insert it.
+            space = bits.count(k)
+            v_enc = f'{v:0{space}b}'
+
+            if len(v_enc) != space:
+                raise Exception(f'Encoding operand {k} failed: {v}')
+
+            v_enc = iter(v_enc)
+            bits = ''.join(next(v_enc) if x == k else x for x in bits)
+
+        # Generate the raw bytes, appending immediate if required.
+        out = struct.pack('>H', int(bits, 2))
+        if 'imm' in self.ops:
+            out += struct.pack('>h', self.ops['imm'])
+
+        return out

@@ -161,17 +161,16 @@ SYNONYMS = {
 
 # Represents a single instruction.
 class Instruction:
-    def __init__(self, mnem, ops):
+    def __init__(self, mnem, ops, cond=None):
         self.mnem = mnem
         self.ops = ops
+        self.cond = cond
 
-    # Cond state appends the .t/.f to the mnemonic based on the current state of
-    # frontend.
-    def print(self, cond_state=None):
+    def __str__(self):
         name = self.mnem
 
-        if cond_state is not None:
-            name += '.t' if cond_state & 1 else '.f'
+        if self.cond is not None:
+            name += self.cond
 
         # Operands will have been added to the dict in order so we can just
         # iterate through them for printing.
@@ -195,9 +194,6 @@ class Instruction:
             ops = [f'{ops[0]}..{ops[1]}'] + ops[2:]
 
         return f'{name} {", ".join(ops)}'
-
-    def __str__(self):
-        return self.print()
 
     # How many instructions following this one that will be predicated after
     # running this instruction. The only instructions that set this are cmpx

@@ -19,8 +19,9 @@ def _parse_op_m(enc):
     return out
 
 
-# Parse binary into instruction stream.
-def decode(data):
+# Parse binary into instruction stream, optionally stopping after the specified
+# number of instructions have been parsed.
+def decode(data, max_items=None):
     items = []
 
     if len(data) % 2:
@@ -88,6 +89,10 @@ def decode(data):
                 cond_state = new_cond_state
             else:
                 cond_state = 't'
+
+        # If we've parsed the maximum number of instructions then stop.
+        if max_items is not None and len(items) >= max_items:
+            break
 
     return items
 

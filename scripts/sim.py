@@ -104,15 +104,15 @@ class Sim:
             'bitx':     self._cmp,
             'inpx':     None,
             'addpc':    None,
-            'b':        None,
-            'j':        None,
-            'bl':       None,
-            'jl':       None,
+            'b':        self._jmp,
+            'j':        self._jmp,
+            'bl':       self._jmp,
+            'jl':       self._jmp,
             'in':       None,
             'out':      None,
             'out1':     None,
             'outp':     None,
-            'utx':      None,
+            'utx':      self._utx,
             'carry':    None,
             'putp':     None,
             'cex':      None,
@@ -242,6 +242,33 @@ class Sim:
         if mnem[-1] == 'x':
             self._write_cond(0b11)
 
+    # Branch and jump instructions.
+    def _jmp(self, mnem, c=None, imm=None):
+        lhs = None
+        rhs = self.regs[c] if c != isa.REGS['sp'] else imm
+
+        # Branches are relative to PC, jumps are absolute.
+        if mnem[0] == 'b':
+            lhs = self.pc
+            rhs = self._u2s(rhs)
+        else:
+            lhs = 0
+
+        # Write link register with next sequential instruction, accounting for
+        # the immediate.
+        if mnem[-1] == 'l':
+            self._write_reg(isa.REGS['lr'], self.pc + int(imm is not None))
+
+        return (lhs + rhs) & 0xffff
+
+    # UART TX instruction.
+    def _utx(self, mnem, c=None, imm=None):
+        value = self.regs[c] if c != isa.REGS['sp'] else imm
+        value &= 0xffff
+
+        self._log(f'UTX    0x{value:04x}')
+        self.cb.write_uart(value)
+
 
 # Parse command line arguments.
 def parse_args():
@@ -281,10 +308,14 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
 
+    # UART output buffer.
+    uart_tx = []
+
     class Cb(Callback):
         # Load binary into memory.
-        def __init__(self, path):
+        def __init__(self, path, uart_tx):
             self.mem = {}
+            self.uart_tx = uart_tx
 
             with open(path, 'rb') as f:
                 data = f.read()
@@ -297,7 +328,7 @@ if __name__ == '__main__':
         def fetch(self, pc):
             data = self.mem.get(pc)
             if data is None:
-                raise Exception('Fetch from uninitialised memory: 0x{pc:04x}')
+                raise Exception(f'Fetch from uninitialised memory: 0x{pc:04x}')
 
             # Add on the next 16b if it exists in case this instruction takes an
             # immediate.
@@ -306,8 +337,31 @@ if __name__ == '__main__':
             # Decode and return the instruction.
             return decode(data, max_items=1)[0]
 
-    cb = Cb(args.input)
+        # Receive from the UART.
+        def write_uart(self, value):
+            self.uart_tx.append(value)
+
+    # End of test is signalled by receiving the string @@END@@ over UART
+    # followed by the exit code of test_main.
+    end_of_test = [ord(x) for x in '@@END@@']
+    exit_code = None
+
+    cb = Cb(args.input, uart_tx)
     sim = Sim(cb, args.verbose)
 
     for _ in range(args.timeout):
         sim.tick()
+
+        # Look for the end of test value in the UART buffer followed by the
+        # exit code.
+        if uart_tx[-len(end_of_test) - 1:-1] == end_of_test:
+            exit_code = uart_tx[-1]
+            break
+
+    if exit_code is None:
+        raise Exception(f'Timed out after {args.timeout} ticks')
+
+    sim._log(f'EXIT   0x{exit_code:04x}')
+
+    if exit_code:
+        raise Exception(f'Exited with non-zero code: 0x{exit_code:04x}')

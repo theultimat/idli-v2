@@ -164,10 +164,14 @@ SYNONYMS = {
 
 # Represents a single instruction.
 class Instruction:
-    def __init__(self, mnem, ops, cond=None):
+    def __init__(self, mnem, ops, cond=None, cex_mask=None):
         self.mnem = mnem
         self.ops = ops
         self.cond = cond
+
+        # Stored only for running on the simulator so we don't need to
+        # recalculate when decoding via objdump.
+        self.cex_mask = cex_mask
 
     def __str__(self):
         name = self.mnem

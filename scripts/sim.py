@@ -59,6 +59,9 @@ class Sim:
         self.pred = False
         self.cond = 0
 
+        # Number of times tick() has been called.
+        self.ticks = 0
+
         # Functions for running each instruction type.
         self.funcs = {
             'add':      self._add_sub,
@@ -86,7 +89,7 @@ class Sim:
             'ror':      None,
             'rol':      None,
             'not':      None,
-            'urx':      None,
+            'urx':      self._urx,
             'getp':     None,
             'eq':       self._cmp,
             'ne':       self._cmp,
@@ -116,7 +119,7 @@ class Sim:
             'utx':      self._utx,
             'carry':    None,
             'putp':     None,
-            'cex':      None,
+            'cex':      self._cex,
         }
 
     # Run a single instruction.
@@ -131,7 +134,14 @@ class Sim:
         # Check if the instruction should run based on the predicate register
         # and cond state, and if so execute the instruction.
         if self._check_run():
-            redirect = self.funcs[instr.mnem](instr.mnem, **instr.ops)
+            # Special case for CEX as we want the actual value rather than the
+            # number of predicated followers which is used returned by the
+            # decoder in the operand.
+            ops = instr.ops
+            if instr.mnem == 'cex':
+                ops['m'] = instr.cex_mask
+
+            redirect = self.funcs[instr.mnem](instr.mnem, **ops)
 
         # If the instruction redirected the PC update it to the new address,
         # otherwise continue sequentially.
@@ -140,6 +150,9 @@ class Sim:
             self.pc = redirect
         else:
             self.pc = pc
+
+        # Increment tick counter for logging.
+        self.ticks += 1
 
     # Fetch the next instruction, returning its value and the next PC.
     def _fetch(self, pc):
@@ -177,7 +190,7 @@ class Sim:
         if not reg:
             return
 
-        self._log(f'REG    {isa.REGS_INV[reg]}    0x{value:04x}')
+        self._log(f'REG    {isa.REGS_INV[reg]:3}       0x{value:04x}')
         self.regs[reg] = value
         self.cb.write_reg(reg, value)
 
@@ -189,7 +202,7 @@ class Sim:
 
     # Write cond state.
     def _write_cond(self, value):
-        value_str = bin(value)[3:].replace('1', 'T').replace('0', 'F')
+        value_str = bin(value)[3:].replace('1', 'T').replace('0', 'F')[::-1]
         self._log(f'COND   {value_str}')
         self.cond = value
         self.cb.write_cond(value)
@@ -197,6 +210,7 @@ class Sim:
     # Log if verbose is enabled.
     def _log(self, *args):
         if self.verbose:
+            print(f'{self.ticks:6d} ', end='')
             print(*args)
 
     # Convert value from u16 to i16.
@@ -269,6 +283,17 @@ class Sim:
 
         self._log(f'UTX    0x{value:04x}')
         self.cb.write_uart(value)
+
+    # UART RX.
+    def _urx(self, mnem, a=None):
+        value = self.cb.read_uart() & 0xffff
+
+        self._log(f'URX    0x{value:04x}')
+        self.regs[a] = value
+
+    # Cond state configuration instruction.
+    def _cex(self, mnem, m=None):
+        self._write_cond(m)
 
 
 # Parse command line arguments.
@@ -391,7 +416,7 @@ if __name__ == '__main__':
 
     # Check data received over UART matches expected.
     if args.yaml and args.yaml['output']:
-        if (data := uart_tx[:-len(end_of_test)]) != args.yaml['output']:
+        if (data := uart_tx[:-len(end_of_test) - 1]) != args.yaml['output']:
             raise Exception(
                 f'Received data incorrect:\n'
                 f'  - Expected  {args.yaml["output"]}\n'

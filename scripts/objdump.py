@@ -67,7 +67,9 @@ def decode(data, max_items=None):
             data = data[2:]
 
         # If M is an op we need to parse the predicate state.
+        cex_mask = None
         if ops.get('m'):
+            cex_mask = ops['m']
             new_cond_state = _parse_op_m(ops['m'])
             ops['m'] = len(new_cond_state)
 
@@ -79,7 +81,7 @@ def decode(data, max_items=None):
             cond_state = cond_state[1:]
 
         # Add the instruction to the items list.
-        items.append(isa.Instruction(mnem, ops, cond))
+        items.append(isa.Instruction(mnem, ops, cond, cex_mask))
 
         # If the instruction sets conditional state save it.
         if items[-1].num_cond():

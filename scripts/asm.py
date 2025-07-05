@@ -96,8 +96,8 @@ def parse_instr(args, tree, prefix, need_conds, items):
 
         # If the previous instruction was a compare and set cond state then
         # this instruction must be T not F.
-        if items and (prev := next(reversed(items.values())).mnem) != 'cex':
-            if cond != '.t':
+        if items and (prev := next(reversed(items.values()))).mnem != 'cex':
+            if prev.num_cond() and cond != '.t':
                 abort(prefix, 'Follower of compare and cond must be .t!')
     elif need_conds:
         abort(prefix, 'Expected condition suffix but none found.')

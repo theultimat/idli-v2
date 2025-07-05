@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+import yaml
 
 import isa
 
@@ -296,10 +297,24 @@ def parse_args():
         help='Number of ticks to run before timing out.',
     )
 
+    parser.add_argument(
+        '-y',
+        '--yaml',
+        required=True,
+        type=pathlib.Path,
+        help='YAML config for the test.',
+    )
+
     args = parser.parse_args()
 
     if not args.input.is_file():
         raise Exception(f'Bad input file: {args.input}')
+
+    if not args.yaml.is_file():
+        raise Exception(f'Bad YAML file: {args.yaml}')
+
+    with open(args.yaml, 'r') as f:
+        args.yaml = yaml.safe_load(f)
 
     return args
 
@@ -308,14 +323,16 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
 
-    # UART output buffer.
+    # UART IO buffers.
     uart_tx = []
+    uart_rx = [] if not args.yaml else args.yaml.get('input', [])
 
     class Cb(Callback):
         # Load binary into memory.
-        def __init__(self, path, uart_tx):
+        def __init__(self, path, uart_tx, uart_rx):
             self.mem = {}
             self.uart_tx = uart_tx
+            self.uart_rx = uart_rx
 
             with open(path, 'rb') as f:
                 data = f.read()
@@ -337,16 +354,22 @@ if __name__ == '__main__':
             # Decode and return the instruction.
             return decode(data, max_items=1)[0]
 
-        # Receive from the UART.
+        # UART IO.
         def write_uart(self, value):
             self.uart_tx.append(value)
+
+        def read_uart(self):
+            if not self.uart_rx:
+                raise Exception(f'No data in UART RX buffer')
+
+            return self.uart_rx.pop(0)
 
     # End of test is signalled by receiving the string @@END@@ over UART
     # followed by the exit code of test_main.
     end_of_test = [ord(x) for x in '@@END@@']
     exit_code = None
 
-    cb = Cb(args.input, uart_tx)
+    cb = Cb(args.input, uart_tx, uart_rx)
     sim = Sim(cb, args.verbose)
 
     for _ in range(args.timeout):
@@ -365,3 +388,12 @@ if __name__ == '__main__':
 
     if exit_code:
         raise Exception(f'Exited with non-zero code: 0x{exit_code:04x}')
+
+    # Check data received over UART matches expected.
+    if args.yaml and args.yaml['output']:
+        if (data := uart_tx[:-len(end_of_test)]) != args.yaml['output']:
+            raise Exception(
+                f'Received data incorrect:\n'
+                f'  - Expected  {args.yaml["output"]}\n'
+                f'  - Received  {data}'
+            )

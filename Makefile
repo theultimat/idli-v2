@@ -63,10 +63,11 @@ $(BUILD_ROOT)/%.out: %.asm $(ASM_WRAPPER) $(VENV)
 SIM_TEST    ?= $(BUILD_ROOT)/$(ASM_ROOT)/smoke.out
 SIM_TIMEOUT ?= 5000
 SIM_DEBUG   ?= $(if $(DEBUG),--verbose,)
+SIM_YAML    ?= $(ASM_ROOT)/$(notdir $(basename $(SIM_TEST))).yaml
 
 SIM := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/sim.py $(SIM_DEBUG)
 
 run_sim: $(SIM_TEST) $(VENV)
-	$(SIM) $< --timeout $(SIM_TIMEOUT)
+	$(SIM) $< --timeout $(SIM_TIMEOUT) --yaml $(SIM_YAML)
 
 .PHONY: run_sim

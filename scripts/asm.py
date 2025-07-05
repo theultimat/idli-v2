@@ -118,6 +118,14 @@ def parse_instr(args, tree, prefix, need_conds, items):
 
                     if ops[op] == isa.REGS['sp']:
                         abort(prefix, 'Cannot use SP in C operand.')
+                elif token.type == 'IMMEDIATE':
+                    # Immediate can be either signed or unsigned so make sure
+                    # it's within the maximum range of min_signed, max_unsigned.
+                    imm = int(token.value, 0)
+                    if imm < -32768 or imm > 65535:
+                        abort(prefix, f'Out of range immediate: {imm}')
+                    ops[op] = isa.REGS['sp']
+                    ops['imm'] = imm
                 elif token.type == 'LABEL_REF':
                     # Labels will be resolved later after parsing is done.
                     ops[op] = isa.REGS['sp']

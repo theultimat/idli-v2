@@ -82,8 +82,8 @@ class Sim:
             'st-':      None,
             '-ld':      None,
             '-st':      None,
-            'inc':      None,
-            'dec':      None,
+            'inc':      self._inc_dec,
+            'dec':      self._inc_dec,
             'srl':      None,
             'sra':      None,
             'ror':      None,
@@ -241,7 +241,7 @@ class Sim:
             value = lhs != rhs
         elif mnem in ('lt', 'ltx'):
             value = self._u2s(lhs) < self._u2s(rhs)
-        elif mnem in ('ltu', 'lutx'):
+        elif mnem in ('ltu', 'ltux'):
             value = lhs < rhs
         elif mnem in ('ge', 'gex'):
             value = self._u2s(lhs) >= self._u2s(rhs)
@@ -294,6 +294,11 @@ class Sim:
     # Cond state configuration instruction.
     def _cex(self, mnem, m=None):
         self._write_cond(m)
+
+    # Increment and decrement make use of ADD/SUB.
+    def _inc_dec(self, mnem, a=None, b=None):
+        imm = -1 if mnem == 'dec' else 1
+        return self._add_sub('add', a=a, b=b, c=isa.REGS['sp'], imm=imm)
 
 
 # Parse command line arguments.

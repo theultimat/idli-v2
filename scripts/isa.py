@@ -159,6 +159,8 @@ SYNONYMS = {
     'mov':  ('add', {'b': REGS['zr']}),
     'ret':  ('j', {'c': REGS['lr']}),
     'nop':  ('add', {'a': REGS['zr'], 'b': REGS['zr'], 'c': REGS['zr']}),
+    'push': ('-st', {'b': REGS['sp']}),
+    'pop':  ('ld+', {'b': REGS['sp']}),
 }
 
 

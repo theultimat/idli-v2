@@ -123,7 +123,10 @@ AB_OP: "ld+"
      | "rol"
      | "not"
 
-A_OP: "urx" | "getp"
+A_OP: "urx"
+    | "getp"
+    | "push"
+    | "pop"
 
 BC_OP: "eq"
      | "ne"

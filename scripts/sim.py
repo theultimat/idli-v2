@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+import struct
 import yaml
 
 import isa
@@ -70,18 +71,18 @@ class Sim:
             'andn':     None,
             'or':       None,
             'xor':      None,
-            'ld':       None,
-            'st':       None,
-            'ldm':      None,
-            'stm':      None,
-            'ld+':      None,
-            'st+':      None,
-            '+ld':      None,
-            '+st':      None,
-            'ld-':      None,
-            'st-':      None,
-            '-ld':      None,
-            '-st':      None,
+            'ld':       self._ld,
+            'st':       self._st,
+            'ldm':      self._ldstm,
+            'stm':      self._ldstm,
+            'ld+':      self._ld,
+            'st+':      self._st,
+            '+ld':      self._ld,
+            '+st':      self._st,
+            'ld-':      self._ld,
+            'st-':      self._st,
+            '-ld':      self._ld,
+            '-st':      self._st,
             'inc':      self._inc_dec,
             'dec':      self._inc_dec,
             'srl':      None,
@@ -107,7 +108,7 @@ class Sim:
             'geux':     self._cmp,
             'bitx':     self._cmp,
             'inpx':     None,
-            'addpc':    None,
+            'addpc':    self._addpc,
             'b':        self._jmp,
             'j':        self._jmp,
             'bl':       self._jmp,
@@ -175,13 +176,16 @@ class Sim:
         # Take the current lowest bit of the state. If this is a 1 the
         # instruction will run if the predicate register is true, and if zero
         # it will run if the predicate register is false.
-        run = (self.cond & 1) == self.pred
+        cond = self.cond & 1
+        run = cond == self.pred
 
         # Shift out the now consumed bit of the cond state.
         self.cond >>= 1
 
         if not run:
-            self._log(f'SKIP   {int(run)}')
+            cond = 'T' if cond else 'F'
+            pred = 'T' if self.pred else 'F'
+            self._log(f'SKIP   {cond}         {pred}')
 
         return run
 
@@ -300,6 +304,86 @@ class Sim:
         imm = -1 if mnem == 'dec' else 1
         return self._add_sub('add', a=a, b=b, c=isa.REGS['sp'], imm=imm)
 
+    # Store to memory.
+    def _st(self, mnem, a=None, b=None, c=None, imm=None):
+        base = self.regs[b]
+
+        if c is not None:
+            offset = self.regs[c] if c != isa.REGS['sp'] else imm
+        else:
+            offset = 1 if '+' in mnem else -1
+
+        # Address is base + offset unless we're post-increment.
+        addr = base + offset if mnem[-1] not in '+-' else base
+        addr &= 0xffff
+
+        # Write back register if pre-increment.
+        if mnem[0] in '+-':
+            self._write_reg(b, addr)
+
+        # Store to memory - read data after address update in case base is the
+        # value being stored.
+        data = self.regs[a]
+        self._log(f'ST     0x{addr:04x}    0x{data:04x}')
+        self.cb.write_mem(addr, data)
+
+        # Write back register if post-increment.
+        if mnem[-1] in '+-':
+            self._write_reg(b, (base + offset) & 0xffff)
+
+    # Load from memory - same as store but read data instead.
+    def _ld(self, mnem, a=None, b=None, c=None, imm=None):
+        base = self.regs[b]
+
+        if c is not None:
+            offset = self.regs[c] if c != isa.REGS['sp'] else imm
+        else:
+            offset = 1 if '+' in mnem else -1
+
+        addr = base + offset if mnem[-1] not in '+-' else base
+        addr &= 0xffff
+
+        if mnem[0] in '+-':
+            self._write_reg(b, addr)
+
+        data = self.cb.read_mem(addr)
+        self._log(f'LD     0x{addr:04x}    0x{data:04x}')
+
+        if mnem[-1] in '+-':
+            self._write_reg(b, (base + offset) & 0xffff)
+
+        # Store load value after writeback in case A == B.
+        self._write_reg(a, data)
+
+    # Load/store multiple registers. Range R..S is inclusive and wraps.
+    def _ldstm(self, mnem, r=None, s=None, b=None):
+        addr = self.regs[b]
+
+        while True:
+            if 'st' in mnem:
+                data = self.regs[r]
+                self._log(f'ST     0x{addr:04x}    0x{data:04x}')
+                self.cb.write_mem(addr, data)
+            else:
+                data = self.cb.read_mem(addr)
+                self._log(f'LD     0x{addr:04x}    0x{data:04x}')
+                self._write_reg(r, data)
+
+            # Check if this is the final register and if not keep going.
+            if r == s:
+                break
+
+            r = (r + 1) & 15
+            addr = (addr + 1) & 0xffff
+
+    # ADDPC instruction.
+    def _addpc(self, mnem, a=None, c=None, imm=None):
+        lhs = self.pc
+        rhs = self.regs[c] if c != isa.REGS['sp'] else imm
+
+        value = (lhs + rhs) & 0xffff
+        self._write_reg(a, value)
+
 
 # Parse command line arguments.
 def parse_args():
@@ -394,6 +478,16 @@ if __name__ == '__main__':
 
             return self.uart_rx.pop(0)
 
+        # Memory accesses.
+        def write_mem(self, addr, value):
+            self.mem[addr] = struct.pack('>H', value)
+
+        def read_mem(self, addr):
+            if addr not in self.mem:
+                raise Exception(f'Read from uninitialised memory: 0x{addr:04x}')
+
+            return struct.unpack('>H', self.mem[addr])[0]
+
     # End of test is signalled by receiving the string @@END@@ over UART
     # followed by the exit code of test_main.
     end_of_test = [ord(x) for x in '@@END@@']
@@ -419,11 +513,13 @@ if __name__ == '__main__':
     if exit_code:
         raise Exception(f'Exited with non-zero code: 0x{exit_code:04x}')
 
-    # Check data received over UART matches expected.
+    # Check data received over UART matches expected. Convert values to unsigned
+    # for performing comparison to avoid thinking about signs.
     if args.yaml and args.yaml['output']:
-        if (data := uart_tx[:-len(end_of_test) - 1]) != args.yaml['output']:
+        ref = [x & 0xffff for x in args.yaml['output']]
+        if (data := uart_tx[:-len(end_of_test) - 1]) != ref:
             raise Exception(
                 f'Received data incorrect:\n'
-                f'  - Expected  {args.yaml["output"]}\n'
+                f'  - Expected  {ref}\n'
                 f'  - Received  {data}'
             )

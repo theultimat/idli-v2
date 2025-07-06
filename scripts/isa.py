@@ -272,6 +272,11 @@ class RawData:
     def __init__(self, data):
         self.data = data
 
+        self.mnem = None
+        self.ops = {}
+        self.cond = None
+        self.cex_mask = None
+
     def __str__(self):
         return f'.int 0x{self.data:04X}'
 
@@ -282,4 +287,4 @@ class RawData:
         return 1
 
     def encode(self, followers=[]):
-        return struct.pack('>h', self.ops['imm'])
+        return struct.pack('>h', self.data)

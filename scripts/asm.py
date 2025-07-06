@@ -327,7 +327,7 @@ def encode(args, path, items):
             try:
                 f.write(item.encode(followers=items[i + 1:]))
             except Exception as e:
-                abort(prefixes[i], 'Encoding failed: {e}')
+                abort(prefixes[i], f'Encoding failed: {item}: {e}')
 
             mem_size += item.size()
 

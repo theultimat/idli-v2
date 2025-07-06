@@ -164,6 +164,11 @@ SYNONYMS = {
 }
 
 
+# Order of operands in syntax strings. Used by disassembler for displaying in
+# the correct order.
+OPERAND_ORDER = 'rsabncm'
+
+
 # Represents a single instruction.
 class Instruction:
     def __init__(self, mnem, ops, cond=None, cex_mask=None):

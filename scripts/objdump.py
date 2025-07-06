@@ -61,6 +61,13 @@ def decode(data, max_items=None):
             value = (enc & mask) >> ((mask & -mask).bit_length() - 1)
             ops[k] = value
 
+        # Sort operands into order based on the expected precedence in the
+        # syntax string.
+        ops = {
+            k: ops[k]
+            for k in sorted(ops, key=lambda x: isa.OPERAND_ORDER.index(x))
+        }
+
         # If C is SP then the next 16b is an immediate so parse this too.
         if ops.get('c') == isa.REGS['sp']:
             ops['imm'], = struct.unpack('>h', data[:2])

@@ -32,6 +32,13 @@ def parse_directive(args, tree, dir_path, prefix, labels, items):
         inc_path = dir_path/tree.children[0].children[0]
         return parse(args, inc_path, prefix, labels, items)
 
+    # .space adds the specified number of zero items to reserve some space for
+    # data in memory.
+    if tree.data == 'directive_space':
+        for i in range(int(tree.children[0].value, 0)):
+            items[f'{prefix}.space{i}'] = isa.RawData(0)
+        return
+
     abort(prefix, f'Unsupported directive: {tree.data}')
 
 

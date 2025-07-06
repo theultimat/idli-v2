@@ -262,3 +262,22 @@ class Instruction:
             out += struct.pack('>h', self.ops['imm'])
 
         return out
+
+
+# Represents raw data in the instruction stream i.e. any encoding that doesn't
+# decode to a valid instruction.
+class RawData:
+    def __init__(self, data):
+        self.data = data
+
+    def __str__(self):
+        return f'.int 0x{self.data:04X}'
+
+    def num_cond(self):
+        return 0
+
+    def size(self):
+        return 1
+
+    def encode(self, followers=[]):
+        return struct.pack('>h', self.ops['imm'])

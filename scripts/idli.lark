@@ -4,7 +4,7 @@ start: line
 
 line: label
     | label? instr
-    | directive
+    | label? directive
 
 instr: instr_abc
      | instr_rsb

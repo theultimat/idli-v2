@@ -131,6 +131,12 @@ def parse_instr(args, tree, prefix, need_conds, items):
                     imm = int(token.value, 0)
                     if imm < -32768 or imm > 65535:
                         abort(prefix, f'Out of range immediate: {imm}')
+
+                    # Immediates are represented as signed internally so convert
+                    # into signed range if required.
+                    if imm > 32767:
+                        imm -= 1 << 16
+
                     ops[op] = isa.REGS['sp']
                     ops['imm'] = imm
                 elif token.type == 'LABEL_REF':

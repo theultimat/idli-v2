@@ -60,6 +60,11 @@ class Sim:
         self.pred = False
         self.cond = 0
 
+        # Reset carry state.
+        self.num_carry = 0
+        self.max_carry = 0
+        self.cin = 0
+
         # Number of times tick() has been called.
         self.ticks = 0
 
@@ -67,10 +72,10 @@ class Sim:
         self.funcs = {
             'add':      self._add_sub,
             'sub':      self._add_sub,
-            'and':      None,
-            'andn':     None,
-            'or':       None,
-            'xor':      None,
+            'and':      self._bitwise,
+            'andn':     self._bitwise,
+            'or':       self._bitwise,
+            'xor':      self._bitwise,
             'ld':       self._ld,
             'st':       self._st,
             'ldm':      self._ldstm,
@@ -85,10 +90,10 @@ class Sim:
             '-st':      self._st,
             'inc':      self._inc_dec,
             'dec':      self._inc_dec,
-            'srl':      None,
-            'sra':      None,
-            'ror':      None,
-            'rol':      None,
+            'srl':      self._shift,
+            'sra':      self._shift,
+            'ror':      self._shift,
+            'rol':      self._shift,
             'not':      None,
             'urx':      self._urx,
             'getp':     None,
@@ -118,7 +123,7 @@ class Sim:
             'out1':     None,
             'outp':     None,
             'utx':      self._utx,
-            'carry':    None,
+            'carry':    self._carry,
             'putp':     None,
             'cex':      self._cex,
         }
@@ -228,16 +233,23 @@ class Sim:
     def _add_sub(self, mnem, a=None, b=None, c=None, imm=None):
         lhs = self.regs[b]
         rhs = self.regs[c] if c != isa.REGS['sp'] else imm
+        cin = self.cin if self.num_carry < self.max_carry else 0
 
-        value = lhs + rhs if mnem == 'add' else lhs - rhs
+        value = lhs + rhs + cin if mnem == 'add' else lhs - rhs - cin
+        cout = (value >> 16) & 1
         value &= 0xffff
 
         self._write_reg(a, value)
 
+        # Save carry state for next instruction
+        if self.num_carry < self.max_carry:
+            self.num_carry += 1
+            self.cin = cout
+
     # Comparison instructions.
     def _cmp(self, mnem, b=None, c=None, imm=None):
         lhs = self.regs[b]
-        rhs = self.regs[c] if c != isa.REGS['sp'] else imm
+        rhs = (self.regs[c] if c != isa.REGS['sp'] else imm) & 0xffff
 
         if mnem in ('eq', 'eqx'):
             value = lhs == rhs
@@ -252,7 +264,7 @@ class Sim:
         elif mnem in ('geu', 'geux'):
             value = lhs >= rhs
         elif mnem in ('bit', 'bitx'):
-            value = bool(lhs & (1 << lhs))
+            value = bool(lhs & rhs)
         else:
             raise NotImplementedError()
 
@@ -383,6 +395,53 @@ class Sim:
 
         value = (lhs + rhs) & 0xffff
         self._write_reg(a, value)
+
+    # Bitwise logical operations: AND/ANDN/OR/XOR.
+    def _bitwise(self, mnem, a=None, b=None, c=None, imm=None):
+        lhs = self.regs[b]
+        rhs = self.regs[c] if c != isa.REGS['sp'] else imm
+
+        if mnem == 'and':
+            value = lhs & rhs
+        elif mnem == 'andn':
+            value = lhs & ~rhs
+        elif mnem == 'or':
+            value = lhs | rhs
+        elif mnem == 'xor':
+            value = lhs ^ rhs
+        else:
+            raise NotImplementedError()
+
+        self._write_reg(a, value)
+
+    # Shift and rotate instructions.
+    def _shift(self, mnem, a=None, b=None):
+        value = self.regs[b] & 0xffff
+
+        if mnem == 'srl':
+            value >>= 1
+        elif mnem == 'sra':
+            value >>= 1
+            value |= (value << 1) & 0x8000
+        elif mnem == 'ror':
+            value |= (value & 1) << 16
+            value >>= 1
+        elif mnem == 'rol':
+            value <<= 1
+            value |= value >> 16
+            value &= 0xffff
+        else:
+            raise NotImplementedError()
+
+        self._write_reg(a, value)
+
+    # Update carry state.
+    def _carry(self, mnem, c=None, imm=None):
+        self.num_carry = 0
+        self.max_carry = self.regs[c] if c != isa.REGS['sp'] else imm
+        self.cin = 0
+
+        self._log(f'CARRY  {self.max_carry}')
 
 
 # Parse command line arguments.

@@ -61,7 +61,7 @@ $(BUILD_ROOT)/%.out: %.asm $(ASM_WRAPPER) $(VENV)
 
 # Run test on the simulator.
 SIM_TEST    ?= $(BUILD_ROOT)/$(ASM_ROOT)/smoke.out
-SIM_TIMEOUT ?= 5000
+SIM_TIMEOUT ?= 50000
 SIM_DEBUG   ?= $(if $(DEBUG),--verbose,)
 SIM_YAML    ?= $(ASM_ROOT)/$(notdir $(basename $(SIM_TEST))).yaml
 

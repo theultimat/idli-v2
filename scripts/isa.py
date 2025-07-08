@@ -161,6 +161,7 @@ SYNONYMS = {
     'nop':  ('add', {'a': REGS['zr'], 'b': REGS['zr'], 'c': REGS['zr']}),
     'push': ('-st', {'b': REGS['sp']}),
     'pop':  ('ld+', {'b': REGS['sp']}),
+    'sll':  ('add', {'c': 'b'}),
 }
 
 

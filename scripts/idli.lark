@@ -122,6 +122,7 @@ AB_OP: "ld+"
      | "ror"
      | "rol"
      | "not"
+     | "sll"
 
 A_OP: "urx"
     | "getp"

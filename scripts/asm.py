@@ -158,7 +158,11 @@ def parse_instr(args, tree, prefix, need_conds, items):
     # Detect and substitute synonym with the real instruction.
     if mnem in isa.SYNONYMS:
         mnem, extra_ops = isa.SYNONYMS[mnem]
-        ops.update(extra_ops)
+        for k, v in extra_ops.items():
+            if isinstance(v, str):
+                ops[k] = ops[v]
+            else:
+                ops[k] = v
 
     instr = isa.Instruction(mnem, ops, cond=cond)
     log(args, f'* Adding instruction: {instr}')

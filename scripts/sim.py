@@ -99,9 +99,9 @@ class Sim:
             'sra':      self._shift,
             'ror':      self._shift,
             'rol':      self._shift,
-            'not':      None,
+            'not':      self._not,
             'urx':      self._urx,
-            'getp':     None,
+            'getp':     self._getp,
             'eq':       self._cmp,
             'ne':       self._cmp,
             'lt':       self._cmp,
@@ -129,7 +129,7 @@ class Sim:
             'outp':     None,
             'utx':      self._utx,
             'carry':    self._carry,
-            'putp':     None,
+            'putp':     self._putp,
             'andp':     self._andor_p,
             'orp':      self._andor_p,
             'cex':      self._cex,
@@ -473,6 +473,22 @@ class Sim:
         self.pmod_op = mnem[:-1]
 
         self._log(f'PMOD   {self.pmod_op:4}      {self.max_pmod}')
+
+    # Bitwise NOT.
+    def _not(self, mnem, a=None, b=None):
+        value = ~self.regs[b] & 0xffff
+        self._write_reg(a, value)
+
+    # Get predicate register.
+    def _getp(self, mnem, a=None):
+        value = self.pred & 1
+        self._write_reg(a, value)
+
+    # Set predicate register.
+    def _putp(self, mnem, c=None):
+        value = self.regs[c] if c != isa.REGS['sp'] else imm
+        value &= 1
+        self._write_pred(value)
 
 
 # Parse command line arguments.

@@ -13,8 +13,8 @@ fnv1a:                          # data = r1, n = r2
     ret.t                       #   return (hash0, hash1)
     ld+     r5, r3              # tmp = *data++
     xor     r1, r1, r5          # hash0 ^= tmp
-    mov     r5, 0x0193          # prime0 = 0x0193
-    mov     r6, 0x0100          # prime1 = 0x0100
+    mov     r5, 0x0193          # prime0 = FNV_prime[0]
+    mov     r6, 0x0100          # prime1 = FNV_prime[1]
     mov     r8, zr              # mul0 = 0
     mov     r9, zr              # mul1 = 0
 2:  eq      r5, zr              # done = prime0 == 0
@@ -33,7 +33,7 @@ fnv1a:                          # data = r1, n = r2
     srl     r6, r6              # c, prime1 >>= 1
     srl     r5, r5              # prime0 = (c << 15) | (prime0 >> 1)
     carry   2                   # (shift through carry)
-    sll     r1, r1              # c, hash0 <<= hash0
+    sll     r1, r1              # c, hash0 <<= 1
     sll     r2, r2              # hash1 = (hash1 << 1) | c
     b       @2b                 # goto 2b
 

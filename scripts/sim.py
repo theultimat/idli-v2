@@ -416,16 +416,21 @@ class Sim:
     # Shift and rotate instructions.
     def _shift(self, mnem, a=None, b=None):
         value = self.regs[b] & 0xffff
+        cin = self.cin if self.num_carry < self.max_carry else 0
 
         if mnem == 'srl':
-            value >>= 1
+            self.cin = value & 1
+            value = (value >> 1) | (cin << 15)
         elif mnem == 'sra':
+            self.cin = value & 1
             value >>= 1
             value |= (value << 1) & 0x8000
         elif mnem == 'ror':
+            self.cin = value & 1
             value |= (value & 1) << 16
             value >>= 1
         elif mnem == 'rol':
+            self.cin = (value >> 15) & 1
             value <<= 1
             value |= value >> 16
             value &= 0xffff

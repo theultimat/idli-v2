@@ -32,14 +32,12 @@ fnv1a:                          # data = r1, n = r2
     carry.t 2                   #   (sticky carry)
     add.t   r8, r8, r1          #   c, mul0 = mul0 + hash0
     add.t   r9, r9, r2          #   mul1 = mul1 + hash1 + c
-    srl     r5, r5              # prime0 >>= 1
-    bitx    r6, 0x1             # if prime1 & 1:
-    or.t    r5, r5, 0x8000      #   prime0 |= 0x8000
-    srl     r6, r6              # prime1 >>= 1
-    sll     r2, r2              # hash1 <<= 1
-    bitx    r1, 0x8000          # if hash0 & 0x8000:
-    inc.t   r2, r2              #   hash1 += 1
-    sll     r1, r1              # hash0 <<= 1
+    carry   2                   # (shift through carry)
+    srl     r6, r6              # c, prime1 >>= 1
+    srl     r5, r5              # prime0 = (c << 15) | (prime0 >> 1)
+    carry   2                   # (shift through carry)
+    sll     r1, r1              # c, hash0 <<= hash0
+    sll     r2, r2              # hash1 = (hash1 << 1) | c
     b       @2b                 # goto 2b
 
 

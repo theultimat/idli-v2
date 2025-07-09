@@ -65,6 +65,11 @@ class Sim:
         self.max_carry = 0
         self.cin = 0
 
+        # Reset pmod state.
+        self.num_pmod = 0
+        self.max_pmod = 0
+        self.pmod_op = None
+
         # Number of times tick() has been called.
         self.ticks = 0
 
@@ -125,6 +130,8 @@ class Sim:
             'utx':      self._utx,
             'carry':    self._carry,
             'putp':     None,
+            'andp':     self._andor_p,
+            'orp':      self._andor_p,
             'cex':      self._cex,
         }
 
@@ -160,6 +167,13 @@ class Sim:
         # Update carry state for next instruction.
         if self.num_carry < self.max_carry:
             self.num_carry += 1
+
+        # Update pmod state, resetting back to standard operation once the
+        # counter elapses.
+        if self.num_pmod < self.max_pmod:
+            self.num_pmod += 1
+        if self.num_pmod >= self.max_pmod:
+            self.pmod_op = None
 
         # Increment tick counter for logging.
         self.ticks += 1
@@ -209,6 +223,11 @@ class Sim:
 
     # Write the predicate register.
     def _write_pred(self, value):
+        if self.pmod_op == 'and':
+            value = self.pred and value
+        elif self.pmod_op == 'or':
+            value = self.pred or value
+
         self._log(f'PRED   {int(value)}')
         self.pred = bool(value)
         self.cb.write_pred(value)
@@ -446,6 +465,14 @@ class Sim:
         self.cin = 0
 
         self._log(f'CARRY  {self.max_carry}')
+
+    # Update AND/OR state for P.
+    def _andor_p(self, mnem, c=None, imm=None):
+        self.num_pmod = -1
+        self.max_pmod = self.regs[c] if c != isa.REGS['sp'] else imm
+        self.pmod_op = mnem[:-1]
+
+        self._log(f'PMOD   {self.pmod_op:4}      {self.max_pmod}')
 
 
 # Parse command line arguments.

@@ -138,6 +138,10 @@ ENCODINGS = {
     # Put value into predicate register.
     'putp':     '1101001011??cccc',     # p = c & 1
 
+    # Set compare instructions to AND/OR into P rather than replacing.
+    'andp':     '1101001111??cccc',
+    'orp':      '1101010011??cccc',
+
     # Set conditional execution state for the following instructions.
     'cex':      '11100000mmmmmmmm',     # cond(*m)
 }

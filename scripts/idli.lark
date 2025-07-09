@@ -154,6 +154,8 @@ C_OP: "b"
     | "utx"
     | "carry"
     | "putp"
+    | "andp"
+    | "orp"
 
 N_OP: "inp"
     | "inpx"

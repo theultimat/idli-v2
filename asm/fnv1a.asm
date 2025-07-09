@@ -17,12 +17,9 @@ fnv1a:                          # data = r1, n = r2
     mov     r6, 0x0100          # prime1 = 0x0100
     mov     r8, zr              # mul0 = 0
     mov     r9, zr              # mul1 = 0
-2:  mov     r7, zr              # more = 0
-    nex     r5, zr              # if prime0 == 0:
-    inc.t   r7, r7              #   more += 1
-    nex     r6, zr              # if prime1 == 0:
-    inc.t   r7, r7              #   more += 1
-    eq      r7, zr              # p = not more
+2:  eq      r5, zr              # done = prime0 == 0
+    andp    1                   # (and next compare)
+    eq      r6, zr              # done &= prime1 == 0
     cex     3                   # if p:
     mov.t   r1, r8              #   hash0 = mul0
     mov.t   r2, r9              #   hash1 = mul1

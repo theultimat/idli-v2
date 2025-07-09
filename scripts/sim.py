@@ -157,6 +157,10 @@ class Sim:
         else:
             self.pc = pc
 
+        # Update carry state for next instruction.
+        if self.num_carry < self.max_carry:
+            self.num_carry += 1
+
         # Increment tick counter for logging.
         self.ticks += 1
 
@@ -236,15 +240,10 @@ class Sim:
         cin = self.cin if self.num_carry < self.max_carry else 0
 
         value = lhs + rhs + cin if mnem == 'add' else lhs - rhs - cin
-        cout = (value >> 16) & 1
+        self.cin = (value >> 16) & 1
         value &= 0xffff
 
         self._write_reg(a, value)
-
-        # Save carry state for next instruction
-        if self.num_carry < self.max_carry:
-            self.num_carry += 1
-            self.cin = cout
 
     # Comparison instructions.
     def _cmp(self, mnem, b=None, c=None, imm=None):
@@ -437,7 +436,7 @@ class Sim:
 
     # Update carry state.
     def _carry(self, mnem, c=None, imm=None):
-        self.num_carry = 0
+        self.num_carry = -1
         self.max_carry = self.regs[c] if c != isa.REGS['sp'] else imm
         self.cin = 0
 

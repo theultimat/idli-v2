@@ -24,7 +24,7 @@ fnv1a:                          # data = r1, n = r2
     mov.t   r1, r8              #   hash0 = mul0
     mov.t   r2, r9              #   hash1 = mul1
     b.t     @1b                 #   goto 1b
-    bit     r5, 0x1             # p = (prime0 & 1) != 0
+    any     r5, 0x1             # p = (prime0 & 1) != 0
     cex     3                   # if p:
     carry.t 2                   #   (sticky carry)
     add.t   r8, r8, r1          #   c, mul0 = mul0 + hash0

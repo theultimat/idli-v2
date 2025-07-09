@@ -100,7 +100,7 @@ ENCODINGS = {
     'ltu':      '10110011bbbbcccc',     # p = b < c
     'ge':       '10110100bbbbcccc',     # p = b >= c
     'geu':      '10110101bbbbcccc',     # p = b >= c
-    'bit':      '10110110bbbbcccc',     # p = (b >> c) & 1
+    'any':      '10110110bbbbcccc',     # p = |(b & c)
     'inp':      '10110111??nn????',     # p = pin(n)
 
     # Comparison as above, but only run the following instruction if the value
@@ -111,7 +111,7 @@ ENCODINGS = {
     'ltux':     '10111011bbbbcccc',     # p = ltu(b, c); cond(t)
     'gex':      '10111100bbbbcccc',     # p = ge(b, c); cond(t)
     'geux':     '10111101bbbbcccc',     # p = geu(b, c); cond(t)
-    'bitx':     '10111110bbbbcccc',     # p = bit(b, c); cond(t)
+    'anyx':     '10111110bbbbcccc',     # p = any(b, c); cond(t)
     'inpx':     '10111111??nn????',     # p = inp(n); cond(t)
 
     # Add value to program counter.
@@ -139,8 +139,8 @@ ENCODINGS = {
     'putp':     '1101001011??cccc',     # p = c & 1
 
     # Set compare instructions to AND/OR into P rather than replacing.
-    'andp':     '1101001111??cccc',
-    'orp':      '1101010011??cccc',
+    'andp':     '1101001111??cccc',     # p &= q for c instructions
+    'orp':      '1101010011??cccc',     # p |= q for c instructions
 
     # Set conditional execution state for the following instructions.
     'cex':      '11100000mmmmmmmm',     # cond(*m)
@@ -219,7 +219,7 @@ class Instruction:
     # and cex, with the former always being 1 and the latter being the value of
     # the m operand.
     def num_cond(self):
-        CMPX = set(['eqx', 'nex', 'ltx', 'ltux', 'gex', 'geux', 'bitx', 'inpx'])
+        CMPX = set(['eqx', 'nex', 'ltx', 'ltux', 'gex', 'geux', 'anyx', 'inpx'])
 
         if self.mnem in CMPX:
             return 1

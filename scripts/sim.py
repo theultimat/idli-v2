@@ -108,7 +108,7 @@ class Sim:
             'ltu':      self._cmp,
             'ge':       self._cmp,
             'geu':      self._cmp,
-            'bit':      self._cmp,
+            'any':      self._cmp,
             'inp':      None,
             'eqx':      self._cmp,
             'nex':      self._cmp,
@@ -116,7 +116,7 @@ class Sim:
             'ltux':     self._cmp,
             'gex':      self._cmp,
             'geux':     self._cmp,
-            'bitx':     self._cmp,
+            'anyx':     self._cmp,
             'inpx':     None,
             'addpc':    self._addpc,
             'b':        self._jmp,
@@ -281,7 +281,7 @@ class Sim:
             value = self._u2s(lhs) >= self._u2s(rhs)
         elif mnem in ('geu', 'geux'):
             value = lhs >= rhs
-        elif mnem in ('bit', 'bitx'):
+        elif mnem in ('any', 'anyx'):
             value = bool(lhs & rhs)
         else:
             raise NotImplementedError()

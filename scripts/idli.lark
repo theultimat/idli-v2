@@ -16,6 +16,7 @@ instr: instr_abc
      | instr_n
      | instr_nc
      | instr_m
+     | instr_j
      | instr_none
 
 instr_abc: ABC_OP COND? REGISTER "," REGISTER "," c
@@ -37,6 +38,8 @@ instr_n: N_OP COND? PIN
 instr_nc: NC_OP COND? PIN "," c
 
 instr_m: M_OP INT
+
+instr_j: J_OP COND? INT
 
 instr_none: NONE_OP COND?
 
@@ -152,15 +155,16 @@ C_OP: "b"
     | "bl"
     | "jl"
     | "utx"
-    | "carry"
     | "putp"
-    | "andp"
-    | "orp"
 
 N_OP: "inp"
     | "inpx"
     | "in"
     | "outp"
+
+J_OP: "carry"
+    | "andp"
+    | "orp"
 
 NC_OP: "out"
 

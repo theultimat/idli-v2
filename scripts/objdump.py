@@ -80,6 +80,10 @@ def decode(data, max_items=None):
             new_cond_state = _parse_op_m(ops['m'])
             ops['m'] = len(new_cond_state)
 
+        # If J is zero then set to 16.
+        if ops.get('j') == 0:
+            ops['j'] = 16
+
         # Determine whether this instruction was conditional and set the flag
         # appropriately based on the current state.
         cond = None

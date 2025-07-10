@@ -152,6 +152,11 @@ def parse_instr(args, tree, prefix, need_conds, items):
                 ops[op] = int(token.value)
                 if ops[op] < 1 or ops[op] > 7:
                     abort(prefix, f'Bad value for CEX count: {ops[op]}')
+            elif op == 'j':
+                imm = int(token.value)
+                if imm < 1 or imm > 16:
+                    abort(prefix, f'Out of range immediate: {token.value}')
+                ops[op] = imm
             else:
                 abort(prefix, f'Unexpected operand type: {op}')
 

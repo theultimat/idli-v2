@@ -43,6 +43,7 @@ REGS_INV = {v: k for k, v in REGS.items()}
 #           one of the following instructions should execute if the current
 #           predicate state is true or false.
 #   - r, s  Register range from r to s inclusive.
+#   - j     4b unsigned immediate where a zero indicates 16.
 ENCODINGS = {
     # Add/subtract.
     'add':      '0000aaaabbbbcccc',     # a = b + c
@@ -133,14 +134,14 @@ ENCODINGS = {
     'utx':      '1101000011??cccc',     # uart(c)
 
     # Set sticky carry flag.
-    'carry':    '1101000111??cccc',     # C_in = C_out for C instructions
+    'carry':    '1101000111??jjjj',     # C_in = C_out for C instructions
 
     # Put value into predicate register.
     'putp':     '1101001011??cccc',     # p = c & 1
 
     # Set compare instructions to AND/OR into P rather than replacing.
-    'andp':     '1101001111??cccc',     # p &= q for c instructions
-    'orp':      '1101010011??cccc',     # p |= q for c instructions
+    'andp':     '1101001111??jjjj',     # p &= q for c instructions
+    'orp':      '1101010011??jjjj',     # p |= q for c instructions
 
     # Set conditional execution state for the following instructions.
     'cex':      '11100000mmmmmmmm',     # cond(*m)
@@ -171,7 +172,7 @@ SYNONYMS = {
 
 # Order of operands in syntax strings. Used by disassembler for displaying in
 # the correct order.
-OPERAND_ORDER = 'rsabncm'
+OPERAND_ORDER = 'rsabncmj'
 
 
 # Represents a single instruction.
@@ -197,7 +198,7 @@ class Instruction:
         for k, v in self.ops.items():
             if k in 'abrs':
                 ops.append(REGS_INV[v])
-            elif k in 'nm':
+            elif k in 'nmj':
                 ops.append(str(v))
             elif k == 'imm':
                 ops.append(hex(v) if isinstance(v, int) else v)
@@ -257,6 +258,10 @@ class Instruction:
                     mask |= bit << i
 
                 v = mask
+
+            # If J is set to 16 then wrap it back around to 0 for encoding.
+            if k == 'j' and v == 16:
+                v = 0
 
             # Convert the value into a bit string and insert it.
             space = bits.count(k)

@@ -459,17 +459,17 @@ class Sim:
         self._write_reg(a, value)
 
     # Update carry state.
-    def _carry(self, mnem, c=None, imm=None):
+    def _carry(self, mnem, j=None):
         self.num_carry = -1
-        self.max_carry = self.regs[c] if c != isa.REGS['sp'] else imm
+        self.max_carry = j
         self.cin = 0
 
         self._log(f'CARRY  {self.max_carry}')
 
     # Update AND/OR state for P.
-    def _andor_p(self, mnem, c=None, imm=None):
+    def _andor_p(self, mnem, j=None):
         self.num_pmod = -1
-        self.max_pmod = self.regs[c] if c != isa.REGS['sp'] else imm
+        self.max_pmod = j
         self.pmod_op = mnem[:-1]
 
         self._log(f'PMOD   {self.pmod_op:4}      {self.max_pmod}')

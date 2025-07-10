@@ -2,6 +2,7 @@ BUILD_ROOT  := build
 SOURCE_ROOT := src
 SCRIPT_ROOT := scripts
 ASM_ROOT    := asm
+TEST_ROOT   := test
 
 
 PYTHON := python
@@ -60,10 +61,10 @@ $(BUILD_ROOT)/%.out: %.asm $(ASM_WRAPPER) $(VENV)
 
 
 # Run test on the simulator.
-SIM_TEST    ?= $(BUILD_ROOT)/$(ASM_ROOT)/smoke.out
-SIM_TIMEOUT ?= 50000
-SIM_DEBUG   ?= $(if $(DEBUG),--verbose,)
-SIM_YAML    ?= $(ASM_ROOT)/$(notdir $(basename $(SIM_TEST))).yaml
+export SIM_TEST    ?= $(BUILD_ROOT)/$(ASM_ROOT)/smoke.out
+export SIM_TIMEOUT ?= 50000
+export SIM_DEBUG   ?= $(if $(DEBUG),--verbose,)
+export SIM_YAML    ?= $(ASM_ROOT)/$(notdir $(basename $(SIM_TEST))).yaml
 
 SIM := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/sim.py $(SIM_DEBUG)
 
@@ -71,3 +72,10 @@ run_sim: $(SIM_TEST) $(VENV)
 	$(SIM) $< --timeout $(SIM_TIMEOUT) --yaml $(SIM_YAML)
 
 .PHONY: run_sim
+
+
+# Run test on verilator.
+run_veri: $(SIM_TEST) $(VENV)
+	source $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=verilator
+
+.PHONY: run_veri

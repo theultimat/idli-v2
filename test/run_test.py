@@ -6,6 +6,8 @@ import os
 import pathlib
 import yaml
 
+from tb import TestBench
+
 
 @cocotb.test()
 async def run_test(dut):
@@ -18,4 +20,4 @@ async def run_test(dut):
     with open('..'/config, 'r') as f:
         config = yaml.safe_load(f)
 
-    print(path, timeout, config)
+    await TestBench(dut, path, config, timeout).run()

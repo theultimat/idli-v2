@@ -46,10 +46,12 @@ class TestBench:
 
                 addr += 1
 
-
     # Run the simulation and checkers.
     async def run(self):
         cocotb.start_soon(Clock(self.dut.gck, 40, 'us').start())
+
+        cocotb.start_soon(self._run_mem(self.mem_lo))
+        cocotb.start_soon(self._run_mem(self.mem_hi))
 
         self.log('BENCH: RESET BEGIN')
 
@@ -63,3 +65,28 @@ class TestBench:
         self.log('BENCH: RESET COMPLETE')
 
         await ClockCycles(self.dut.gck, 10)
+
+    # Simulates one of the two attached memories.
+    async def _run_mem(self, mem):
+        # Select appropriate signals in the test bench to use for the memory.
+        if mem == self.mem_lo:
+            sck = self.dut.mem_lo_sck
+            cs = self.dut.mem_lo_cs
+            sio_in = self.dut.mem_lo_in
+            sio_out = self.dut.mem_lo_out
+        else:
+            sck = self.dut.mem_hi_sck
+            cs = self.dut.mem_hi_cs
+            sio_in = self.dut.mem_hi_in
+            sio_out = self.dut.mem_hi_out
+
+        # Wait for chip to come out of reset.
+        await RisingEdge(self.dut.rst_n)
+
+        while True:
+            await RisingEdge(sck)
+            mem.rising_edge(cs.value, sio_out.value)
+
+            await FallingEdge(sck)
+            if (data := mem.falling_edge()) is not None:
+                sio_in.value = data

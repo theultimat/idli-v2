@@ -18,4 +18,35 @@ module idli_tb_m import idli_pkg::*; ();
   slice_t mem_lo_out;
   slice_t mem_hi_out;
 
+  // UART signals.
+  logic uart_rx;
+  logic uart_tx;
+
+  // IO pins.
+  io_pins_t pins_in;
+  io_pins_t pins_out;
+
+
+  // Instantiate the top-level module of the core and connect to the bench.
+  idli_top_m idli_top_u (
+    .i_top_gck    (gck),
+    .i_top_rst_n  (rst_n),
+
+    .o_top_mem_lo_sck (mem_lo_sck),
+    .o_top_mem_lo_cs  (mem_lo_cs),
+    .i_top_mem_lo_sio (mem_lo_in),
+    .o_top_mem_lo_sio (mem_lo_out),
+
+    .o_top_mem_hi_sck (mem_hi_sck),
+    .o_top_mem_hi_cs  (mem_hi_cs),
+    .i_top_mem_hi_sio (mem_hi_in),
+    .o_top_mem_hi_sio (mem_hi_out),
+
+    .i_top_uart_rx    (uart_rx),
+    .o_top_uart_tx    (uart_tx),
+
+    .i_top_io_pins    (pins_in),
+    .o_top_io_pins    (pins_out)
+  );
+
 endmodule

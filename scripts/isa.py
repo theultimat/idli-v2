@@ -43,7 +43,7 @@ REGS_INV = {v: k for k, v in REGS.items()}
 #           one of the following instructions should execute if the current
 #           predicate state is true or false.
 #   - r, s  Register range from r to s inclusive.
-#   - j     4b unsigned immediate where a zero indicates 16.
+#   - j     4b unsigned immediate.
 # Underscores are only used to make the encoding strings more readable.
 ENCODINGS = {
     # Add/subtract.
@@ -261,10 +261,6 @@ class Instruction:
                     mask |= bit << i
 
                 v = mask
-
-            # If J is set to 16 then wrap it back around to 0 for encoding.
-            if k == 'j' and v == 16:
-                v = 0
 
             # Convert the value into a bit string and insert it.
             space = bits.count(k)

@@ -154,7 +154,7 @@ def parse_instr(args, tree, prefix, need_conds, items):
                     abort(prefix, f'Bad value for CEX count: {ops[op]}')
             elif op == 'j':
                 imm = int(token.value)
-                if imm < 1 or imm > 16:
+                if imm < 0 or imm > 15:
                     abort(prefix, f'Out of range immediate: {token.value}')
                 ops[op] = imm
             else:

@@ -17,7 +17,7 @@ typedef logic [1:0] ctr_t;
 // 16 registers so 4b identifier.
 typedef logic [3:0] reg_t;
 
-// Link register and zero register.
+// Link register, zero register.
 //localparam reg_t REG_ZR = reg_t'('d0);
 //localparam reg_t REG_LR = reg_t'('d14);
 
@@ -79,6 +79,11 @@ typedef struct packed {
   dst_t dst;
   src_t lhs;
   src_t rhs;
+
+  // Register operand values.
+  reg_t dst_reg;
+  reg_t lhs_reg;
+  reg_t rhs_reg;
 
   // ALU and comparison controls.
   alu_op_t  alu_op;

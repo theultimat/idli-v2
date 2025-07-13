@@ -29,6 +29,10 @@ module idli_top_m import idli_pkg::*; (
   output var io_pins_t  o_top_io_pins
 );
 
+  // Encoded instruction read from memory and whether it's valid.
+  slice_t enc;
+  logic   enc_vld;
+
   // TODO Move the counter into the sync/control block.
   ctr_t ctr_q;
   always_ff @(posedge i_top_gck, negedge i_top_rst_n) begin
@@ -45,10 +49,8 @@ module idli_top_m import idli_pkg::*; (
     .i_sqi_wr_en    ('0),
 
     .i_sqi_data     ('0),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_sqi_data     (),
-    .o_sqi_data_vld (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_sqi_data     (enc),
+    .o_sqi_data_vld (enc_vld),
 
     .o_sqi_lo_sck   (o_top_mem_lo_sck),
     .o_sqi_lo_cs    (o_top_mem_lo_cs),
@@ -59,6 +61,17 @@ module idli_top_m import idli_pkg::*; (
     .o_sqi_hi_cs    (o_top_mem_hi_cs),
     .i_sqi_hi_sio   (i_top_mem_hi_sio),
     .o_sqi_hi_sio   (o_top_mem_hi_sio)
+  );
+
+  idli_decode_m decode_u (
+    .i_de_gck       (i_top_gck),
+    .i_de_rst_n     (i_top_rst_n),
+
+    .i_de_ctr       (ctr_q),
+    .i_de_redirect  ('0),
+
+    .i_de_enc       (enc),
+    .i_de_enc_vld   (enc_vld)
   );
 
 endmodule

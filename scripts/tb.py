@@ -48,7 +48,7 @@ class TestBench:
 
     # Run the simulation and checkers.
     async def run(self):
-        cocotb.start_soon(Clock(self.dut.gck, 40, 'us').start())
+        cocotb.start_soon(Clock(self.dut.gck, 2, 'ns').start())
 
         cocotb.start_soon(self._run_mem(self.mem_lo))
         cocotb.start_soon(self._run_mem(self.mem_hi))
@@ -56,7 +56,7 @@ class TestBench:
         self.log('BENCH: RESET BEGIN')
 
         # Reset sequence pulls the reset pin low for two cycles.
-        self.dut.rst_n.value = 1
+        self.dut.rst_n.setimmediatevalue(1)
         await ClockCycles(self.dut.gck, 2)
         self.dut.rst_n.value = 0
         await ClockCycles(self.dut.gck, 2)
@@ -64,7 +64,7 @@ class TestBench:
 
         self.log('BENCH: RESET COMPLETE')
 
-        await ClockCycles(self.dut.gck, 10)
+        await ClockCycles(self.dut.gck, 50)
 
     # Simulates one of the two attached memories.
     async def _run_mem(self, mem):

@@ -43,7 +43,7 @@ class Memory:
         # If CS is high then the memory is not currently active so we should
         # go back to the initial uninitialised state and do nothing else.
         if cs:
-            if self.addr is not None:
+            if self.mode is not None:
                 self.log('Resetting SQI memory.')
 
             self.addr = None
@@ -58,7 +58,7 @@ class Memory:
             # This is the first cycle out of reset so we expect the incoming
             # nibble to contain the top 4b of the mode.
             self.mode = sio & 0xf
-            self.mode = 'mode'
+            self.state = 'mode'
         elif self.state == 'mode':
             # Now we receive the low 4b of the mode.
             self.mode = (self.mode << 4) | (sio & 0xf)
@@ -79,7 +79,7 @@ class Memory:
             # Move to the next cycle or into the read/write phase.
             cycle = int(self.state[-1])
             if cycle == 3:
-                self.log('Address set to 0x{self.addr:04x}')
+                self.log(f'Address set to 0x{self.addr:04x}')
                 self.state = 'dummy0' if self.mode == READ else 'write0'
             else:
                 self.state = f'addr{cycle + 1}'
@@ -118,7 +118,7 @@ class Memory:
     # read from the memory.
     def falling_edge(self):
         # If we're not in a read state then there's nothing to return.
-        if not self.state.startswith('read'):
+        if not self.state or not self.state.startswith('read'):
             return None
 
         # Get the byte from the memory and complain if we're attempting to read

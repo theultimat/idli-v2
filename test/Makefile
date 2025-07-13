@@ -16,6 +16,7 @@ TOPLEVEL_LANG   := verilog
 BENCH_SOURCE    := $(TEST_ROOT)/idli_tb_m.sv
 
 VERILOG_SOURCES := $(wildcard $(SOURCE_ROOT)/*.sv)
+VERILOG_SOURCES += $(wildcard $(SOURCE_ROOT)/*.svh)
 VERILOG_SOURCES += $(BENCH_SOURCE)
 
 # Configure simulator flags.

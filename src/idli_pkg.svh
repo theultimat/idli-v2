@@ -11,6 +11,9 @@ typedef logic [NUM_IO_PINS-1:0] io_pins_t;
 typedef logic   [3:0] slice_t;
 typedef slice_t [3:0] data_t;
 
+// Each instruction takes four cycles so we need a 2b counter.
+typedef logic [1:0] ctr_t;
+
 endpackage
 
 `endif // idli_pkg_svh

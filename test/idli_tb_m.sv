@@ -29,8 +29,8 @@ module idli_tb_m import idli_pkg::*; ();
 
   // Instantiate the top-level module of the core and connect to the bench.
   idli_top_m idli_top_u (
-    .i_top_gck    (gck),
-    .i_top_rst_n  (rst_n),
+    .i_top_gck        (gck),
+    .i_top_rst_n      (rst_n),
 
     .o_top_mem_lo_sck (mem_lo_sck),
     .o_top_mem_lo_cs  (mem_lo_cs),

@@ -61,39 +61,39 @@ ENCODINGS = {
     'st':       '0111_aaaa_bbbb_cccc',      # [b + c] = a
 
     # Load/store register range.
-    'ldm':      '1000_rrrr_bbbb_ssss',      # r..s = [b, b + 1, ...]
-    'stm':      '1001_rrrr_bbbb_ssss',      # [b, b + 1, ...] = r..s
+    'ldm':      '1000_rrrr_ssss_bbbb',      # r..s = [b, b + 1, ...]
+    'stm':      '1001_rrrr_ssss_bbbb',      # [b, b + 1, ...] = r..s
 
     # Load/store with post/pre-increment writeback.
-    'ld+':      '1010_aaaa_bbbb_0000',      # a = [b++]
-    'st+':      '1010_aaaa_bbbb_0001',      # [b++] = a
-    '+ld':      '1010_aaaa_bbbb_0010',      # a = [++b]
-    '+st':      '1010_aaaa_bbbb_0011',      # [++b] = a
+    'ld+':      '1010_0000_aaaa_bbbb',      # a = [b++]
+    'st+':      '1010_0001_aaaa_bbbb',      # [b++] = a
+    '+ld':      '1010_0010_aaaa_bbbb',      # a = [++b]
+    '+st':      '1010_0011_aaaa_bbbb',      # [++b] = a
 
     # Load/store with post/pre-decrement writeback.
-    'ld-':      '1010_aaaa_bbbb_0100',      # a = [b--]
-    'st-':      '1010_aaaa_bbbb_0101',      # [b--] = a
-    '-ld':      '1010_aaaa_bbbb_0110',      # a = [--b]
-    '-st':      '1010_aaaa_bbbb_0111',      # [--b] = a
+    'ld-':      '1010_0100_aaaa_bbbb',      # a = [b--]
+    'st-':      '1010_0101_aaaa_bbbb',      # [b--] = a
+    '-ld':      '1010_0110_aaaa_bbbb',      # a = [--b]
+    '-st':      '1010_0111_aaaa_bbbb',      # [--b] = a
 
     # Increment/decrement register.
-    'inc':      '1010_aaaa_bbbb_1000',      # a = b + 1
-    'dec':      '1010_aaaa_bbbb_1001',      # a = b - 1
+    'inc':      '1010_1000_aaaa_bbbb',      # a = b + 1
+    'dec':      '1010_1001_aaaa_bbbb',      # a = b - 1
 
     # Shift/rotate.
-    'srl':      '1010_aaaa_bbbb_1010',      # a = {1'b0, b[15:1]}
-    'sra':      '1010_aaaa_bbbb_1011',      # a = {b[15], b[15:1]}
-    'ror':      '1010_aaaa_bbbb_1100',      # a = {b[0], b[15:1]}
-    'rol':      '1010_aaaa_bbbb_1101',      # a = {b[14:0], b[15]}
+    'srl':      '1010_1010_aaaa_bbbb',      # a = {1'b0, b[15:1]}
+    'sra':      '1010_1011_aaaa_bbbb',      # a = {b[15], b[15:1]}
+    'ror':      '1010_1100_aaaa_bbbb',      # a = {b[0], b[15:1]}
+    'rol':      '1010_1101_aaaa_bbbb',      # a = {b[14:0], b[15]}
 
     # Bitwise invert.
-    'not':      '1010_aaaa_bbbb_1110',      # a = ~b
+    'not':      '1010_1110_aaaa_bbbb',      # a = ~b
 
     # Receive from UART.
-    'urx':      '1010_aaaa_0000_1111',      # a = uart()
+    'urx':      '1010_1111_???0_aaaa',      # a = uart()
 
     # Get predicate register.
-    'getp':     '1010_aaaa_0001_1111',      # a = p
+    'getp':     '1010_1111_???1_aaaa',      # a = p
 
     # Compare or read pin into predicate.
     'eq':       '1011_0000_bbbb_cccc',      # p = b == c
@@ -117,35 +117,35 @@ ENCODINGS = {
     'inpx':     '1011_1111_??nn_????',      # p = inp(n); cond(t)
 
     # Add value to program counter.
-    'addpc':    '1100_aaaa_0000_cccc',      # a = pc + c
+    'addpc':    '1100_???0_aaaa_cccc',      # a = pc + c
 
     # Branch and jump, optionally with link.
-    'b':        '1100_0000_1111_cccc',      # pc += c
-    'j':        '1100_0001_1111_cccc',      # pc = c
-    'bl':       '1100_0010_1111_cccc',      # lr = pc + 1; b(c)
-    'jl':       '1100_0011_1111_cccc',      # lr = pc + 1; j(c)
+    'b':        '1100_???1_??00_cccc',      # pc += c
+    'j':        '1100_???1_??01_cccc',      # pc = c
+    'bl':       '1100_???1_??10_cccc',      # lr = pc + 1; b(c)
+    'jl':       '1100_???1_??11_cccc',      # lr = pc + 1; j(c)
 
     # Read/write input and output pins.
-    'in':       '1101_aaaa_00nn_????',      # a = pin(n)
-    'out':      '1101_0000_01nn_cccc',      # pin(n, c)
-    'out1':     '1101_0001_01nn_???1',      # pin(n, 1)
-    'outp':     '1101_0010_10nn_????',      # pin(n, p)
+    'in':       '1101_??00_00nn_aaaa',      # a = pin(n)
+    'out':      '1101_??00_01nn_cccc',      # pin(n, c)
+    'out1':     '1101_??00_10nn_????',      # pin(n, 1)
+    'outp':     '1101_??00_11nn_????',      # pin(n, p)
 
     # Send over UART.
-    'utx':      '1101_0000_11??_cccc',      # uart(c)
-
-    # Set sticky carry flag.
-    'carry':    '1101_0001_11??_jjjj',      # C_in = C_out for C instructions
+    'utx':      '1101_??01_???0_cccc',      # uart(c)
 
     # Put value into predicate register.
-    'putp':     '1101_0010_11??_cccc',      # p = c & 1
+    'putp':     '1101_??01_???1_cccc',      # p = c & 1
+
+    # Set sticky carry flag.
+    'carry':    '1101_??10_??00_jjjj',      # C_in = C_out for C instructions
 
     # Set compare instructions to AND/OR into P rather than replacing.
-    'andp':     '1101_0011_11??_jjjj',      # p &= q for c instructions
-    'orp':      '1101_0100_11??_jjjj',      # p |= q for c instructions
+    'andp':     '1101_??10_??01_jjjj',      # p &= q for c instructions
+    'orp':      '1101_??10_??10_jjjj',      # p |= q for c instructions
 
     # Set conditional execution state for the following instructions.
-    'cex':      '1110_0000_mmmm_mmmm',      # cond(*m)
+    'cex':      '1110_????_mmmm_mmmm',      # cond(*m)
 }
 
 ENCODINGS = {k: v.replace('_', '') for k, v in ENCODINGS.items()}
@@ -159,6 +159,20 @@ OPCODE_MASKS = {
     k: int(''.join('1' if x in '01' else '0' for x in v), 2)
     for k, v in ENCODINGS.items()
 }
+
+
+# Sanity check that we have no encoding collisions.
+def _check_encodings():
+    for mnem, opcode in OPCODES.items():
+        mask = OPCODE_MASKS[mnem]
+
+        for other_mnem, other_opcode in OPCODES.items():
+            if mnem == other_mnem:
+                continue
+
+            assert opcode & mask != other_opcode & mask, f'{mnem} {other_mnem}'
+
+_check_encodings()
 
 
 # Mapping from synonym mnemonic to real instruction and operand substitutions.

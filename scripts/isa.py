@@ -89,12 +89,6 @@ ENCODINGS = {
     # Bitwise invert.
     'not':      '1010_1110_aaaa_bbbb',      # a = ~b
 
-    # Receive from UART.
-    'urx':      '1010_1111_???0_aaaa',      # a = uart()
-
-    # Get predicate register.
-    'getp':     '1010_1111_???1_aaaa',      # a = p
-
     # Compare or read pin into predicate.
     'eq':       '1011_0000_bbbb_cccc',      # p = b == c
     'ne':       '1011_0001_bbbb_cccc',      # p = b != c
@@ -131,11 +125,13 @@ ENCODINGS = {
     'out1':     '1101_??00_10nn_????',      # pin(n, 1)
     'outp':     '1101_??00_11nn_????',      # pin(n, p)
 
-    # Send over UART.
-    'utx':      '1101_??01_???0_cccc',      # uart(c)
+    # Send/receive over UART.
+    'urx':      '1101_??01_??00_aaaa',      # a = uart()
+    'utx':      '1101_??01_??01_cccc',      # uart(c)
 
-    # Put value into predicate register.
-    'putp':     '1101_??01_???1_cccc',      # p = c & 1
+    # Get/put predicate register.
+    'getp':     '1101_??01_??10_aaaa',      # a = p
+    'putp':     '1101_??01_??11_cccc',      # p = c & 1
 
     # Set sticky carry flag.
     'carry':    '1101_??10_??00_jjjj',      # C_in = C_out for C instructions

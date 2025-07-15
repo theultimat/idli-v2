@@ -97,7 +97,7 @@ ENCODINGS = {
     'ge':       '1011_0100_bbbb_cccc',      # p = b >= c
     'geu':      '1011_0101_bbbb_cccc',      # p = b >= c
     'any':      '1011_0110_bbbb_cccc',      # p = |(b & c)
-    'inp':      '1011_0111_??nn_????',      # p = pin(n)
+    'inp':      '1011_0111_??nn_0000',      # p = pin(n)
 
     # Comparison as above, but only run the following instruction if the value
     # written to p is true.
@@ -108,7 +108,7 @@ ENCODINGS = {
     'gex':      '1011_1100_bbbb_cccc',      # p = ge(b, c); cond(t)
     'geux':     '1011_1101_bbbb_cccc',      # p = geu(b, c); cond(t)
     'anyx':     '1011_1110_bbbb_cccc',      # p = any(b, c); cond(t)
-    'inpx':     '1011_1111_??nn_????',      # p = inp(n); cond(t)
+    'inpx':     '1011_1111_??nn_0000',      # p = inp(n); cond(t)
 
     # Add value to program counter.
     'addpc':    '1100_???0_aaaa_cccc',      # a = pc + c
@@ -120,28 +120,28 @@ ENCODINGS = {
     'jl':       '1100_???1_??11_cccc',      # lr = pc + 1; j(c)
 
     # Read/write input and output pins.
-    'in':       '1101_??00_00nn_aaaa',      # a = pin(n)
-    'out':      '1101_??00_01nn_cccc',      # pin(n, c)
-    'out1':     '1101_??00_10nn_????',      # pin(n, 1)
-    'outp':     '1101_??00_11nn_????',      # pin(n, p)
+    'in':       '1101_???0_00nn_aaaa',      # a = pin(n)
+    'out':      '1101_???0_01nn_cccc',      # pin(n, c)
+    'out1':     '1101_???0_10nn_0000',      # pin(n, 1)
+    'outp':     '1101_???0_11nn_0000',      # pin(n, p)
 
     # Send/receive over UART.
-    'urx':      '1101_??01_??00_aaaa',      # a = uart()
-    'utx':      '1101_??01_??01_cccc',      # uart(c)
+    'urx':      '1101_???1_??00_aaaa',      # a = uart()
+    'utx':      '1101_???1_??01_cccc',      # uart(c)
 
     # Get/put predicate register.
-    'getp':     '1101_??01_??10_aaaa',      # a = p
-    'putp':     '1101_??01_??11_cccc',      # p = c & 1
-
-    # Set sticky carry flag.
-    'carry':    '1101_??10_??00_jjjj',      # C_in = C_out for C instructions
-
-    # Set compare instructions to AND/OR into P rather than replacing.
-    'andp':     '1101_??10_??01_jjjj',      # p &= q for c instructions
-    'orp':      '1101_??10_??10_jjjj',      # p |= q for c instructions
+    'getp':     '1101_???1_??10_aaaa',      # a = p
+    'putp':     '1101_???1_??11_cccc',      # p = c & 1
 
     # Set conditional execution state for the following instructions.
-    'cex':      '1110_????_mmmm_mmmm',      # cond(*m)
+    'cex':      '1110_???0_mmmm_mmmm',      # cond(*m)
+
+    # Set sticky carry flag.
+    'carry':    '1110_???1_??00_jjjj',      # C_in = C_out for C instructions
+
+    # Set compare instructions to AND/OR into P rather than replacing.
+    'andp':     '1110_???1_??01_jjjj',      # p &= q for c instructions
+    'orp':      '1110_???1_??10_jjjj',      # p |= q for c instructions
 }
 
 ENCODINGS = {k: v.replace('_', '') for k, v in ENCODINGS.items()}

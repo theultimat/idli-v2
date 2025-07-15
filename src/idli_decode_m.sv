@@ -19,36 +19,44 @@ module idli_decode_m import idli_pkg::*; (
 );
 
   // Encoding arrives 4b per cycle so decode needs to maintain a state machine
-  // to fully decode an instruction. Extra states are also added for LDM and
-  // STM which generate multiple operations for a single encoding.
+  // to fully decode an instruction. Extra states are also added for LD* and
+  // ST* which generate multiple operations for a single encoding.
   typedef enum logic [4:0] {
+    // Cycle 0
     STATE_INIT,       // Reset state, process opcode major.
 
-    STATE_ABC,        // Operands A, B, and C remain.
-    STATE_RBS,        // Operands R, B, and S remain.
-    STATE_AB,         // Operands A and B remain followed by opcode.
-    STATE_CMP,        // Compare opcode followed by operands B and C/N.
-    STATE_PC_0,       // PC operation followed by opcode and C.
-    STATE_FLAG_0,     // Flag/IO operation followed by C/J.
-    STATE_CEX,        // Operation is a CEX.
+    // Cycle 1
+    STATE_ABC,        // Operands A + B + C
+    STATE_RNG_0,      // Range cycle 0: operands R + S + B.
+    STATE_OP_AB,      // Opcode + A + B.
+    STATE_CMP,        // Comparison operation + B + C.
+    STATE_PC_0,       // PC operation + opcode/A + C
+    STATE_PUP,        // Pin/UART/predicate operation.
+    STATE_DEC_0,      // Decode only instruction cycle 1.
 
-    STATE_BC,         // B and C remain.
-    STATE_BS,         // B and S remain.
-    STATE_B,          // B followed by opcode.
-    STATE_PC_1,       // PC opcode followed by C.
-    STATE_FLAG_1,     // Flag/IO opcode followed by C or J.
-    STATE_M_0,        // First chunk of operand M.
+    // Cycle 2
+    STATE_BC,         // Operands B + C.
+    STATE_RNG_1,      // Range cycle 1: operands S + B.
+    STATE_AB,         // Operands A + B.
+    STATE_AC,         // Operands A + C.
+    STATE_PC_1,       // Opcode + C.
+    STATE_PIN,        // Pin opcode + operand.
+    STATE_UP,         // UART/predicate + operand.
+    STATE_DEC_1,      // Decode only instruction cycle 2.
+    STATE_M_0,        // First cycle of operand M.
 
-    STATE_C,          // C remains.
-    STATE_S,          // S remains.
-    STATE_AB_OP,      // Opcode after A and B remains.
-    STATE_J,          // J operand remains.
-    STATE_M_1,        // Second chunk of operand M.
+    // Cycle 3
+    STATE_C,          // Operand C.
+    STATE_RNG_2,      // Range cycle 2: operand B.
+    STATE_B,          // Operand B.
+    STATE_A,          // Operand A.
+    STATE_M_1,        // Second cycle of operand M.
+    STATE_J,          // Operand J.
 
-    STATE_IMM,        // Immedate data.
-    STATE_LD,         // Generate LD register write.
-    STATE_ST,         // Generate ST register read.
-    STATE_POST_MEM    // Post-memory access redirect.
+    // Extra
+    STATE_IMM,        // Immediate data.
+    STATE_MEM,        // Load/store single register.
+    STATE_POST_MEM    // Redirect after memory access.
   } state_t;
 
   // Current and next stte for decoder.
@@ -59,14 +67,19 @@ module idli_decode_m import idli_pkg::*; (
   op_t op_q;
   op_t op_d;
 
-  // Current and final register for loads and stores.
-  reg_t mem_reg_q;
-  reg_t mem_reg_d;
-  reg_t mem_end_reg_q;
+  // Whether we've decoded a memory operation.
+  logic mem_vld_q;
+  logic mem_vld_d;
 
-  // Whether memory operation is LD or ST.
+  // Whether the memory operation is a load or store.
   logic mem_st_q;
   logic mem_st_d;
+
+  // Memory range start and end.
+  reg_t mem_next_q;
+  reg_t mem_next_d;
+  reg_t mem_end_q;
+  reg_t mem_end_d;
 
   // Flop new state and in-progress decoded operation. Operation doesn't need
   // to be reset as we should write all enables while decoding.
@@ -82,85 +95,56 @@ module idli_decode_m import idli_pkg::*; (
 
   // Determine the next state for the state machine.
   always_comb case (state_q)
+    // Cycle 0
     STATE_INIT: begin
       casez ({i_de_enc_vld, i_de_enc})
         5'b0????: state_d = state_q;
         5'b10???: state_d = STATE_ABC;
-        5'b1100?: state_d = STATE_RBS;
-        5'b11010: state_d = STATE_AB;
+        5'b1100?: state_d = STATE_RNG_0;
+        5'b11010: state_d = STATE_OP_AB;
         5'b11011: state_d = STATE_CMP;
         5'b11100: state_d = STATE_PC_0;
-        5'b11101: state_d = STATE_FLAG_0;
-        5'b11110: state_d = STATE_CEX;
-        default:  state_d = state_t'('x); // Invalid encoding!
+        5'b11101: state_d = STATE_PUP;
+        default:  state_d = STATE_DEC_0;
       endcase
     end
-    STATE_FLAG_1: begin
-      casez ({op_q.dst_reg, i_de_enc[3:2]})
-        6'b000001,
-        6'b001011:  state_d = STATE_C;
-        default:    state_d = STATE_J;
-      endcase
-    end
-    STATE_C: begin
-      // Take immediate data when C == SP unless redirecting.
-      casez ({i_de_redirect, i_de_enc[2:0]})
-        4'b0111:  state_d = STATE_IMM;
-        default:  state_d = STATE_INIT;
-      endcase
-    end
-    STATE_IMM: begin
-      // Return back to INIT on final cycle of immediate.
-      state_d = &i_de_ctr ? STATE_INIT : STATE_IMM;
-    end
-    STATE_LD, STATE_ST: begin
-      // Keep generating more LD/ST instructions until there are no more
-      // registers to process.
-      state_d = &i_de_ctr && mem_reg_q == mem_end_reg_q ? STATE_POST_MEM
-                                                        : state_q;
-    end
-    STATE_S: begin
-      // Move into either LD or ST state depending on which operation is being
-      // performed.
-      state_d = mem_st_q ? STATE_ST : STATE_LD;
-    end
-    STATE_POST_MEM: begin
-      // Generate a PC update then return back to INIT.
-      state_d = &i_de_ctr ? STATE_INIT : state_q;
-    end
-    STATE_AB_OP: begin
-      // Move to LD or ST if this is a memory operation otherwise back to
-      // INIT.
-      casez (i_de_enc)
-        4'b1???:  state_d = STATE_INIT;
-        4'b0??0:  state_d = STATE_LD;
-        default:  state_d = STATE_ST;
-      endcase
-    end
-    STATE_ABC, STATE_CMP:   state_d = STATE_BC;
-    STATE_RBS:              state_d = STATE_BS;
-    STATE_AB:               state_d = STATE_B;
-    STATE_PC_0:             state_d = STATE_PC_1;
-    STATE_FLAG_0:           state_d = STATE_FLAG_1;
-    STATE_CEX:              state_d = STATE_M_0;
-    STATE_BC, STATE_PC_1:   state_d = STATE_C;
-    STATE_BS:               state_d = STATE_S;
-    STATE_B:                state_d = STATE_AB_OP;
-    STATE_M_0:              state_d = STATE_M_1;
-    default: begin
-      // This is the final state of the instruction encoding -- return back to
-      // INIT in all cases.
-      state_d = STATE_INIT;
-    end
-  endcase
 
-  // If the instruction is actually going to the execution unit then it's
-  // always ALU unless it's a shift. This is determined on the final cycle of
-  // decoding so there's no need to save the flopped value.
-  always_comb casez ({state_q, i_de_enc})
-    {STATE_AB_OP, 4'b101?},
-    {STATE_AB_OP, 4'b110?}: op_d.pipe = PIPE_SHIFT;
-    default:                op_d.pipe = PIPE_ALU;
+    // Cycle 1
+    STATE_ABC:    state_d = STATE_BC;
+    STATE_RNG_0:  state_d = STATE_RNG_1;
+    STATE_OP_AB:  state_d = STATE_AB;
+    STATE_CMP:    state_d = STATE_BC;
+    STATE_PC_0:   state_d = i_de_enc[0] ? STATE_PC_1  : STATE_AC;
+    STATE_PUP:    state_d = i_de_enc[0] ? STATE_UP    : STATE_PIN;
+    STATE_DEC_0:  state_d = i_de_enc[0] ? STATE_DEC_1 : STATE_M_0;
+
+    // Cycle 2
+    STATE_BC, STATE_AC, STATE_PC_1: state_d = STATE_C;
+    STATE_AB:                       state_d = STATE_B;
+    STATE_RNG_1:                    state_d = STATE_RNG_2;
+    STATE_UP, STATE_PIN:            state_d = i_de_enc[0] ? STATE_C : STATE_A;
+    STATE_DEC_1:                    state_d = STATE_J;
+    STATE_M_0:                      state_d = STATE_M_1;
+
+    // If C is SP (i.e. all 1) then an immediate follows this instruction. We
+    // also need to check for a memory operation, and this should take
+    // priority over the immediate so we can generate the next instruction
+    // while the immediate is being processed.
+    STATE_C: casez ({mem_vld_q, i_de_enc})
+      5'b1????: state_d = STATE_MEM;
+      5'b01111: state_d = STATE_IMM;
+      default:  state_d = STATE_INIT;
+    endcase
+
+    // Stay in IMM or POST_MEM until end of 16b packet.
+    STATE_IMM, STATE_POST_MEM: state_d = &i_de_ctr ? STATE_INIT : state_q;
+
+    // Generate another LD/ST operation until we hit the end register.
+    STATE_MEM: state_d = mem_next_q == mem_end_q ? STATE_POST_MEM : state_q;
+
+    // Catch all for other cycle 3 entries. Either return back to INIT or
+    // start a memory operation.
+    default: state_d = mem_vld_q ? STATE_MEM : STATE_INIT;
   endcase
 
 endmodule

@@ -60,6 +60,24 @@ $(BUILD_ROOT)/%.out: %.asm $(ASM_WRAPPER) $(VENV)
 .PHONY: asm
 
 
+# Convert SystemVerilog to Verilog.
+SV2V_ROOT := $(BUILD_ROOT)/sv2v
+
+SV_SOURCES := $(wildcard $(SOURCE_ROOT)/*.sv $(TEST_ROOT)/*.sv)
+SV_HEADERS := $(wildcard $(SOURCE_ROOT)/*.svh $(TEST_ROOT)/*.svh)
+V_SOURCES  := $(patsubst %.sv,$(SV2V_ROOT)/%.v,$(SV_SOURCES))
+
+SV2V := sv2v -I$(SOURCE_ROOT)
+
+sv2v: $(V_SOURCES)
+
+$(SV2V_ROOT)/%.v: %.sv $(SV_HEADERS)
+	@mkdir -p $(@D)
+	$(SV2V) $< > $@
+
+.PHONY: sv2v
+
+
 # Run test on the simulator.
 export SIM_TEST    ?= $(BUILD_ROOT)/$(ASM_ROOT)/smoke.out
 export SIM_TIMEOUT ?= 50000
@@ -74,8 +92,11 @@ run_sim: $(SIM_TEST) $(VENV)
 .PHONY: run_sim
 
 
-# Run test on verilator.
+# Run test on verilator or iverilog.
 run_veri: $(SIM_TEST) $(VENV)
 	source $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=verilator
 
-.PHONY: run_veri
+run_icarus: $(SIM_TEST) $(VENV) sv2v
+	source $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=icarus
+
+.PHONY: run_veri run_icarus

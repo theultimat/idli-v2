@@ -44,6 +44,7 @@ module idli_decode_m import idli_pkg::*; (
     STATE_UP,         // UART/predicate + operand.
     STATE_DEC_1,      // Decode only instruction cycle 2.
     STATE_M_0,        // First cycle of operand M.
+    STATE_NC,         // Operands N + C.
 
     // Cycle 3
     STATE_C,          // Operand C.
@@ -113,18 +114,19 @@ module idli_decode_m import idli_pkg::*; (
     STATE_ABC:    state_d = STATE_BC;
     STATE_RNG_0:  state_d = STATE_RNG_1;
     STATE_OP_AB:  state_d = STATE_AB;
-    STATE_CMP:    state_d = STATE_BC;
-    STATE_PC_0:   state_d = i_de_enc[0] ? STATE_PC_1  : STATE_AC;
-    STATE_PUP:    state_d = i_de_enc[0] ? STATE_UP    : STATE_PIN;
-    STATE_DEC_0:  state_d = i_de_enc[0] ? STATE_DEC_1 : STATE_M_0;
+    STATE_CMP:    state_d = &i_de_enc[2:0] ? STATE_NC    : STATE_BC;
+    STATE_PC_0:   state_d =  i_de_enc[0]   ? STATE_PC_1  : STATE_AC;
+    STATE_PUP:    state_d =  i_de_enc[0]   ? STATE_UP    : STATE_PIN;
+    STATE_DEC_0:  state_d =  i_de_enc[0]   ? STATE_DEC_1 : STATE_M_0;
 
     // Cycle 2
-    STATE_BC, STATE_AC, STATE_PC_1: state_d = STATE_C;
-    STATE_AB:                       state_d = STATE_B;
-    STATE_RNG_1:                    state_d = STATE_RNG_2;
-    STATE_UP, STATE_PIN:            state_d = i_de_enc[0] ? STATE_C : STATE_A;
-    STATE_DEC_1:                    state_d = STATE_J;
-    STATE_M_0:                      state_d = STATE_M_1;
+    STATE_BC, STATE_AC,
+    STATE_PC_1, STATE_NC: state_d = STATE_C;
+    STATE_AB:             state_d = STATE_B;
+    STATE_RNG_1:          state_d = STATE_RNG_2;
+    STATE_UP, STATE_PIN:  state_d = i_de_enc[0] ? STATE_C : STATE_A;
+    STATE_DEC_1:          state_d = STATE_J;
+    STATE_M_0:            state_d = STATE_M_1;
 
     // If C is SP (i.e. all 1) then an immediate follows this instruction. We
     // also need to check for a memory operation, and this should take
@@ -145,6 +147,65 @@ module idli_decode_m import idli_pkg::*; (
     // Catch all for other cycle 3 entries. Either return back to INIT or
     // start a memory operation.
     default: state_d = mem_vld_q ? STATE_MEM : STATE_INIT;
+  endcase
+
+  // Instructions that go to the execution stage all go to the ALU except for
+  // shift instructions.
+  always_comb casez ({state_q, i_de_enc})
+    {STATE_INIT,  4'b????}: op_d.pipe = PIPE_ALU;
+    {STATE_OP_AB, 4'b101?},
+    {STATE_OP_AB, 4'b110?}: op_d.pipe = PIPE_SHIFT;
+    default:                op_d.pipe = op_q.pipe;
+  endcase
+
+  // Where the destination should be written to. If an operation doesn't write
+  // a result the value will be written to ZR and discarded.
+  always_comb case (state_q)
+    STATE_ABC,
+    STATE_MEM,
+    STATE_AB,
+    STATE_A:        op_d.dst = DST_REG;
+    STATE_CMP:      op_d.dst = DST_P;
+    STATE_PC_0:     op_d.dst =  i_de_enc[0] ? DST_REG : DST_PC;
+    STATE_UP:       op_d.dst = ~i_de_enc[0] ? DST_REG :
+                                i_de_enc[1] ? DST_P   : DST_UART;
+    STATE_POST_MEM: op_d.dst = DST_PC;
+    default:        op_d.dst = op_q.dst;
+  endcase
+
+  // Where the LHS operand should come from. This is almost always a register,
+  // so we reset back to REG on the first cycle and then override it as
+  // required.
+  always_comb case (state_q)
+    STATE_INIT,
+    STATE_MEM,
+    STATE_POST_MEM: op_d.lhs = SRC_REG;
+    STATE_PC_0:     op_d.lhs = SRC_PC;
+    STATE_UP:       op_d.lhs = i_de_enc[1] ? SRC_REG : SRC_UART;
+    default:        op_d.lhs = op_q.lhs;
+  endcase
+
+  // Location of the RHS operand. Special care needs to be taken to check for
+  // operand C == SP to pick up the immediate from SQI.
+  always_comb case (state_q)
+    STATE_INIT,
+    STATE_POST_MEM: op_d.rhs = SRC_REG;
+    STATE_C:        op_d.rhs = &i_de_enc ? SRC_SQI : SRC_REG;
+    STATE_MEM:      op_d.rhs =  mem_st_q ? SRC_REG : SRC_SQI;
+    default:        op_d.rhs = op_q.rhs;
+  endcase
+
+  // Destination register is mostly read directly from the encoding but in
+  // some cases we override with ZR to discard. Special cases also exist for
+  // memory operations to pick up the approprate load register.
+  always_comb case (state_q)
+    STATE_ABC,
+    STATE_AB:   op_d.dst_reg = mem_vld_q ? REG_ZR : reg_t'(i_de_enc);
+    STATE_CMP:  op_d.dst_reg = REG_ZR;
+    STATE_AC,
+    STATE_A:    op_d.dst_reg = reg_t'(i_de_enc);
+    STATE_MEM:  op_d.dst_reg = mem_st_q ? REG_ZR : mem_next_q;
+    default:    op_d.dst_reg = op_q.dst_reg;
   endcase
 
 endmodule

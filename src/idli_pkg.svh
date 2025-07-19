@@ -18,7 +18,7 @@ typedef logic [1:0] ctr_t;
 typedef logic [3:0] reg_t;
 
 // Link register, zero register.
-//localparam reg_t REG_ZR = reg_t'('d0);
+localparam reg_t REG_ZR = reg_t'('d0);
 //localparam reg_t REG_LR = reg_t'('d14);
 
 // Operations supported by the ALU.
@@ -50,8 +50,8 @@ typedef enum logic [1:0] {
 typedef enum logic [1:0] {
   DST_REG,
   DST_PC,
-  DST_SQI,
-  DST_UART
+  DST_UART,
+  DST_P
 } dst_t;
 
 // Possible source operand locations.
@@ -61,6 +61,15 @@ typedef enum logic [1:0] {
   SRC_SQI,
   SRC_UART
 } src_t;
+
+// Extra write destination, used by instructions to redirect SQI while also
+// writing a register and updating LR.
+typedef enum [1:0] {
+  AUX_WR_NONE,
+  AUX_WR_LR,
+  AUX_WR_SQI_DST,
+  AUX_WR_SQI_LHS
+} aux_wr_t;
 
 // Whether to take the final result from the ALU or shift block.
 typedef enum logic {
@@ -90,13 +99,10 @@ typedef struct packed {
   logic     alu_rhs_inv;
   cmp_op_t  cmp_op;
   logic     cmp_sign;
+  aux_wr_t  aux_wr;
 
   // Shift control signals.
   shift_op_t shift_op;
-
-  // Link register and predicate write enables.
-  logic wr_lr;
-  logic wr_p;
 } op_t;
 
 endpackage

@@ -93,10 +93,15 @@ run_sim: $(SIM_TEST) $(VENV)
 
 
 # Run test on verilator or iverilog.
+VERI_DEBUG   := $(if $(DEBUG),gtkwave $(TEST_ROOT)/*.fst,)
+ICARUS_DEBUG := $(if $(DEBUG),gtkwave $(BUILD_ROOT)/test/sim_build/*.fst,)
+
 run_veri: $(SIM_TEST) $(VENV)
 	source $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=verilator
+	$(VERI_DEBUG)
 
 run_icarus: $(SIM_TEST) $(VENV) sv2v
 	source $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=icarus
+	$(ICARUS_DEBUG)
 
 .PHONY: run_veri run_icarus

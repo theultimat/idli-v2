@@ -1,8 +1,13 @@
 `include "idli_pkg.svh"
 
 
-// Wrapper for the top module for debug.
+// Wrapper for the top module for debug. Note that many of the signals are
+// driven by the python script so we need to tell the linter to not complain
+// for a number of signals.
 module idli_tb_m import idli_pkg::*; ();
+
+  // verilator lint_off UNDRIVEN
+  // verilator lint_off UNUSEDSIGNAL
 
   // Clock and reset signals.
   logic gck;
@@ -13,10 +18,10 @@ module idli_tb_m import idli_pkg::*; ();
   logic   mem_hi_sck;
   logic   mem_lo_cs;
   logic   mem_hi_cs;
-  slice_t mem_lo_in;
-  slice_t mem_hi_in;
   slice_t mem_lo_out;
   slice_t mem_hi_out;
+  slice_t mem_lo_in;
+  slice_t mem_hi_in;
 
   // UART signals.
   logic uart_rx;
@@ -25,6 +30,9 @@ module idli_tb_m import idli_pkg::*; ();
   // IO pins.
   io_pins_t pins_in;
   io_pins_t pins_out;
+
+  // verilator lint_on UNDRIVEN
+  // verilator lint_on UNUSEDSIGNAL
 
 
   // Instantiate the top-level module of the core and connect to the bench.

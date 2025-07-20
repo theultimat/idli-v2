@@ -29,49 +29,46 @@ module idli_top_m import idli_pkg::*; (
   output var io_pins_t  o_top_io_pins
 );
 
-//  // Encoded instruction read from memory and whether it's valid.
-//  slice_t enc;
-//  logic   enc_vld;
-//
-//  // TODO Move the counter into the sync/control block.
-//  ctr_t ctr_q;
-//  always_ff @(posedge i_top_gck, negedge i_top_rst_n) begin
-//    if (!i_top_rst_n) ctr_q <= '0;
-//    else              ctr_q <= ctr_q + 2'b1;
-//  end
-//
-//  idli_sqi_m sqi_u (
-//    .i_sqi_gck      (i_top_gck),
-//    .i_sqi_rst_n    (i_top_rst_n),
-//
-//    .i_sqi_ctr      (ctr_q),
-//    .i_sqi_redirect ('0),
-//    .i_sqi_wr_en    ('0),
-//
-//    .i_sqi_data     ('0),
-//    .o_sqi_data     (enc),
-//    .o_sqi_data_vld (enc_vld),
-//
-//    .o_sqi_lo_sck   (o_top_mem_lo_sck),
-//    .o_sqi_lo_cs    (o_top_mem_lo_cs),
-//    .i_sqi_lo_sio   (i_top_mem_lo_sio),
-//    .o_sqi_lo_sio   (o_top_mem_lo_sio),
-//
-//    .o_sqi_hi_sck   (o_top_mem_hi_sck),
-//    .o_sqi_hi_cs    (o_top_mem_hi_cs),
-//    .i_sqi_hi_sio   (i_top_mem_hi_sio),
-//    .o_sqi_hi_sio   (o_top_mem_hi_sio)
-//  );
-//
-//  idli_decode_m decode_u (
-//    .i_de_gck       (i_top_gck),
-//    .i_de_rst_n     (i_top_rst_n),
-//
-//    .i_de_ctr       (ctr_q),
-//    .i_de_redirect  ('0),
-//
-//    .i_de_enc       (enc),
-//    .i_de_enc_vld   (enc_vld)
-//  );
+  // TODO Move the counter into the sync/control block.
+  ctr_t ctr_q;
+  always_ff @(posedge i_top_gck, negedge i_top_rst_n) begin
+    if (!i_top_rst_n) ctr_q <= '0;
+    else              ctr_q <= ctr_q + 2'b1;
+  end
+
+
+  idli_sqi_m sqi_u (
+    .i_sqi_gck        (i_top_gck),
+    .i_sqi_rst_n      (i_top_rst_n),
+
+    .i_sqi_ctr        (ctr_q),
+    .i_sqi_redirect   ('0),
+    .i_sqi_wr_en      ('0),
+
+    .i_sqi_slice      ('0),
+    // verilator lint_off PINCONNECTEMPTY
+    .o_sqi_slice      (),
+    .o_sqi_slice_vld  (),
+    .o_sqi_data       (),
+    // verilator lint_on PINCONNECTEMPTY
+
+    .o_sqi_lo_sck     (o_top_mem_lo_sck),
+    .o_sqi_lo_cs      (o_top_mem_lo_cs),
+    .i_sqi_lo_sio     (i_top_mem_lo_sio),
+    .o_sqi_lo_sio     (o_top_mem_lo_sio),
+
+    .o_sqi_hi_sck     (o_top_mem_hi_sck),
+    .o_sqi_hi_cs      (o_top_mem_hi_cs),
+    .i_sqi_hi_sio     (i_top_mem_hi_sio),
+    .o_sqi_hi_sio     (o_top_mem_hi_sio)
+  );
+
+
+  // Tie off unused signals for now.
+  always_comb o_top_uart_tx = 'x;
+  always_comb o_top_io_pins = 'x;
+
+  logic _unused;
+  always_comb _unused = &{1'b0, i_top_uart_rx, i_top_io_pins};
 
 endmodule

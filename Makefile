@@ -60,16 +60,23 @@ $(BUILD_ROOT)/%.out: %.asm $(ASM_WRAPPER) $(VENV)
 .PHONY: asm
 
 
-# Convert SystemVerilog to Verilog.
-SV2V_ROOT := $(BUILD_ROOT)/sv2v
-
+# Lint the design using verilator.
 SV_SOURCES := $(wildcard $(SOURCE_ROOT)/*.sv $(TEST_ROOT)/*.sv)
 SV_HEADERS := $(wildcard $(SOURCE_ROOT)/*.svh $(TEST_ROOT)/*.svh)
-V_SOURCES  := $(patsubst %.sv,$(SV2V_ROOT)/%.v,$(SV_SOURCES))
+
+lint: $(SV_SOURCES) $(SV_HEADERS)
+	verilator -Wall --lint-only -I$(SOURCE_ROOT) $(SV_SOURCES)
+
+.PHONY: lint
+
+
+# Convert SystemVerilog to Verilog.
+SV2V_ROOT := $(BUILD_ROOT)/sv2v
+V_SOURCES := $(patsubst %.sv,$(SV2V_ROOT)/%.v,$(SV_SOURCES))
 
 SV2V := sv2v -I$(SOURCE_ROOT)
 
-sv2v: $(V_SOURCES)
+sv2v: lint $(V_SOURCES)
 
 $(SV2V_ROOT)/%.v: %.sv $(SV_HEADERS)
 	@mkdir -p $(@D)
@@ -96,7 +103,7 @@ run_sim: $(SIM_TEST) $(VENV)
 VERI_DEBUG   := $(if $(DEBUG),gtkwave $(TEST_ROOT)/*.fst,)
 ICARUS_DEBUG := $(if $(DEBUG),gtkwave $(BUILD_ROOT)/test/sim_build/*.fst,)
 
-run_veri: $(SIM_TEST) $(VENV)
+run_veri: $(SIM_TEST) $(VENV) lint
 	source $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=verilator
 	$(VERI_DEBUG)
 

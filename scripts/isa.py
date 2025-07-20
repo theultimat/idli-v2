@@ -65,29 +65,29 @@ ENCODINGS = {
     'stm':      '1001_rrrr_ssss_bbbb',      # [b, b + 1, ...] = r..s
 
     # Load/store with post/pre-increment writeback.
-    'ld+':      '1010_0000_aaaa_bbbb',      # a = [b++]
-    'st+':      '1010_0001_aaaa_bbbb',      # [b++] = a
-    '+ld':      '1010_0010_aaaa_bbbb',      # a = [++b]
-    '+st':      '1010_0011_aaaa_bbbb',      # [++b] = a
+    'ld+':      '1010_aaaa_bbbb_0000',      # a = [b++]
+    'st+':      '1010_aaaa_bbbb_0001',      # [b++] = a
+    '+ld':      '1010_aaaa_bbbb_0010',      # a = [++b]
+    '+st':      '1010_aaaa_bbbb_0011',      # [++b] = a
 
     # Load/store with post/pre-decrement writeback.
-    'ld-':      '1010_0100_aaaa_bbbb',      # a = [b--]
-    'st-':      '1010_0101_aaaa_bbbb',      # [b--] = a
-    '-ld':      '1010_0110_aaaa_bbbb',      # a = [--b]
-    '-st':      '1010_0111_aaaa_bbbb',      # [--b] = a
+    'ld-':      '1010_aaaa_bbbb_0100',      # a = [b--]
+    'st-':      '1010_aaaa_bbbb_0101',      # [b--] = a
+    '-ld':      '1010_aaaa_bbbb_0110',      # a = [--b]
+    '-st':      '1010_aaaa_bbbb_0111',      # [--b] = a
 
     # Increment/decrement register.
-    'inc':      '1010_1000_aaaa_bbbb',      # a = b + 1
-    'dec':      '1010_1001_aaaa_bbbb',      # a = b - 1
+    'inc':      '1010_aaaa_bbbb_1000',      # a = b + 1
+    'dec':      '1010_aaaa_bbbb_1001',      # a = b - 1
 
     # Shift/rotate.
-    'srl':      '1010_1010_aaaa_bbbb',      # a = {1'b0, b[15:1]}
-    'sra':      '1010_1011_aaaa_bbbb',      # a = {b[15], b[15:1]}
-    'ror':      '1010_1100_aaaa_bbbb',      # a = {b[0], b[15:1]}
-    'rol':      '1010_1101_aaaa_bbbb',      # a = {b[14:0], b[15]}
+    'srl':      '1010_aaaa_bbbb_1010',      # a = {1'b0, b[15:1]}
+    'sra':      '1010_aaaa_bbbb_1011',      # a = {b[15], b[15:1]}
+    'ror':      '1010_aaaa_bbbb_1100',      # a = {b[0], b[15:1]}
+    'rol':      '1010_aaaa_bbbb_1101',      # a = {b[14:0], b[15]}
 
     # Bitwise invert.
-    'not':      '1010_1110_aaaa_bbbb',      # a = ~b
+    'not':      '1010_aaaa_bbbb_1110',      # a = ~b
 
     # Compare or read pin into predicate.
     'eq':       '1011_0000_bbbb_cccc',      # p = b == c
@@ -111,13 +111,13 @@ ENCODINGS = {
     'inpx':     '1011_1111_??nn_0000',      # p = inp(n); cond(t)
 
     # Add value to program counter.
-    'addpc':    '1100_???0_aaaa_cccc',      # a = pc + c
+    'addpc':    '1100_aaaa_???0_cccc',      # a = pc + c
 
     # Branch and jump, optionally with link.
-    'b':        '1100_???1_??00_cccc',      # pc += c
-    'j':        '1100_???1_??01_cccc',      # pc = c
-    'bl':       '1100_???1_??10_cccc',      # lr = pc + 1; b(c)
-    'jl':       '1100_???1_??11_cccc',      # lr = pc + 1; j(c)
+    'b':        '1100_??00_???1_cccc',      # pc += c
+    'j':        '1100_??01_???1_cccc',      # pc = c
+    'bl':       '1100_??10_???1_cccc',      # lr = pc + 1; b(c)
+    'jl':       '1100_??11_???1_cccc',      # lr = pc + 1; j(c)
 
     # Read/write input and output pins.
     'in':       '1101_???0_00nn_aaaa',      # a = pin(n)

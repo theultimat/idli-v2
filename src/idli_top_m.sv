@@ -48,8 +48,8 @@ module idli_top_m import idli_pkg::*; (
     .i_sqi_slice      ('0),
     // verilator lint_off PINCONNECTEMPTY
     .o_sqi_slice      (),
-    .o_sqi_slice_vld  (),
-    .o_sqi_data       (),
+    .o_sqi_instr      (),
+    .o_sqi_instr_vld  (),
     // verilator lint_on PINCONNECTEMPTY
 
     .o_sqi_lo_sck     (o_top_mem_lo_sck),

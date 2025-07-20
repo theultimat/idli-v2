@@ -11,9 +11,10 @@ module idli_sqi_buf_m import idli_pkg::*; (
   input  var logic    i_sqi_gck,
   input  var logic    i_sqi_rst_n,
 
-  // Global counter and push signal.
+  // Global counter, push signal, and direction of data.
   input  var ctr_t    i_sqi_ctr,
   input  var logic    i_sqi_push,
+  output var logic    o_sqi_dir,
 
   // Current read and write data. We also provide a view of the entire buffer
   // which can be useful for e.g. instruction decode.
@@ -56,9 +57,10 @@ module idli_sqi_buf_m import idli_pkg::*; (
     end
   end
 
-  // Output current slice and entire buffer contents.
+  // Output current slice, buffer contents, and direction.
   always_comb o_sqi_slice = data_q[ptr_q];
   always_comb o_sqi_data  = data_q;
+  always_comb o_sqi_dir   = dir_q;
 
   // Next pointer value depends on whether we're pushing at the direction of
   // motion. If we're flipping this cycle then there's no need to increment.

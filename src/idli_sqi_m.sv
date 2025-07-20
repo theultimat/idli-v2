@@ -18,8 +18,8 @@ module idli_sqi_m import idli_pkg::*; (
   // Data IO with the rest of the core.
   input  var slice_t  i_sqi_slice,
   output var slice_t  o_sqi_slice,
-  output var logic    o_sqi_slice_vld,
-  output var data_t   o_sqi_data,
+  output var data_t   o_sqi_instr,
+  output var logic    o_sqi_instr_vld,
 
   // Interface with the low memory.
   output var logic    o_sqi_lo_sck,
@@ -66,9 +66,11 @@ module idli_sqi_m import idli_pkg::*; (
   // Output value to the HI memory on the previous cycle.
   slice_t hi_sio_q;
 
-  // Whether to push data and what to push.
+  // Signals for the internal buffer.
   logic   buf_push;
+  logic   buf_dir;
   slice_t buf_push_slice;
+  data_t  buf_data;
 
   // Internal buffer for reversing endianness of data -- core is LE but
   // memories are BE.
@@ -78,10 +80,11 @@ module idli_sqi_m import idli_pkg::*; (
 
     .i_sqi_ctr,
     .i_sqi_push   (buf_push),
-    .i_sqi_slice  (buf_push_slice),
+    .o_sqi_dir    (buf_dir),
 
+    .i_sqi_slice  (buf_push_slice),
     .o_sqi_slice,
-    .o_sqi_data
+    .o_sqi_data   (buf_data)
   );
 
   // Update state of the state machine every other falling edge of SCK for to
@@ -163,15 +166,22 @@ module idli_sqi_m import idli_pkg::*; (
     default:    buf_push_slice = i_sqi_slice;
   endcase
 
-  // Data coming out of the core is valid when we leave the DATA state for the
-  // first time. At this point we have read a complete 16b into the buffer so
-  // it is ready to be read back out in LE.
-  always_ff @(posedge i_sqi_gck, negedge i_sqi_rst_n) begin
-    if (!i_sqi_rst_n) begin
-      o_sqi_slice_vld <= '0;
+  // Instruction will be ready for flopping by the decode unit on the final
+  // DATA cycle in the 4 GCK period.
+  always_comb o_sqi_instr_vld = state_q == STATE_DATA && &i_sqi_ctr;
+
+  // Instruction encoding presented to the decode unit. We need to keep the
+  // data in a consistent order, so data may need to be reversed based on the
+  // current direction of the buffer. The encoding will be flopped in the
+  // decode unit, so we also make sure we present the data currently incoming
+  // from the memory for the final nibble rather than the old data in the
+  // buffer.
+  always_comb begin
+    if (buf_dir) begin
+      o_sqi_instr = {buf_push_slice, buf_data[1], buf_data[2], buf_data[3]};
     end
-    else if (&i_sqi_ctr) begin
-      o_sqi_slice_vld <= state_q == STATE_DATA;
+    else begin
+      o_sqi_instr = {buf_push_slice, buf_data[2:0]};
     end
   end
 

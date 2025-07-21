@@ -20,7 +20,13 @@ module idli_decode_m import idli_pkg::*; (
   output var logic      o_de_alu_inv,
   output var logic      o_de_alu_cin,
   output var cmp_op_t   o_de_cmp_op,
-  output var shift_op_t o_de_shift_op
+  output var shift_op_t o_de_shift_op,
+
+  // Operand locations.
+  output var dst_t      o_de_dst,
+  output var reg_t      o_de_dst_reg,
+  output var src_t      o_de_lhs,
+  output var reg_t      o_de_lhs_reg
 );
 
   // Instruction being decoded and whether it's valid.
@@ -67,13 +73,17 @@ module idli_decode_m import idli_pkg::*; (
   //  4) MEM- => B = B + ~ZR
   //  5) -MEM => B = B + ~ZR
   //  6) DEC  => A = B + ~ZR
-  always_comb unique casez ({enc_q[0], enc_q[3]})
-    8'b0001_????,
-    8'b0011_????,
-    8'b1010_1110,
-    8'b1010_01??,
-    8'b1010_1??1: o_de_alu_inv = '1;
-    default:      o_de_alu_inv = '0;
+  //  7) CMP  => A = B + ~C + 1 (excluding ANY)
+  always_comb unique casez ({enc_q[0], enc_q[1], enc_q[3]})
+    12'b0001_????_????,
+    12'b0011_????_????,
+    12'b1010_????_1110,
+    12'b1010_????_01??,
+    12'b1010_????_1??1,
+    12'b1011_?0??_????,
+    12'b1011_?10?_????,
+    12'b1011_?110_????: o_de_alu_inv = '1;
+    default:            o_de_alu_inv = '0;
   endcase
 
   // ALU carry in should be set in the following cases only:
@@ -81,10 +91,12 @@ module idli_decode_m import idli_pkg::*; (
   //  2) INC  => A = B + ZR + 1
   //  3) MEM+ => A = B + ZR + 1
   //  4) +MEM => A = B + ZR + 1
+  //  5) CMP  => A = B + ~C + 1 (ANY is don't care)
   always_comb unique casez ({enc_q[0], enc_q[3]})
     8'b0001_????,
     8'b1010_10?0,
-    8'b1010_00??: o_de_alu_cin = '1;
+    8'b1010_00??,
+    8'b1011_????: o_de_alu_cin = '1;
     default:      o_de_alu_cin = '0;
   endcase
 
@@ -93,5 +105,45 @@ module idli_decode_m import idli_pkg::*; (
 
   // Shift operation can be read directly from the encoding.
   always_comb o_de_shift_op = shift_op_t'(enc_q[3][1:0]);
+
+  // Destination is typically a register except for:
+  //  1) CMP instructions write to the predicate register P.
+  //  2) B/J write to PC.
+  //  3) UTX writes to UART.
+  //  4) PUTP writes to P.
+  always_comb unique casez ({enc_q[0], enc_q[1], enc_q[2]})
+    12'b1101_???1_??11,
+    12'b1011_????_????: o_de_dst = DST_P;
+    12'b1100_????_???1: o_de_dst = DST_PC;
+    12'b1101_???1_??01: o_de_dst = DST_UART;
+    default:            o_de_dst = DST_REG;
+  endcase
+
+  // Typically the destination register comes from the A bits in the encoding,
+  // but this isn't always the case:
+  //  1) LD[M]/ST[M] write to ZR to discard the address.
+  //  2) LD+/-ST/... write to B instead of A.
+  always_comb unique casez ({enc_q[0], enc_q[3]})
+    8'b011?_????,
+    8'b100?_????: o_de_dst_reg = REG_ZR;
+    8'b1010_0???: o_de_dst_reg = reg_t'(enc_q[2]);  // B
+    default:      o_de_dst_reg = reg_t'(enc_q[1]);  // A
+  endcase
+
+  // LHS comes from a register except for instructions that offset the PC:
+  // ADDPC and B[L].
+  always_comb unique casez ({enc_q[0], enc_q[1], enc_q[2]})
+    12'b1100_????_???0,
+    12'b1100_???0_???1: o_de_lhs = SRC_PC;
+    default:            o_de_lhs = SRC_REG;
+  endcase
+
+  // When a register LHS is almost always taken from B except for J[L], URX,
+  // UTX, GETP, and PUTP, which all offset from ZR.
+  always_comb unique casez ({enc_q[0]})
+    4'b1100,
+    4'b1101:  o_de_lhs_reg = REG_ZR;
+    default:  o_de_lhs_reg = reg_t'(enc_q[2]);  // B
+  endcase
 
 endmodule

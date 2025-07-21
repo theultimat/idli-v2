@@ -17,8 +17,8 @@ typedef logic [1:0] ctr_t;
 // 16 registers so 4b identifier.
 typedef logic [3:0] reg_t;
 
-//// Link register, zero register.
-//localparam reg_t REG_ZR = reg_t'('d0);
+// Link register, zero register.
+localparam reg_t REG_ZR = reg_t'('d0);
 ////localparam reg_t REG_LR = reg_t'('d14);
 
 // Whether to take the final result from the ALU or shift block.
@@ -54,23 +54,23 @@ typedef enum logic [2:0] {
   CMP_OP_ANY
 } cmp_op_t;
 
-//
-//// Possible destinations for operation output, excluding predicate write.
-//typedef enum logic [1:0] {
-//  DST_REG,
-//  DST_PC,
-//  DST_UART,
-//  DST_P
-//} dst_t;
-//
-//// Possible source operand locations.
-//typedef enum logic [1:0] {
-//  SRC_REG,
-//  SRC_PC,
-//  SRC_SQI,
-//  SRC_UART
-//} src_t;
-//
+
+// Possible destinations for operation output.
+typedef enum logic [1:0] {
+  DST_REG,
+  DST_PC,
+  DST_UART,
+  DST_P
+} dst_t;
+
+// Possible source operand locations.
+typedef enum logic [1:0] {
+  SRC_REG,
+  SRC_PC,
+  SRC_SQI,
+  SRC_UART
+} src_t;
+
 //// Extra write destination, used by instructions to redirect SQI while also
 //// writing a register and updating LR.
 //typedef enum [1:0] {

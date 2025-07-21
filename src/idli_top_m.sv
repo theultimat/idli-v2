@@ -81,7 +81,12 @@ module idli_top_m import idli_pkg::*; (
     .o_de_alu_inv   (),
     .o_de_alu_cin   (),
     .o_de_cmp_op    (),
-    .o_de_shift_op  ()
+    .o_de_shift_op  (),
+
+    .o_de_dst       (),
+    .o_de_dst_reg   (),
+    .o_de_lhs       (),
+    .o_de_lhs_reg   ()
     // verilator lint_on PINCONNECTEMPTY
   );
 

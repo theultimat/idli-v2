@@ -26,7 +26,9 @@ module idli_decode_m import idli_pkg::*; (
   output var dst_t      o_de_dst,
   output var reg_t      o_de_dst_reg,
   output var src_t      o_de_lhs,
-  output var reg_t      o_de_lhs_reg
+  output var reg_t      o_de_lhs_reg,
+  output var src_t      o_de_rhs,
+  output var reg_t      o_de_rhs_reg
 );
 
   // Instruction being decoded and whether it's valid.
@@ -140,10 +142,36 @@ module idli_decode_m import idli_pkg::*; (
 
   // When a register LHS is almost always taken from B except for J[L], URX,
   // UTX, GETP, and PUTP, which all offset from ZR.
-  always_comb unique casez ({enc_q[0]})
+  always_comb unique casez (enc_q[0])
     4'b1100,
     4'b1101:  o_de_lhs_reg = REG_ZR;
     default:  o_de_lhs_reg = reg_t'(enc_q[2]);  // B
+  endcase
+
+  // Based on the encoding RHS can only come from the C bits or the UART, but
+  // we also need to account for the immediate following when C is SP (i.e.
+  // all bits are high). There are some exceptions we need to handle:
+  //  1) LDM/STM is always register B which can't be an immediate.
+  //  2) GETP is always ZR.
+  //  3) URX is UART.
+  // There also also some exceptions that we don't need to explicitly handle
+  // as enc_q[3] is not all 1s:
+  //  1) MEM+/-MEM etc always use ZR.
+  //  2) INC/DEC/NOT always use ZR.
+  always_comb unique casez ({enc_q[0], enc_q[2]})
+    8'b100?_????,
+    8'b1101_??10: o_de_rhs = SRC_REG;
+    8'b1101_??00: o_de_rhs = SRC_UART;
+    default:      o_de_rhs = &enc_q[3] ? SRC_SQI : SRC_REG;
+  endcase
+
+  // Force RHS to ZR as descibed above. Don't need to worry about operand
+  // being set incorrectly for shifts as it's unused anyway.
+  always_comb unique casez ({enc_q[0], enc_q[2]})
+    8'b100?_????,
+    8'b1010_????,
+    8'b1101_??10: o_de_rhs_reg = REG_ZR;
+    default:      o_de_rhs_reg = reg_t'(enc_q[3]);  // C
   endcase
 
 endmodule

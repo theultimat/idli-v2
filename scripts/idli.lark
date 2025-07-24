@@ -167,6 +167,7 @@ J_OP: "carry"
     | "orp"
 
 NC_OP: "out"
+     | "outn"
 
 M_OP: "cex"
 

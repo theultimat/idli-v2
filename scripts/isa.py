@@ -122,7 +122,7 @@ ENCODINGS = {
     # Read/write input and output pins.
     'in':       '1101_???0_00nn_aaaa',      # a = pin(n)
     'out':      '1101_???0_01nn_cccc',      # pin(n, c)
-    'out1':     '1101_???0_10nn_0000',      # pin(n, 1)
+    'outn':     '1101_???0_10nn_cccc',      # pin(n, ~c)
     'outp':     '1101_???0_11nn_0000',      # pin(n, p)
 
     # Send/receive over UART.

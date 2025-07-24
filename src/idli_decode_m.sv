@@ -28,12 +28,13 @@ module idli_decode_m import idli_pkg::*; (
   output var src_t      o_de_lhs,
   output var reg_t      o_de_lhs_reg,
   output var src_t      o_de_rhs,
-  output var reg_t      o_de_rhs_reg
+  output var reg_t      o_de_rhs_reg,
+  output var aux_t      o_de_aux
 );
 
   // Instruction being decoded and whether it's valid.
-  // verilator lint_off UNUSEDSIGNAL
   data_t enc_q;
+  // verilator lint_off UNUSEDSIGNAL
   logic  enc_vld_q;
   // verilator lint_on UNUSEDSIGNAL
 
@@ -172,6 +173,20 @@ module idli_decode_m import idli_pkg::*; (
     8'b1010_????,
     8'b1101_??10: o_de_rhs_reg = REG_ZR;
     default:      o_de_rhs_reg = reg_t'(enc_q[3]);  // C
+  endcase
+
+  // Some operations perform an auxiliary write operation in addition to the
+  // primary write controlled by DST. These are:
+  //  1) LD[M]/ST[M] or +MEM/-MEM write the result to SQI to redirect.
+  //  2) MEM+/MEM- write the LHS operand to SQI.
+  //  3) BL/JL write the next PC to LR.
+  always_comb unique casez ({enc_q[0], enc_q[1], enc_q[2], enc_q[3]})
+    16'b011?_????_????_????,
+    16'b100?_????_????_????,
+    16'b1010_????_????_0?1?:  o_de_aux = AUX_SQI_DST;
+    16'b1010_????_????_0?0?:  o_de_aux = AUX_SQI_LHS;
+    16'b1100_??1?_???1_????:  o_de_aux = AUX_LR;
+    default:                  o_de_aux = AUX_NONE;
   endcase
 
 endmodule

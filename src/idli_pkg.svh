@@ -71,42 +71,14 @@ typedef enum logic [1:0] {
   SRC_UART
 } src_t;
 
-//// Extra write destination, used by instructions to redirect SQI while also
-//// writing a register and updating LR.
-//typedef enum [1:0] {
-//  AUX_WR_NONE,
-//  AUX_WR_LR,
-//  AUX_WR_SQI_DST,
-//  AUX_WR_SQI_LHS
-//} aux_wr_t;
-
-//// Operation control signals for execution. Note that some instructions are
-//// essentially executed in the decode stage and as such don't need any control
-//// signals in this structure.
-//typedef struct packed {
-//  // Pipe selection, ALU or shift.
-//  pipe_t pipe;
-//
-//  // Destination and source locations.
-//  dst_t dst;
-//  src_t lhs;
-//  src_t rhs;
-//
-//  // Register operand values.
-//  reg_t dst_reg;
-//  reg_t lhs_reg;
-//  reg_t rhs_reg;
-//
-//  // ALU and comparison controls.
-//  alu_op_t  alu_op;
-//  logic     alu_rhs_inv;
-//  cmp_op_t  cmp_op;
-//  logic     cmp_sign;
-//  aux_wr_t  aux_wr;
-//
-//  // Shift control signals.
-//  shift_op_t shift_op;
-//} op_t;
+// Extra write destination, used by instructions to redirect SQI while also
+// writing a register and updating LR.
+typedef enum logic [1:0] {
+  AUX_NONE,
+  AUX_LR,
+  AUX_SQI_DST,
+  AUX_SQI_LHS
+} aux_t;
 
 endpackage
 

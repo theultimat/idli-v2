@@ -16,6 +16,9 @@ module idli_ex_m import idli_pkg::*; (
   // Whether instruction is valid.
   logic enc_vld_q;
 
+  // Whether instruction should actually be executed.
+  logic run_instr;
+
   // Decoded operand information.
   dst_t dst;
   reg_t dst_reg;
@@ -74,7 +77,7 @@ module idli_ex_m import idli_pkg::*; (
     // verilator lint_on PINCONNECTEMPTY
 
     .i_rf_dst       (dst_reg),
-    .i_rf_dst_en    (dst == DST_REG && enc_vld_q),
+    .i_rf_dst_en    (dst == DST_REG && run_instr),
     .i_rf_dst_data  ('x)
   );
 
@@ -88,5 +91,9 @@ module idli_ex_m import idli_pkg::*; (
       enc_vld_q <= i_ex_enc_vld;
     end
   end
+
+  // Instruction should be run if we have something valid.
+  // TODO Account for stall signals etc.
+  always_comb run_instr = enc_vld_q;
 
 endmodule

@@ -49,11 +49,14 @@ module idli_decode_m import idli_pkg::*; (
     end
   end
 
-  // All operations go to the ALU except for shift instructions.
-  always_comb unique casez ({enc_q[0], enc_q[3]})
-    8'b1010_10??,
-    8'b1010_11??: o_de_pipe = PIPE_SHIFT;
-    default:      o_de_pipe = PIPE_ALU;
+  // Most operations go to the ALU. The four shifts go to the shifter, and the
+  // other instructions are frontend-only or IO pin operations.
+  always_comb unique casez ({enc_q[0], enc_q[1], enc_q[3]})
+    12'b1010_????_10??,
+    12'b1010_????_11??: o_de_pipe = PIPE_SHIFT;
+    12'b1101_???0_????: o_de_pipe = PIPE_IO;
+    12'b1110_????_????: o_de_pipe = PIPE_FE;
+    default:            o_de_pipe = PIPE_ALU;
   endcase
 
   // Most operations are treated as an ADD with the following exceptions:

@@ -21,10 +21,13 @@ typedef logic [3:0] reg_t;
 localparam reg_t REG_ZR = reg_t'('d0);
 ////localparam reg_t REG_LR = reg_t'('d14);
 
-// Whether to take the final result from the ALU or shift block.
-typedef enum logic {
+// Whether to take the final result from the ALU, shifter, IO pins, or
+// frontend state.
+typedef enum logic [1:0] {
   PIPE_ALU,
-  PIPE_SHIFT
+  PIPE_SHIFT,
+  PIPE_IO,
+  PIPE_FE
 } pipe_t;
 
 // Operations supported by the ALU.

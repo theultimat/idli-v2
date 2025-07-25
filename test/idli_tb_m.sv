@@ -40,6 +40,7 @@ module idli_tb_m import idli_pkg::*; ();
 
   // Scoreboard of registers written. Set by the RTL and cleared by TB.
   logic [NUM_REGS-1:0] reg_sb;
+  data_t reg_data [NUM_REGS-1:1];
 
   // verilator lint_on UNDRIVEN
   // verilator lint_on UNUSEDSIGNAL
@@ -88,6 +89,14 @@ module idli_tb_m import idli_pkg::*; ();
       // a register was written.
       if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_REG) begin
         reg_sb[top_u.ex_u.dst_reg] <= '1;
+      end
+
+      // Save register state at the end of each 4 GCK period. Account for
+      // rotation by saving on cycle 0.
+      if (ctr == '0) begin
+        for (int unsigned REG = 1; REG < NUM_REGS; REG++) begin
+          reg_data[REG] <= top_u.ex_u.rf_u.regs_q[REG];
+        end
       end
     end
   end

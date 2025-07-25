@@ -173,7 +173,7 @@ class TestBench:
 
             # Check the value written matches.
             sim = f'{self.sim_reg_sb[i]:016b}'
-            rtl = self.dut.top_u.ex_u.rf_u.regs_q[i].value.binstr
+            rtl = self.dut.reg_data[i].value.binstr
             assert sim == rtl, f'{isa.REGS_INV[i]} data'
 
         # Clear the scoreboards for the next cycle.

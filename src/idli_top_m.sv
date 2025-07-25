@@ -67,30 +67,13 @@ module idli_top_m import idli_pkg::*; (
   );
 
 
-  idli_decode_m decode_u (
-    .i_de_gck       (i_top_gck),
-    .i_de_rst_n     (i_top_rst_n),
+  idli_ex_m ex_u (
+    .i_ex_gck     (i_top_gck),
+    .i_ex_rst_n   (i_top_rst_n),
 
-    .i_de_ctr       (ctr_q),
-    .i_de_enc       (instr),
-    .i_de_enc_vld   (instr_vld),
-
-    // verilator lint_off PINCONNECTEMPTY
-    .o_de_pipe      (),
-    .o_de_alu_op    (),
-    .o_de_alu_inv   (),
-    .o_de_alu_cin   (),
-    .o_de_cmp_op    (),
-    .o_de_shift_op  (),
-
-    .o_de_dst       (),
-    .o_de_dst_reg   (),
-    .o_de_lhs       (),
-    .o_de_lhs_reg   (),
-    .o_de_rhs       (),
-    .o_de_rhs_reg   (),
-    .o_de_aux       ()
-    // verilator lint_on PINCONNECTEMPTY
+    .i_ex_ctr     (ctr_q),
+    .i_ex_enc     (instr),
+    .i_ex_enc_vld (instr_vld)
   );
 
 

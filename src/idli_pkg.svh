@@ -57,7 +57,6 @@ typedef enum logic [2:0] {
   CMP_OP_ANY
 } cmp_op_t;
 
-
 // Possible destinations for operation output.
 typedef enum logic [1:0] {
   DST_REG,

@@ -15,6 +15,7 @@ typedef slice_t [3:0] data_t;
 typedef logic [1:0] ctr_t;
 
 // 16 registers so 4b identifier.
+localparam int unsigned NUM_REGS = 16;
 typedef logic [3:0] reg_t;
 
 // Link register, zero register.

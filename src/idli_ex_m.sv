@@ -13,6 +13,13 @@ module idli_ex_m import idli_pkg::*; (
   input  var logic    i_ex_enc_vld
 );
 
+  // Decoded operand information.
+  dst_t dst;
+  reg_t dst_reg;
+  reg_t lhs_reg;
+  reg_t rhs_reg;
+
+
   // Decode instruction to get control signals.
   idli_decode_m decode_u (
     .i_de_gck       (i_ex_gck),
@@ -29,15 +36,44 @@ module idli_ex_m import idli_pkg::*; (
     .o_de_alu_cin   (),
     .o_de_cmp_op    (),
     .o_de_shift_op  (),
+    // verilator lint_on PINCONNECTEMPTY
 
-    .o_de_dst       (),
-    .o_de_dst_reg   (),
+    .o_de_dst       (dst),
+    .o_de_dst_reg   (dst_reg),
+    // verilator lint_off PINCONNECTEMPTY
     .o_de_lhs       (),
-    .o_de_lhs_reg   (),
+    // verilator lint_on PINCONNECTEMPTY
+    .o_de_lhs_reg   (lhs_reg),
+    // verilator lint_off PINCONNECTEMPTY
     .o_de_rhs       (),
-    .o_de_rhs_reg   (),
+    // verilator lint_on PINCONNECTEMPTY
+    .o_de_rhs_reg   (rhs_reg),
+    // verilator lint_off PINCONNECTEMPTY
     .o_de_aux       ()
     // verilator lint_on PINCONNECTEMPTY
+  );
+
+  // Register file.
+  idli_rf_m rf_u (
+    .i_rf_gck       (i_ex_gck),
+
+    .i_rf_lhs       (lhs_reg),
+    // verilator lint_off PINCONNECTEMPTY
+    .o_rf_lhs_data  (),
+    .o_rf_lhs_next  (),
+    .o_rf_lhs_prev  (),
+    // verilator lint_on PINCONNECTEMPTY
+
+    .i_rf_rhs       (rhs_reg),
+    // verilator lint_off PINCONNECTEMPTY
+    .o_rf_rhs_data  (),
+    .o_rf_rhs_next  (),
+    .o_rf_rhs_prev  (),
+    // verilator lint_on PINCONNECTEMPTY
+
+    .i_rf_dst       (dst_reg),
+    .i_rf_dst_en    (dst == DST_REG),
+    .i_rf_dst_data  ('x)
   );
 
 endmodule

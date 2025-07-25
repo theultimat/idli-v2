@@ -7,12 +7,13 @@
 module idli_decode_m import idli_pkg::*; (
   // Clock and reset.
   input  var logic      i_de_gck,
+  // verilator lint_off UNUSEDSIGNAL
   input  var logic      i_de_rst_n,
+  // verilator lint_on UNUSEDSIGNAL
 
   // Encoding from memory and the sync counter.
   input  var ctr_t      i_de_ctr,
   input  var data_t     i_de_enc,
-  input  var logic      i_de_enc_vld,
 
   // Execution unit control signals.
   output var pipe_t     o_de_pipe,
@@ -34,18 +35,11 @@ module idli_decode_m import idli_pkg::*; (
 
   // Instruction being decoded and whether it's valid.
   data_t enc_q;
-  // verilator lint_off UNUSEDSIGNAL
-  logic  enc_vld_q;
-  // verilator lint_on UNUSEDSIGNAL
 
   // Flop the new instruction encoding for the next period.
-  always_ff @(posedge i_de_gck, negedge i_de_rst_n) begin
-    if (!i_de_rst_n) begin
-      enc_vld_q <= '0;
-    end
-    else if (&i_de_ctr) begin
-      enc_q     <= i_de_enc;
-      enc_vld_q <= i_de_enc_vld;
+  always_ff @(posedge i_de_gck) begin
+    if (&i_de_ctr) begin
+      enc_q <= i_de_enc;
     end
   end
 

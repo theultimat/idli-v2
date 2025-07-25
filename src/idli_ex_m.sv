@@ -13,6 +13,9 @@ module idli_ex_m import idli_pkg::*; (
   input  var logic    i_ex_enc_vld
 );
 
+  // Whether instruction is valid.
+  logic enc_vld_q;
+
   // Decoded operand information.
   dst_t dst;
   reg_t dst_reg;
@@ -27,7 +30,6 @@ module idli_ex_m import idli_pkg::*; (
 
     .i_de_ctr       (i_ex_ctr),
     .i_de_enc       (i_ex_enc),
-    .i_de_enc_vld   (i_ex_enc_vld),
 
     // verilator lint_off PINCONNECTEMPTY
     .o_de_pipe      (),
@@ -72,8 +74,19 @@ module idli_ex_m import idli_pkg::*; (
     // verilator lint_on PINCONNECTEMPTY
 
     .i_rf_dst       (dst_reg),
-    .i_rf_dst_en    (dst == DST_REG),
+    .i_rf_dst_en    (dst == DST_REG && enc_vld_q),
     .i_rf_dst_data  ('x)
   );
+
+
+  // Flop the encoding valid signal.
+  always_ff @(posedge i_ex_gck, negedge i_ex_rst_n) begin
+    if (!i_ex_rst_n) begin
+      enc_vld_q <= '0;
+    end
+    else if (&i_ex_ctr) begin
+      enc_vld_q <= i_ex_enc_vld;
+    end
+  end
 
 endmodule

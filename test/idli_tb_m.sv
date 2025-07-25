@@ -31,12 +31,22 @@ module idli_tb_m import idli_pkg::*; ();
   io_pins_t pins_in;
   io_pins_t pins_out;
 
+  // Internal sync counter.
+  ctr_t ctr;
+
+  // Whether an instruction has just finished.
+  logic instr_done_q;
+  logic instr_done_d;
+
+  // Scoreboard of registers written. Set by the RTL and cleared by TB.
+  logic [NUM_REGS-1:0] reg_sb;
+
   // verilator lint_on UNDRIVEN
   // verilator lint_on UNUSEDSIGNAL
 
 
   // Instantiate the top-level module of the core and connect to the bench.
-  idli_top_m idli_top_u (
+  idli_top_m top_u (
     .i_top_gck        (gck),
     .i_top_rst_n      (rst_n),
 
@@ -56,5 +66,30 @@ module idli_tb_m import idli_pkg::*; ();
     .i_top_io_pins    (pins_in),
     .o_top_io_pins    (pins_out)
   );
+
+
+  // Grab sync counter from inside the core.
+  always_comb ctr = top_u.ctr_q;
+
+  // Instruction has just finished if we're at the end of a 4 GCK period and
+  // run_instr was set in the execution wrapper.
+  always_comb instr_done_d = &ctr && top_u.ex_u.run_instr;
+
+  // Flop and reset required values.
+  always_ff @(posedge gck, negedge rst_n) begin
+    if (!rst_n) begin
+      instr_done_q <= '0;
+      reg_sb       <= '0;
+    end
+    else begin
+      instr_done_q <= instr_done_d;
+
+      // On the first cycle of an instruction that's being run record whether
+      // a register was written.
+      if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_REG) begin
+        reg_sb[top_u.ex_u.dst_reg] <= '1;
+      end
+    end
+  end
 
 endmodule

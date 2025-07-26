@@ -15,7 +15,7 @@ test_init:
     mov     lr, zr
     mov     sp, zr
     nex     zr, zr          # clear predicate and cond state
-    nop.t
+    inc.t   r1, r1
     jl      $test_main      # jump to main test program
     utx     '@'             # send end of test message
     utx     '@'

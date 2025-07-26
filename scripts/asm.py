@@ -337,6 +337,9 @@ def encode(args, path, items):
     prefixes = list(items.keys())
     items = list(items.values())
 
+    # Pad out with NOPs to prevent issues with prefetch reading bad data.
+    items.extend([isa.RawData(0)] * 2)
+
     with open(path, 'wb') as f:
         for i, item in enumerate(items):
             try:

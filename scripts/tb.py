@@ -116,7 +116,7 @@ class TestBench:
 
         self.log('BENCH: RESET COMPLETE')
 
-        await ClockCycles(self.dut.gck, 100)
+        await ClockCycles(self.dut.gck, 200)
 
     # Simulates one of the two attached memories.
     async def _run_mem(self, mem):
@@ -158,7 +158,8 @@ class TestBench:
             if not done.value:
                 continue
 
-            # TODO Check PC was correct.
+            # Check PC was correct.
+            self._check_pc()
 
             # Run instruction on the behavioural model and check the RTL did the
             # same thing.
@@ -210,3 +211,9 @@ class TestBench:
         # Clear for next cycle.
         self.sim_pred = None
         rtl_sb.setimmediatevalue(0)
+
+    # Check PC matches.
+    def _check_pc(self):
+        sim = f'{self.sim.pc:016b}'
+        rtl = self.dut.pc.value.binstr
+        assert sim == rtl, 'pc'

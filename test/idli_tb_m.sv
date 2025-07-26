@@ -44,6 +44,9 @@ module idli_tb_m import idli_pkg::*; ();
   logic pred_sb;
   logic pred;
 
+  // PC of the most recent instruction.
+  data_t pc;
+
   // verilator lint_on UNDRIVEN
   // verilator lint_on UNUSEDSIGNAL
 
@@ -84,6 +87,7 @@ module idli_tb_m import idli_pkg::*; ();
       instr_done_q <= '0;
       reg_sb       <= '0;
       pred_sb      <= '0;
+      pc           <= '0;
     end
     else begin
       instr_done_q <= instr_done_d;
@@ -97,6 +101,11 @@ module idli_tb_m import idli_pkg::*; ();
       // As above for predicate register.
       if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_P) begin
         pred_sb <= !top_u.ex_u.skip_instr;
+      end
+
+      // PC should be saved when instruction is new in EX.
+      if (ctr == '0 && top_u.ex_u.enc_vld_q && top_u.ex_u.enc_new_q) begin
+        pc <= top_u.ex_u.pc_u.pc_q;
       end
     end
   end

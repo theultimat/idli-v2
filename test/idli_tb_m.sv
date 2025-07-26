@@ -90,14 +90,12 @@ module idli_tb_m import idli_pkg::*; ();
       if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_REG) begin
         reg_sb[top_u.ex_u.dst_reg] <= '1;
       end
+    end
+  end
 
-      // Save register state at the end of each 4 GCK period. Account for
-      // rotation by saving on cycle 0.
-      if (ctr == '0) begin
-        for (int unsigned REG = 1; REG < NUM_REGS; REG++) begin
-          reg_data[REG] <= top_u.ex_u.rf_u.regs_q[REG];
-        end
-      end
+  always_comb begin
+    for (int unsigned REG = 1; REG < NUM_REGS; REG++) begin
+      reg_data[REG] = top_u.ex_u.rf_u.regs_q[REG];
     end
   end
 

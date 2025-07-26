@@ -31,7 +31,10 @@ module idli_ex_m import idli_pkg::*; (
   logic     alu_cin_raw;
   logic     alu_cin;
   slice_t   alu_out;
+  logic     alu_z;
+  logic     alu_n;
   logic     alu_c;
+  logic     alu_v;
 
   // LHS and RHS operand data.
   slice_t lhs_data;
@@ -41,6 +44,14 @@ module idli_ex_m import idli_pkg::*; (
 
   // Saved carry flag.
   logic carry_q;
+
+  // Predicate register for comparison results.
+  logic pred_q;
+  logic pred_d;
+
+  // Decoded comparison operation.
+  cmp_op_t cmp_op;
+
 
   // Decode instruction to get control signals.
   idli_decode_m decode_u (
@@ -56,8 +67,8 @@ module idli_ex_m import idli_pkg::*; (
     .o_de_alu_op    (alu_op),
     .o_de_alu_inv   (alu_inv),
     .o_de_alu_cin   (alu_cin_raw),
+    .o_de_cmp_op    (cmp_op),
     // verilator lint_off PINCONNECTEMPTY
-    .o_de_cmp_op    (),
     .o_de_shift_op  (),
     // verilator lint_on PINCONNECTEMPTY
 
@@ -112,14 +123,10 @@ module idli_ex_m import idli_pkg::*; (
     .i_alu_rhs    (rhs_data),
     .o_alu_out    (alu_out),
 
-    // verilator lint_off PINCONNECTEMPTY
-    .o_alu_flag_z (),
-    .o_alu_flag_n (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_alu_flag_z (alu_z),
+    .o_alu_flag_n (alu_n),
     .o_alu_flag_c (alu_c),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_alu_flag_v ()
-    // verilator lint_on PINCONNECTEMPTY
+    .o_alu_flag_v (alu_v)
   );
 
 
@@ -149,6 +156,33 @@ module idli_ex_m import idli_pkg::*; (
   // Save carry flag for the next slice of an operation.
   always_ff @(posedge i_ex_gck) begin
     carry_q <= alu_c;
+  end
+
+  // Predicate register is written on the final cycle of an instruction based
+  // on the comparison operation performed.
+  // TODO Write predicate from pin.
+  always_comb begin
+    pred_d = pred_q;
+
+    if (dst == DST_P && run_instr) begin
+      // Value to write depends on the ALU flags and comparison operation that
+      // was performed.
+      unique case (cmp_op)
+        CMP_OP_EQ:              pred_d = alu_z;
+        CMP_OP_LT:              pred_d = alu_n != alu_v;
+        CMP_OP_LTU:             pred_d = !alu_c;
+        CMP_OP_GE:              pred_d = alu_n == alu_v;
+        CMP_OP_GEU:             pred_d = alu_c;
+        default: /* NE, ANY */  pred_d = !alu_z;
+      endcase
+    end
+  end
+
+  // Flop new value of P on final cycle of instruction.
+  always_ff @(posedge i_ex_gck) begin
+    if (&i_ex_ctr) begin
+      pred_q <= pred_d;
+    end
   end
 
 endmodule

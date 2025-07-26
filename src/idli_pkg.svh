@@ -22,6 +22,10 @@ typedef logic [3:0] reg_t;
 localparam reg_t REG_ZR = reg_t'('d0);
 ////localparam reg_t REG_LR = reg_t'('d14);
 
+// Conditional execution state. Each bit indicates validity or whether an
+// instruction should be executed based on the value of P or its inverse.
+typedef logic [7:0] cond_t;
+
 // Whether to take the final result from the ALU, shifter, IO pins, or
 // frontend state.
 typedef enum logic [1:0] {

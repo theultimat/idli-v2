@@ -18,6 +18,7 @@ module idli_ex_m import idli_pkg::*; (
 
   // Whether instruction should actually be executed.
   logic run_instr;
+  logic skip_instr;
 
   // Decoded operand information.
   dst_t dst;
@@ -52,6 +53,12 @@ module idli_ex_m import idli_pkg::*; (
   // Decoded comparison operation.
   cmp_op_t cmp_op;
 
+  // Conditional execution state and whether it is being written by an
+  // instruction.
+  cond_t  cond_q;
+  cond_t  cond_wr_data;
+  logic   cond_wr;
+
 
   // Decode instruction to get control signals.
   idli_decode_m decode_u (
@@ -83,8 +90,11 @@ module idli_ex_m import idli_pkg::*; (
     // verilator lint_on PINCONNECTEMPTY
     .o_de_rhs_reg   (rhs_reg),
     // verilator lint_off PINCONNECTEMPTY
-    .o_de_aux       ()
+    .o_de_aux       (),
     // verilator lint_on PINCONNECTEMPTY
+
+    .o_de_cond      (cond_wr_data),
+    .o_de_cond_wr   (cond_wr)
   );
 
   // Register file.
@@ -106,7 +116,7 @@ module idli_ex_m import idli_pkg::*; (
     // verilator lint_on PINCONNECTEMPTY
 
     .i_rf_dst       (dst_reg),
-    .i_rf_dst_en    (dst == DST_REG && run_instr),
+    .i_rf_dst_en    (dst == DST_REG && run_instr && !skip_instr),
     .i_rf_dst_data  (alu_out)
   );
 
@@ -144,6 +154,16 @@ module idli_ex_m import idli_pkg::*; (
   // TODO Account for stall signals etc.
   always_comb run_instr = enc_vld_q;
 
+  // Instruction may be skipped based on the conditional execution state. The
+  // state holds a run of bits indicating that an instruction should be run if
+  // P is true (1) or if P is false (0). The state is only considered valid if
+  // any bit other than LSB is high. Note that this is whether or not the
+  // instruction should be skipped, hence the inverse of P.
+  always_comb unique casez (cond_q)
+    8'b000000?: skip_instr = '0;
+    default:    skip_instr = cond_q[0] ? ~pred_q : pred_q;
+  endcase
+
   // For now input data is always taken directly from RF.
   always_comb lhs_data = lhs_data_reg;
   always_comb rhs_data = rhs_data_reg;
@@ -164,7 +184,7 @@ module idli_ex_m import idli_pkg::*; (
   always_comb begin
     pred_d = pred_q;
 
-    if (dst == DST_P && run_instr) begin
+    if (dst == DST_P && run_instr && !skip_instr) begin
       // Value to write depends on the ALU flags and comparison operation that
       // was performed.
       unique case (cmp_op)
@@ -182,6 +202,19 @@ module idli_ex_m import idli_pkg::*; (
   always_ff @(posedge i_ex_gck) begin
     if (&i_ex_ctr) begin
       pred_q <= pred_d;
+    end
+  end
+
+  // Update the conditional execution state. If this is written by an
+  // instruction then on the final cycle write in the new value from the
+  // encoding. If not, the value shifts right by one for each instruction.
+  always_ff @(posedge i_ex_gck, negedge i_ex_rst_n) begin
+    if (!i_ex_rst_n) begin
+      cond_q <= cond_t'('0);
+    end
+    else if (&i_ex_ctr && run_instr) begin
+      cond_q <= cond_wr && !skip_instr ? cond_wr_data
+                                       : cond_t'({1'b0, cond_q[7:1]});
     end
   end
 

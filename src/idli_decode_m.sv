@@ -30,7 +30,11 @@ module idli_decode_m import idli_pkg::*; (
   output var reg_t      o_de_lhs_reg,
   output var src_t      o_de_rhs,
   output var reg_t      o_de_rhs_reg,
-  output var aux_t      o_de_aux
+  output var aux_t      o_de_aux,
+
+  // Conditional execution signals.
+  output  var cond_t    o_de_cond,
+  output  var logic     o_de_cond_wr
 );
 
   // Instruction being decoded and whether it's valid.
@@ -185,5 +189,19 @@ module idli_decode_m import idli_pkg::*; (
     16'b1100_??1?_???1_????:  o_de_aux = AUX_LR;
     default:                  o_de_aux = AUX_NONE;
   endcase
+
+  // Whether to write to the conditional execution state. This is performed by
+  // CMPX instructions and CEX only.
+  always_comb unique casez ({enc_q[0], enc_q[1]})
+    8'b1011_1???,
+    8'b1110_???0: o_de_cond_wr = '1;
+    default:      o_de_cond_wr = '0;
+  endcase
+
+  // Value to write for cond is taken directly from the encoding for CEX. For
+  // CMPX operations the value is always fixed to 'b11 to conditionally
+  // execute the next instruction if P is true only.
+  always_comb o_de_cond = enc_q[0] == 4'b1110 ? cond_t'({enc_q[2], enc_q[3]})
+                                              : cond_t'(2'b11);
 
 endmodule

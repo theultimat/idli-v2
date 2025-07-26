@@ -25,6 +25,22 @@ module idli_ex_m import idli_pkg::*; (
   reg_t lhs_reg;
   reg_t rhs_reg;
 
+  // ALU control and data signals.
+  alu_op_t  alu_op;
+  logic     alu_inv;
+  logic     alu_cin_raw;
+  logic     alu_cin;
+  slice_t   alu_out;
+  logic     alu_c;
+
+  // LHS and RHS operand data.
+  slice_t lhs_data;
+  slice_t rhs_data;
+  slice_t lhs_data_reg;
+  slice_t rhs_data_reg;
+
+  // Saved carry flag.
+  logic carry_q;
 
   // Decode instruction to get control signals.
   idli_decode_m decode_u (
@@ -36,9 +52,11 @@ module idli_ex_m import idli_pkg::*; (
 
     // verilator lint_off PINCONNECTEMPTY
     .o_de_pipe      (),
-    .o_de_alu_op    (),
-    .o_de_alu_inv   (),
-    .o_de_alu_cin   (),
+    // verilator lint_on PINCONNECTEMPTY
+    .o_de_alu_op    (alu_op),
+    .o_de_alu_inv   (alu_inv),
+    .o_de_alu_cin   (alu_cin_raw),
+    // verilator lint_off PINCONNECTEMPTY
     .o_de_cmp_op    (),
     .o_de_shift_op  (),
     // verilator lint_on PINCONNECTEMPTY
@@ -63,22 +81,45 @@ module idli_ex_m import idli_pkg::*; (
     .i_rf_gck       (i_ex_gck),
 
     .i_rf_lhs       (lhs_reg),
+    .o_rf_lhs_data  (lhs_data_reg),
     // verilator lint_off PINCONNECTEMPTY
-    .o_rf_lhs_data  (),
     .o_rf_lhs_next  (),
     .o_rf_lhs_prev  (),
     // verilator lint_on PINCONNECTEMPTY
 
     .i_rf_rhs       (rhs_reg),
+    .o_rf_rhs_data  (rhs_data_reg),
     // verilator lint_off PINCONNECTEMPTY
-    .o_rf_rhs_data  (),
     .o_rf_rhs_next  (),
     .o_rf_rhs_prev  (),
     // verilator lint_on PINCONNECTEMPTY
 
     .i_rf_dst       (dst_reg),
     .i_rf_dst_en    (dst == DST_REG && run_instr),
-    .i_rf_dst_data  ('x)
+    .i_rf_dst_data  (alu_out)
+  );
+
+  // ALU.
+  idli_alu_m alu_u (
+    .i_alu_gck    (i_ex_gck),
+
+    .i_alu_ctr    (i_ex_ctr),
+    .i_alu_op     (alu_op),
+    .i_alu_inv    (alu_inv),
+    .i_alu_cin    (alu_cin),
+
+    .i_alu_lhs    (lhs_data),
+    .i_alu_rhs    (rhs_data),
+    .o_alu_out    (alu_out),
+
+    // verilator lint_off PINCONNECTEMPTY
+    .o_alu_flag_z (),
+    .o_alu_flag_n (),
+    // verilator lint_on PINCONNECTEMPTY
+    .o_alu_flag_c (alu_c),
+    // verilator lint_off PINCONNECTEMPTY
+    .o_alu_flag_v ()
+    // verilator lint_on PINCONNECTEMPTY
   );
 
 
@@ -95,5 +136,19 @@ module idli_ex_m import idli_pkg::*; (
   // Instruction should be run if we have something valid.
   // TODO Account for stall signals etc.
   always_comb run_instr = enc_vld_q;
+
+  // For now input data is always taken directly from RF.
+  always_comb lhs_data = lhs_data_reg;
+  always_comb rhs_data = rhs_data_reg;
+
+  // Carry in for ALU comes from the encoding on the first cycle of an
+  // instruction or the saved value if we're mid-operation.
+  // TODO Account for the CARRY instruction setting persistent flags!
+  always_comb alu_cin = |i_ex_ctr ? carry_q : alu_cin_raw;
+
+  // Save carry flag for the next slice of an operation.
+  always_ff @(posedge i_ex_gck) begin
+    carry_q <= alu_c;
+  end
 
 endmodule

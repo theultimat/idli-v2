@@ -108,7 +108,7 @@ class TestBench:
 
         self.log('BENCH: RESET COMPLETE')
 
-        await ClockCycles(self.dut.gck, 50)
+        await ClockCycles(self.dut.gck, 100)
 
     # Simulates one of the two attached memories.
     async def _run_mem(self, mem):
@@ -161,7 +161,8 @@ class TestBench:
     def _check_reg_writes(self):
         rtl_sb = self.dut.reg_sb
 
-        for i in range(16):
+        # Skip ZR as RTL never sets write enable for it.
+        for i in range(1, 16):
             # Check RTL and BM agree on whether this register was written.
             sim = i in self.sim_reg_sb
             rtl = bool(rtl_sb.value & (1 << i))

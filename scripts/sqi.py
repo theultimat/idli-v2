@@ -74,7 +74,7 @@ class Memory:
             self.addr = 0
         elif self.state.startswith('addr'):
             # A 16b address is sent in 4b chunks over four cycles in big-endian.
-            self.addr = ((self.addr << 4) | (sio & 4)) & self.addr_mask
+            self.addr = ((self.addr << 4) | (sio & 0xf)) & self.addr_mask
 
             # Move to the next cycle or into the read/write phase.
             cycle = int(self.state[-1])

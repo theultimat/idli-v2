@@ -48,6 +48,11 @@ class Callback(sim.Callback):
         self.log(f'SIM_REG_WR: reg={isa.REGS_INV[reg]} value={value:#06x}')
         self.tb.sim_reg_sb[reg] = value
 
+    # Record predicate write.
+    def write_pred(self, value):
+        self.log(f'SIM_PRED_WR: value={value:#x}')
+        self.tb.sim_pred = value
+
 
 # Bench used with cocotb to run tests on the RTL.
 class TestBench:
@@ -67,6 +72,9 @@ class TestBench:
 
         # Scoreboard for register writes and the values written.
         self.sim_reg_sb = {}
+
+        # Whether predicate register was written by sim and its value.
+        self.sim_pred = None
 
         self.log('BENCH: INIT BEGIN')
 
@@ -156,6 +164,7 @@ class TestBench:
             # same thing.
             self.sim.tick()
             self._check_reg_writes()
+            self._check_pred_writes()
 
     # Check outstanding register writes match.
     def _check_reg_writes(self):
@@ -179,4 +188,25 @@ class TestBench:
 
         # Clear the scoreboards for the next cycle.
         self.sim_reg_sb = {}
+        rtl_sb.setimmediatevalue(0)
+
+    # Check outstanding predicate writes match.
+    def _check_pred_writes(self):
+        rtl_sb = self.dut.pred_sb
+
+        # Check both agreed on whether a write was performed.
+        sim = self.sim_pred is not None
+        rtl = bool(rtl_sb.value)
+        assert sim == rtl, 'predicate written'
+
+        if not rtl:
+            return
+
+        # Make sure the values were the same.
+        sim = f'{self.sim_pred:01b}'
+        rtl = self.dut.pred.value.binstr
+        assert sim == rtl, f'predicate write data'
+
+        # Clear for next cycle.
+        self.sim_pred = None
         rtl_sb.setimmediatevalue(0)

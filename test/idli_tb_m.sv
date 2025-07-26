@@ -41,6 +41,8 @@ module idli_tb_m import idli_pkg::*; ();
   // Scoreboard of registers written. Set by the RTL and cleared by TB.
   logic [NUM_REGS-1:0] reg_sb;
   data_t reg_data [NUM_REGS-1:1];
+  logic pred_sb;
+  logic pred;
 
   // verilator lint_on UNDRIVEN
   // verilator lint_on UNUSEDSIGNAL
@@ -81,6 +83,7 @@ module idli_tb_m import idli_pkg::*; ();
     if (!rst_n) begin
       instr_done_q <= '0;
       reg_sb       <= '0;
+      pred_sb      <= '0;
     end
     else begin
       instr_done_q <= instr_done_d;
@@ -90,13 +93,22 @@ module idli_tb_m import idli_pkg::*; ();
       if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_REG) begin
         reg_sb[top_u.ex_u.dst_reg] <= '1;
       end
+
+      // As above for predicate register.
+      if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_P) begin
+        pred_sb <= '1;
+      end
     end
   end
 
+  // Read out register state for use when checking instructions.
   always_comb begin
     for (int unsigned REG = 1; REG < NUM_REGS; REG++) begin
       reg_data[REG] = top_u.ex_u.rf_u.regs_q[REG];
     end
   end
+
+  // Predicate register state.
+  always_comb pred = top_u.ex_u.pred_q;
 
 endmodule

@@ -44,37 +44,37 @@ module idli_rf_m import idli_pkg::*; (
         regs_q[REG] <= {regs_q[REG][0], regs_q[REG][3:1]};
       end
     end
-
-
-    // Set LHS output data.
-    always_comb begin
-      o_rf_lhs_data = slice_t'('0);
-      o_rf_lhs_next = '0;
-      o_rf_lhs_prev = '0;
-
-      for (int unsigned REG = 1; REG < NUM_REGS; REG++) begin
-        if (i_rf_lhs == reg_t'(REG)) begin
-          o_rf_lhs_data = regs_q[REG][0];
-          o_rf_lhs_next = regs_q[REG][1][0];
-          o_rf_lhs_prev = regs_q[REG][3][3];
-        end
-      end
-    end
-
-    // Set RHS output data.
-    always_comb begin
-      o_rf_rhs_data = slice_t'('0);
-      o_rf_rhs_next = '0;
-      o_rf_rhs_prev = '0;
-
-      for (int unsigned REG = 1; REG < NUM_REGS; REG++) begin
-        if (i_rf_rhs == reg_t'(REG)) begin
-          o_rf_rhs_data = regs_q[REG][0];
-          o_rf_rhs_next = regs_q[REG][1][0];
-          o_rf_rhs_prev = regs_q[REG][3][3];
-        end
-      end
-    end
   end : num_reg_b
+
+
+  // Set LHS output data.
+  always_comb begin
+    o_rf_lhs_data = slice_t'('0);
+    o_rf_lhs_next = '0;
+    o_rf_lhs_prev = '0;
+
+    for (int unsigned REG = 1; REG < NUM_REGS; REG++) begin
+      if (i_rf_lhs == reg_t'(REG)) begin
+        o_rf_lhs_data = regs_q[REG][0];
+        o_rf_lhs_next = regs_q[REG][1][0];
+        o_rf_lhs_prev = regs_q[REG][3][3];
+      end
+    end
+  end
+
+  // Set RHS output data.
+  always_comb begin
+    o_rf_rhs_data = slice_t'('0);
+    o_rf_rhs_next = '0;
+    o_rf_rhs_prev = '0;
+
+    for (int unsigned REG = 1; REG < NUM_REGS; REG++) begin
+      if (i_rf_rhs == reg_t'(REG)) begin
+        o_rf_rhs_data = regs_q[REG][0];
+        o_rf_rhs_next = regs_q[REG][1][0];
+        o_rf_rhs_prev = regs_q[REG][3][3];
+      end
+    end
+  end
 
 endmodule

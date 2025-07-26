@@ -11,7 +11,11 @@ module idli_ex_m import idli_pkg::*; (
   input  var ctr_t    i_ex_ctr,
   input  var data_t   i_ex_enc,
   input  var logic    i_ex_enc_vld,
-  input  var slice_t  i_ex_data
+  input  var slice_t  i_ex_data,
+
+  // Write interface to memory and whether or not this is redirect data.
+  output var logic    o_ex_redirect,
+  output var slice_t  o_ex_data
 );
 
   // Whether instruction is valid and new (i.e. first cycle).
@@ -70,7 +74,8 @@ module idli_ex_m import idli_pkg::*; (
   cond_t  cond_wr_data;
   logic   cond_wr;
 
-  // Next sequential PC value. Typically used for updating LR.
+  // Current and next sequential PC value. Typically used for updating LR.
+  slice_t pc;
   slice_t pc_next;
 
 
@@ -156,12 +161,10 @@ module idli_ex_m import idli_pkg::*; (
 
     .i_pc_ctr       (i_ex_ctr),
     .i_pc_inc       (enc_vld_q),
-    .i_pc_redirect  ('0),
-    .i_pc_data      ('x),
+    .i_pc_redirect  (o_ex_redirect),
+    .i_pc_data      (alu_out),
 
-    // verilator lint_off PINCONNECTEMPTY
-    .o_pc           (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_pc           (pc),
     .o_pc_next      (pc_next)
   );
 
@@ -172,14 +175,14 @@ module idli_ex_m import idli_pkg::*; (
       enc_vld_q <= '0;
     end
     else if (&i_ex_ctr) begin
-      enc_vld_q <= i_ex_enc_vld;
+      enc_vld_q <= i_ex_enc_vld && !o_ex_redirect;
     end
   end
 
   // Remember whether this is the first cycle of an instruction.
   always_ff @(posedge i_ex_gck) begin
     if (&i_ex_ctr) begin
-      enc_new_q <= i_ex_enc_vld && run_instr;
+      enc_new_q <= i_ex_enc_vld && (run_instr || !enc_vld_q);
     end
   end
 
@@ -281,5 +284,15 @@ module idli_ex_m import idli_pkg::*; (
   // SQI. In this case we need to wait for the data to be reversed in the SQI
   // block so we can read it out in 4b slices.
   always_comb stall_instr[0] = enc_new_q && (lhs == SRC_SQI || rhs == SRC_SQI);
+
+  // Redirect is happening if this instruction is actually being executed and
+  // it wrtes to the PC.
+  always_comb o_ex_redirect = run_instr && !skip_instr && dst == DST_PC;
+
+  // Data to write to the memory always comes from the ALU except for when we
+  // don't have a valid instruction, in which case we output the PC. This
+  // ensures the initial redirect at the start of time will start from address
+  // zero.
+  always_comb o_ex_data = enc_vld_q ? alu_out : pc;
 
 endmodule

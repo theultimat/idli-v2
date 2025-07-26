@@ -32,6 +32,8 @@ module idli_top_m import idli_pkg::*; (
   data_t  instr;
   logic   instr_vld;
   slice_t mem_data;
+  logic   ex_redirect;
+  slice_t ex_data;
 
   // TODO Move the counter into the sync/control block.
   ctr_t ctr_q;
@@ -46,10 +48,10 @@ module idli_top_m import idli_pkg::*; (
     .i_sqi_rst_n      (i_top_rst_n),
 
     .i_sqi_ctr        (ctr_q),
-    .i_sqi_redirect   ('0),
+    .i_sqi_redirect   (ex_redirect),
     .i_sqi_wr_en      ('0),
 
-    .i_sqi_slice      ('0),
+    .i_sqi_slice      (ex_data),
     .o_sqi_slice      (mem_data),
     .o_sqi_instr      (instr),
     .o_sqi_instr_vld  (instr_vld),
@@ -67,13 +69,16 @@ module idli_top_m import idli_pkg::*; (
 
 
   idli_ex_m ex_u (
-    .i_ex_gck     (i_top_gck),
-    .i_ex_rst_n   (i_top_rst_n),
+    .i_ex_gck       (i_top_gck),
+    .i_ex_rst_n     (i_top_rst_n),
 
-    .i_ex_ctr     (ctr_q),
-    .i_ex_enc     (instr),
-    .i_ex_enc_vld (instr_vld),
-    .i_ex_data    (mem_data)
+    .i_ex_ctr       (ctr_q),
+    .i_ex_enc       (instr),
+    .i_ex_enc_vld   (instr_vld),
+    .i_ex_data      (mem_data),
+
+    .o_ex_redirect  (ex_redirect),
+    .o_ex_data      (ex_data)
   );
 
 

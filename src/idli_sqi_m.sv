@@ -72,6 +72,9 @@ module idli_sqi_m import idli_pkg::*; (
   slice_t buf_push_slice;
   data_t  buf_data;
 
+  // Whether the memory has ever been redirected.
+  logic redirected_q;
+
   // Internal buffer for reversing endianness of data -- core is LE but
   // memories are BE.
   idli_sqi_buf_m buf_u (
@@ -88,13 +91,16 @@ module idli_sqi_m import idli_pkg::*; (
   );
 
   // Update state of the state machine every other falling edge of SCK for to
-  // ensure the output pins will be ready for the next rising SCK edge.
+  // ensure the output pins will be ready for the next rising SCK edge. Also
+  // track whether we've ever been redirected to control address behaviour.
   always_ff @(posedge i_sqi_gck, negedge i_sqi_rst_n) begin
     if (!i_sqi_rst_n) begin
-      state_q <= STATE_RESET;
+      state_q       <= STATE_RESET;
+      redirected_q  <= '0;
     end
     else if (&i_sqi_ctr) begin
-      state_q <= state_d;
+      state_q       <= state_d;
+      redirected_q  <= redirected_q || i_sqi_redirect;
     end
   end
 
@@ -151,18 +157,35 @@ module idli_sqi_m import idli_pkg::*; (
     default:    o_sqi_lo_sio = hi_sio_q;
   endcase
 
-  // Data should be pushed into the buffer in the following states.
-  //  - INSTR:    Address is written by core.
-  //  - ADDR_LO:  First 16b of data is written.
-  //  - DATA:     More data is written.
-  always_comb buf_push = state_q == STATE_INSTR
-                      || state_q == STATE_ADDR_LO
-                      || state_q == STATE_DATA;
+  // Buffer update behaviour depends on whether we're redirected the memory or
+  // not (e.g. due to branch/load/store).
+  always_comb begin
+    if (redirected_q) begin
+      // If we have redirected then the address was written in during the end
+      // of the previous transaction's DATA cycle. As a result we need to hold
+      // the data such that it's read out of the buffer every SCK rather than
+      // every GCK when in ADDR. Once we get back to DATA it's business as
+      // usual.
+      unique case (state_q)
+        STATE_DATA:     buf_push = '1;
+        STATE_ADDR_HI,
+        STATE_ADDR_LO:  buf_push = sck_q;
+        default:        buf_push = '0;
+      endcase
+    end
+    else begin
+      // If we've never redirected then data can always be pushed into the
+      // buffer -- address should be held at zero on reset and once we hit
+      // DATA we'll stay there until redirect.
+      buf_push = '1;
+    end
+  end
 
-  // Data to push into the buffer should come from the memory on DATA cycles
-  // and from the core on all others.
+  // Data to push into the buffer comes from the memory if and only if we're
+  // in the DATA state and aren't being redirected.
   always_comb unique case (state_q)
-    STATE_DATA: buf_push_slice = i_sqi_ctr[0] ? i_sqi_lo_sio : i_sqi_hi_sio;
+    STATE_DATA: buf_push_slice = i_sqi_redirect ? i_sqi_slice :
+                                 i_sqi_ctr[0]   ? i_sqi_lo_sio : i_sqi_hi_sio;
     default:    buf_push_slice = i_sqi_slice;
   endcase
 

@@ -20,7 +20,7 @@ typedef logic [3:0] reg_t;
 
 // Link register, zero register.
 localparam reg_t REG_ZR = reg_t'('d0);
-////localparam reg_t REG_LR = reg_t'('d14);
+localparam reg_t REG_LR = reg_t'('d14);
 
 // Conditional execution state. Each bit indicates validity or whether an
 // instruction should be executed based on the value of P or its inverse.

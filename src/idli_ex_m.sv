@@ -22,9 +22,14 @@ module idli_ex_m import idli_pkg::*; (
 
   // Decoded operand information.
   dst_t dst;
+  reg_t dst_reg_raw;
   reg_t dst_reg;
+  logic dst_reg_wr;
   reg_t lhs_reg;
   reg_t rhs_reg;
+  aux_t aux;
+  src_t lhs;
+  src_t rhs;
 
   // ALU control and data signals.
   alu_op_t  alu_op;
@@ -37,11 +42,12 @@ module idli_ex_m import idli_pkg::*; (
   logic     alu_c;
   logic     alu_v;
 
-  // LHS and RHS operand data.
+  // LHS and RHS operand and destination data.
   slice_t lhs_data;
   slice_t rhs_data;
   slice_t lhs_data_reg;
   slice_t rhs_data_reg;
+  slice_t dst_data;
 
   // Saved carry flag.
   logic carry_q;
@@ -58,6 +64,9 @@ module idli_ex_m import idli_pkg::*; (
   cond_t  cond_q;
   cond_t  cond_wr_data;
   logic   cond_wr;
+
+  // Next sequential PC value. Typically used for updating LR.
+  slice_t pc_next;
 
 
   // Decode instruction to get control signals.
@@ -80,18 +89,12 @@ module idli_ex_m import idli_pkg::*; (
     // verilator lint_on PINCONNECTEMPTY
 
     .o_de_dst       (dst),
-    .o_de_dst_reg   (dst_reg),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_de_lhs       (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_de_dst_reg   (dst_reg_raw),
+    .o_de_lhs       (lhs),
     .o_de_lhs_reg   (lhs_reg),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_de_rhs       (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_de_rhs       (rhs),
     .o_de_rhs_reg   (rhs_reg),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_de_aux       (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_de_aux       (aux),
 
     .o_de_cond      (cond_wr_data),
     .o_de_cond_wr   (cond_wr)
@@ -116,8 +119,8 @@ module idli_ex_m import idli_pkg::*; (
     // verilator lint_on PINCONNECTEMPTY
 
     .i_rf_dst       (dst_reg),
-    .i_rf_dst_en    (dst == DST_REG && run_instr && !skip_instr),
-    .i_rf_dst_data  (alu_out)
+    .i_rf_dst_en    (dst_reg_wr),
+    .i_rf_dst_data  (dst_data)
   );
 
   // ALU.
@@ -137,6 +140,22 @@ module idli_ex_m import idli_pkg::*; (
     .o_alu_flag_n (alu_n),
     .o_alu_flag_c (alu_c),
     .o_alu_flag_v (alu_v)
+  );
+
+  // Program counter wrapper.
+  idli_pc_m pc_u (
+    .i_pc_gck       (i_ex_gck),
+    .i_pc_rst_n     (i_ex_rst_n),
+
+    .i_pc_ctr       (i_ex_ctr),
+    .i_pc_inc       (enc_vld_q),
+    .i_pc_redirect  ('0),
+    .i_pc_data      ('x),
+
+    // verilator lint_off PINCONNECTEMPTY
+    .o_pc           (),
+    // verilator lint_on PINCONNECTEMPTY
+    .o_pc_next      (pc_next)
   );
 
 
@@ -164,9 +183,21 @@ module idli_ex_m import idli_pkg::*; (
     default:    skip_instr = cond_q[0] ? ~pred_q : pred_q;
   endcase
 
-  // For now input data is always taken directly from RF.
-  always_comb lhs_data = lhs_data_reg;
-  always_comb rhs_data = rhs_data_reg;
+  // LHS/RHS data depends on the source value.
+  // TODO Implement SQI and UART!
+  always_comb unique case (lhs)
+    SRC_REG:            lhs_data = lhs_data_reg;
+    SRC_PC:             lhs_data = pc_next;
+    SRC_SQI:            lhs_data = 'x;
+    default: /* UART */ lhs_data = 'x;
+  endcase
+
+  always_comb unique case (rhs)
+    SRC_REG:            rhs_data = rhs_data_reg;
+    SRC_PC:             rhs_data = pc_next;
+    SRC_SQI:            rhs_data = 'x;
+    default: /* UART */ rhs_data = 'x;
+  endcase
 
   // Carry in for ALU comes from the encoding on the first cycle of an
   // instruction or the saved value if we're mid-operation.
@@ -217,5 +248,20 @@ module idli_ex_m import idli_pkg::*; (
                                        : cond_t'({1'b0, cond_q[7:1]});
     end
   end
+
+  // Destination register comes from the encoding but may also be LR from the
+  // auxiliary write operation.
+  always_comb dst_reg = aux == AUX_LR ? REG_LR : dst_reg_raw;
+
+  // Write enable for destination register is based on whether we're actually
+  // writing to a register and whether the instruction is actually being
+  // executed.
+  always_comb dst_reg_wr = (dst == DST_REG || aux == AUX_LR)
+                        && run_instr
+                        && !skip_instr;
+
+  // Register write data depends on the pipe and auxiliary write status.
+  // TODO Implement other pipes! Assumes ALU for now.
+  always_comb dst_data = aux == AUX_LR ? pc_next : alu_out;
 
 endmodule

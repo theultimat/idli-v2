@@ -7,18 +7,23 @@ module idli_ex_m import idli_pkg::*; (
   input  var logic    i_ex_gck,
   input  var logic    i_ex_rst_n,
 
-  // Sync counter and encodings from memory.
+  // Sync counter and data from memory.
   input  var ctr_t    i_ex_ctr,
   input  var data_t   i_ex_enc,
-  input  var logic    i_ex_enc_vld
+  input  var logic    i_ex_enc_vld,
+  input  var slice_t  i_ex_data
 );
 
-  // Whether instruction is valid.
+  // Whether instruction is valid and new (i.e. first cycle).
   logic enc_vld_q;
+  logic enc_new_q;
 
   // Whether instruction should actually be executed.
   logic run_instr;
   logic skip_instr;
+
+  // Stall reasons for instruction, one per bit.
+  logic [0:0] stall_instr;
 
   // Decoded operand information.
   dst_t dst;
@@ -69,13 +74,15 @@ module idli_ex_m import idli_pkg::*; (
   slice_t pc_next;
 
 
-  // Decode instruction to get control signals.
+  // Decode instruction to get control signals. Note that we only flop an
+  // encoding if the instruction actually exectued (or we didn't have one).
   idli_decode_m decode_u (
     .i_de_gck       (i_ex_gck),
     .i_de_rst_n     (i_ex_rst_n),
 
     .i_de_ctr       (i_ex_ctr),
     .i_de_enc       (i_ex_enc),
+    .i_de_enc_vld   (!enc_vld_q || run_instr),
 
     // verilator lint_off PINCONNECTEMPTY
     .o_de_pipe      (),
@@ -169,9 +176,15 @@ module idli_ex_m import idli_pkg::*; (
     end
   end
 
-  // Instruction should be run if we have something valid.
-  // TODO Account for stall signals etc.
-  always_comb run_instr = enc_vld_q;
+  // Remember whether this is the first cycle of an instruction.
+  always_ff @(posedge i_ex_gck) begin
+    if (&i_ex_ctr) begin
+      enc_new_q <= i_ex_enc_vld && run_instr;
+    end
+  end
+
+  // Instruction should be run if we have something valid don't need to stall.
+  always_comb run_instr = enc_vld_q && ~|stall_instr;
 
   // Instruction may be skipped based on the conditional execution state. The
   // state holds a run of bits indicating that an instruction should be run if
@@ -184,18 +197,18 @@ module idli_ex_m import idli_pkg::*; (
   endcase
 
   // LHS/RHS data depends on the source value.
-  // TODO Implement SQI and UART!
+  // TODO Implement UART!
   always_comb unique case (lhs)
     SRC_REG:            lhs_data = lhs_data_reg;
     SRC_PC:             lhs_data = pc_next;
-    SRC_SQI:            lhs_data = 'x;
+    SRC_SQI:            lhs_data = i_ex_data;
     default: /* UART */ lhs_data = 'x;
   endcase
 
   always_comb unique case (rhs)
     SRC_REG:            rhs_data = rhs_data_reg;
     SRC_PC:             rhs_data = pc_next;
-    SRC_SQI:            rhs_data = 'x;
+    SRC_SQI:            rhs_data = i_ex_data;
     default: /* UART */ rhs_data = 'x;
   endcase
 
@@ -263,5 +276,10 @@ module idli_ex_m import idli_pkg::*; (
   // Register write data depends on the pipe and auxiliary write status.
   // TODO Implement other pipes! Assumes ALU for now.
   always_comb dst_data = aux == AUX_LR ? pc_next : alu_out;
+
+  // Instruction needs to stall if this is its first cycle but it reads from
+  // SQI. In this case we need to wait for the data to be reversed in the SQI
+  // block so we can read it out in 4b slices.
+  always_comb stall_instr[0] = enc_new_q && (lhs == SRC_SQI || rhs == SRC_SQI);
 
 endmodule

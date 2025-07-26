@@ -14,6 +14,7 @@ module idli_decode_m import idli_pkg::*; (
   // Encoding from memory and the sync counter.
   input  var ctr_t      i_de_ctr,
   input  var data_t     i_de_enc,
+  input  var logic      i_de_enc_vld,
 
   // Execution unit control signals.
   output var pipe_t     o_de_pipe,
@@ -42,7 +43,7 @@ module idli_decode_m import idli_pkg::*; (
 
   // Flop the new instruction encoding for the next period.
   always_ff @(posedge i_de_gck) begin
-    if (&i_de_ctr) begin
+    if (&i_de_ctr && i_de_enc_vld) begin
       enc_q <= i_de_enc;
     end
   end

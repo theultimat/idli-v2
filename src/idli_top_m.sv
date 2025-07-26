@@ -31,6 +31,7 @@ module idli_top_m import idli_pkg::*; (
 
   data_t  instr;
   logic   instr_vld;
+  slice_t mem_data;
 
   // TODO Move the counter into the sync/control block.
   ctr_t ctr_q;
@@ -49,9 +50,7 @@ module idli_top_m import idli_pkg::*; (
     .i_sqi_wr_en      ('0),
 
     .i_sqi_slice      ('0),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_sqi_slice      (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_sqi_slice      (mem_data),
     .o_sqi_instr      (instr),
     .o_sqi_instr_vld  (instr_vld),
 
@@ -73,7 +72,8 @@ module idli_top_m import idli_pkg::*; (
 
     .i_ex_ctr     (ctr_q),
     .i_ex_enc     (instr),
-    .i_ex_enc_vld (instr_vld)
+    .i_ex_enc_vld (instr_vld),
+    .i_ex_data    (mem_data)
   );
 
 

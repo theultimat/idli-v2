@@ -91,12 +91,12 @@ module idli_tb_m import idli_pkg::*; ();
       // On the first cycle of an instruction that's being run record whether
       // a register was written.
       if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_REG) begin
-        reg_sb[top_u.ex_u.dst_reg] <= '1;
+        reg_sb[top_u.ex_u.dst_reg] <= !top_u.ex_u.skip_instr;
       end
 
       // As above for predicate register.
       if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_P) begin
-        pred_sb <= '1;
+        pred_sb <= !top_u.ex_u.skip_instr;
       end
     end
   end

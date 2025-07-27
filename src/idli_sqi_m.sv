@@ -14,6 +14,7 @@ module idli_sqi_m import idli_pkg::*; (
   input  var ctr_t    i_sqi_ctr,
   input  var logic    i_sqi_redirect,
   input  var logic    i_sqi_wr_en,
+  input  var logic    i_sqi_stall,
 
   // Data IO with the rest of the core.
   input  var slice_t  i_sqi_slice,
@@ -104,26 +105,31 @@ module idli_sqi_m import idli_pkg::*; (
     end
   end
 
-  // Determine the next state for the state machine.
-  always_comb unique case (state_q)
-    STATE_RESET:        state_d = STATE_INSTR;
-    STATE_INSTR:        state_d = STATE_ADDR_HI;
-    STATE_ADDR_HI:      state_d = STATE_ADDR_LO;
-    STATE_ADDR_LO:      state_d = i_sqi_wr_en ? STATE_DATA : STATE_DUMMY;
-    STATE_DUMMY:        state_d = STATE_DATA;
-    default: /* DATA */ state_d = i_sqi_redirect ? STATE_RESET : STATE_DATA;
-  endcase
+  // Determine the next state for the state machine. It's only possible to
+  // enter the stall state during DATA so we don't need to consider it
+  // elsewhere.
+  always_comb begin
+    unique case (state_q)
+      STATE_RESET:        state_d = STATE_INSTR;
+      STATE_INSTR:        state_d = STATE_ADDR_HI;
+      STATE_ADDR_HI:      state_d = STATE_ADDR_LO;
+      STATE_ADDR_LO:      state_d = i_sqi_wr_en ? STATE_DATA : STATE_DUMMY;
+      STATE_DUMMY:        state_d = STATE_DATA;
+      default: /* DATA */ state_d = i_sqi_redirect ? STATE_RESET : STATE_DATA;
+    endcase
+  end
 
   // Flop the new value of SCK. In standard operation this is the *inverse* of
   // the low bit of the counter to ensure we get SCK high on the second GCK
   // cycle of the 4 GCK period. At times we need to pause SCK so the clock
-  // will be tied zero to hold memory until data is ready.
+  // will be tied zero to hold memory until data is ready. If we're stalled
+  // then the clock stays at zero.
   always_ff @(posedge i_sqi_gck, negedge i_sqi_rst_n) begin
     if (!i_sqi_rst_n) begin
       sck_q <= '0;
     end
     else begin
-      sck_q <= ~i_sqi_ctr[0];
+      sck_q <= ~i_sqi_ctr[0] && !i_sqi_stall;
     end
   end
 
@@ -167,7 +173,7 @@ module idli_sqi_m import idli_pkg::*; (
       // every GCK when in ADDR. Once we get back to DATA it's business as
       // usual.
       unique case (state_q)
-        STATE_DATA:     buf_push = '1;
+        STATE_DATA:     buf_push = !i_sqi_stall;
         STATE_ADDR_HI,
         STATE_ADDR_LO:  buf_push = sck_q;
         default:        buf_push = '0;

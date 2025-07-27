@@ -13,9 +13,16 @@ module idli_ex_m import idli_pkg::*; (
   input  var logic    i_ex_enc_vld,
   input  var slice_t  i_ex_data,
 
-  // Write interface to memory and whether or not this is redirect data.
+  // Write interface to memory and whether or not this is redirect data or a
+  // stall is required.
   output var logic    o_ex_redirect,
-  output var slice_t  o_ex_data
+  output var slice_t  o_ex_data,
+  output var logic    o_ex_stall,
+
+  // UART TX interface.
+  output var slice_t  o_ex_utx_data,
+  output var logic    o_ex_utx_vld,
+  input  var logic    i_ex_utx_acp
 );
 
   // Whether instruction is valid and new (i.e. first cycle).
@@ -26,8 +33,9 @@ module idli_ex_m import idli_pkg::*; (
   logic run_instr;
   logic skip_instr;
 
-  // Stall reasons for instruction, one per bit.
-  logic [0:0] stall_instr;
+  // Stall reasons for instruction.
+  logic stall_sqi;
+  logic stall_utx;
 
   // Decoded operand information.
   dst_t dst;
@@ -160,7 +168,7 @@ module idli_ex_m import idli_pkg::*; (
     .i_pc_rst_n     (i_ex_rst_n),
 
     .i_pc_ctr       (i_ex_ctr),
-    .i_pc_inc       (enc_vld_q),
+    .i_pc_inc       (enc_vld_q && !o_ex_stall),
     .i_pc_redirect  (o_ex_redirect),
     .i_pc_data      (alu_out),
 
@@ -187,7 +195,7 @@ module idli_ex_m import idli_pkg::*; (
   end
 
   // Instruction should be run if we have something valid don't need to stall.
-  always_comb run_instr = enc_vld_q && ~|stall_instr;
+  always_comb run_instr = enc_vld_q && ~|{stall_sqi, stall_utx};
 
   // Instruction may be skipped based on the conditional execution state. The
   // state holds a run of bits indicating that an instruction should be run if
@@ -283,7 +291,11 @@ module idli_ex_m import idli_pkg::*; (
   // Instruction needs to stall if this is its first cycle but it reads from
   // SQI. In this case we need to wait for the data to be reversed in the SQI
   // block so we can read it out in 4b slices.
-  always_comb stall_instr[0] = enc_new_q && (lhs == SRC_SQI || rhs == SRC_SQI);
+  always_comb stall_sqi = enc_new_q && (lhs == SRC_SQI || rhs == SRC_SQI);
+
+  // UART TX instructions can only run if the block is accepting and we have
+  // all of our data.
+  always_comb stall_utx= dst == DST_UART && !i_ex_utx_acp && !stall_sqi;
 
   // Redirect is happening if this instruction is actually being executed and
   // it wrtes to the PC.
@@ -294,5 +306,17 @@ module idli_ex_m import idli_pkg::*; (
   // ensures the initial redirect at the start of time will start from address
   // zero.
   always_comb o_ex_data = enc_vld_q ? alu_out : pc;
+
+  // UART TX data always comes from the ALU and is valid when we UART is the
+  // destination.
+  always_comb o_ex_utx_data = alu_out;
+  always_comb o_ex_utx_vld  = dst == DST_UART
+                           && enc_vld_q
+                           && run_instr
+                           && !skip_instr;
+
+  // We need to stall the memory if any of the stall reasons are set except
+  // for we're waiting for SQI data.
+  always_comb o_ex_stall = |{stall_utx};
 
 endmodule

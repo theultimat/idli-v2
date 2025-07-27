@@ -34,6 +34,11 @@ module idli_top_m import idli_pkg::*; (
   slice_t mem_data;
   logic   ex_redirect;
   slice_t ex_data;
+  logic   ex_stall;
+
+  slice_t utx_data;
+  logic   utx_vld;
+  logic   utx_acp;
 
   // TODO Move the counter into the sync/control block.
   ctr_t ctr_q;
@@ -50,6 +55,7 @@ module idli_top_m import idli_pkg::*; (
     .i_sqi_ctr        (ctr_q),
     .i_sqi_redirect   (ex_redirect),
     .i_sqi_wr_en      ('0),
+    .i_sqi_stall      (ex_stall),
 
     .i_sqi_slice      (ex_data),
     .o_sqi_slice      (mem_data),
@@ -78,12 +84,29 @@ module idli_top_m import idli_pkg::*; (
     .i_ex_data      (mem_data),
 
     .o_ex_redirect  (ex_redirect),
-    .o_ex_data      (ex_data)
+    .o_ex_data      (ex_data),
+    .o_ex_stall     (ex_stall),
+
+    .o_ex_utx_data  (utx_data),
+    .o_ex_utx_vld   (utx_vld),
+    .i_ex_utx_acp   (utx_acp)
+  );
+
+
+  idli_utx_m utx_u (
+    .i_utx_gck    (i_top_gck),
+    .i_utx_rst_n  (i_top_rst_n),
+
+    .i_utx_ctr    (ctr_q),
+    .i_utx_data   (utx_data),
+    .i_utx_vld    (utx_vld),
+    .o_utx_acp    (utx_acp),
+
+    .o_utx_data   (o_top_uart_tx)
   );
 
 
   // Tie off unused signals for now.
-  always_comb o_top_uart_tx = 'x;
   always_comb o_top_io_pins = 'x;
 
   logic _unused;

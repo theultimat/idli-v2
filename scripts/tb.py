@@ -14,6 +14,7 @@ import isa
 import objdump
 import sim
 import sqi
+import uart
 
 
 # Callback used for behavioural model with the bench.
@@ -53,6 +54,11 @@ class Callback(sim.Callback):
         self.log(f'SIM_PRED_WR: value={value:#x}')
         self.tb.sim_pred = value
 
+    # Save UART data for checking.
+    def write_uart(self, value):
+        self.log(f'SIM_UTX: value={value:#06x}')
+        self.tb.sim_utx.append(value)
+
 
 # Bench used with cocotb to run tests on the RTL.
 class TestBench:
@@ -75,6 +81,24 @@ class TestBench:
 
         # Whether predicate register was written by sim and its value.
         self.sim_pred = None
+
+        # Received UART from sim and RTL.
+        self.sim_utx = []
+        self.rtl_utx = []
+
+        # Expected values from the UART with the end of test appended.
+        self.ref_utx = self.config.get('output', [])
+        self.ref_utx += [ord(x) for x in '@@END@@']
+
+        # Exit code from the test.
+        self.exit_code = None
+
+        # Create UART handlers for connecting to the RTL. Bench is receiving TX
+        # data hence why URX pushes to UTX.
+        self.urx = uart.URX(lambda x: self.rtl_utx.append(x))
+
+        # Signal set when we've seen the test end condition.
+        self.end_of_test = Event()
 
         self.log('BENCH: INIT BEGIN')
 
@@ -104,6 +128,7 @@ class TestBench:
         cocotb.start_soon(self._run_mem(self.mem_lo))
         cocotb.start_soon(self._run_mem(self.mem_hi))
         cocotb.start_soon(self._check_instr())
+        cocotb.start_soon(self._check_uart())
 
         self.log('BENCH: RESET BEGIN')
 
@@ -116,7 +141,15 @@ class TestBench:
 
         self.log('BENCH: RESET COMPLETE')
 
-        await ClockCycles(self.dut.gck, 200)
+        # Wait for test to end.
+        await with_timeout(self.end_of_test.wait(), self.timeout, 'ns')
+        self.log(f'BENCH: TEST COMPLETE exit_code={self.exit_code:#06x}')
+
+        # Perform final end-of-test checks.
+        self._check_uart_data(final=True)
+
+        # Check exit code is zero.
+        assert self.exit_code == 0, 'exit code'
 
     # Simulates one of the two attached memories.
     async def _run_mem(self, mem):
@@ -217,3 +250,42 @@ class TestBench:
         sim = f'{self.sim.pc:016b}'
         rtl = self.dut.pc.value.binstr
         assert sim == rtl, 'pc'
+
+    # Check data received from the UART.
+    def _check_uart_data(self, final=False):
+        while self.sim_utx and self.rtl_utx:
+            sim = self.sim_utx.pop(0)
+            rtl = self.rtl_utx.pop(0)
+
+            self.log(f'UART: sim={sim:#06x} rtl={rtl:#06x}')
+            assert sim == rtl, 'utx data'
+
+            # If we have more reference data then process it, otherwise we're
+            # receiving the exit code.
+            if self.ref_utx:
+                ref = self.ref_utx.pop(0)
+                assert ref == rtl, 'utx ref'
+            else:
+                self.exit_code = rtl
+                self.end_of_test.set()
+
+        if not final:
+            return
+
+        # If we're at the end of the test then we shouldn't have any more data
+        # left in the buffers.
+        assert not self.sim_utx, 'outstanding sim utx'
+        assert not self.rtl_utx, 'outstanding rtl utx'
+
+    # Continuously check UART data.
+    async def _check_uart(self):
+        tx = self.dut.uart_tx
+
+        # Wait for reset.
+        await RisingEdge(self.dut.rst_n)
+
+        while True:
+            await RisingEdge(self.dut.gck)
+
+            self.urx.rising_edge(tx.value)
+            self._check_uart_data()

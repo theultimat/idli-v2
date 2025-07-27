@@ -20,4 +20,7 @@ async def run_test(dut):
     with open('..'/config, 'r') as f:
         config = yaml.safe_load(f)
 
+    if config is None:
+        config = {}
+
     await TestBench(dut, path, config, timeout).run()

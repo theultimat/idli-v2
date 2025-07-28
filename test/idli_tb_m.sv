@@ -47,6 +47,9 @@ module idli_tb_m import idli_pkg::*; ();
   // PC of the most recent instruction.
   data_t pc;
 
+  // Core is ready for a new 16b UART transaction to be received.
+  logic uart_rx_rdy;
+
   // verilator lint_on UNDRIVEN
   // verilator lint_on UNUSEDSIGNAL
 
@@ -119,5 +122,8 @@ module idli_tb_m import idli_pkg::*; ();
 
   // Predicate register state.
   always_comb pred = top_u.ex_u.pred_q;
+
+  // TODO Set this high when stalled on URX instruction.
+  always_comb uart_rx_rdy = '0;
 
 endmodule

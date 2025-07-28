@@ -43,3 +43,62 @@ class URX:
         else:
             raise Exception(f'Unknown state: {self.state}')
 
+
+# Send UART data to the RTL.
+class UTX:
+    def __init__(self, data):
+        # Queue of data to send in 16b chunks.
+        self.data = data
+
+        # Number of bits sent out of the current 16b chunk.
+        self.bits = 0
+
+        # Start in idle state.
+        self.state = 'idle_lo'
+
+    # Called on rising edge of the clock. The "ready" argument indicates that
+    # the RTL is ready to receive a new 16b chunk of data.
+    def rising_edge(self, ready):
+        if ready is None:
+            raise Exception(f'Pin is not connected!')
+
+        out = None
+
+        if self.state == 'idle_lo':
+            # Wait in idle state until we receive the ready. When we do send the
+            # start bit and move to the data state.
+            if ready:
+                assert self.data, 'No more data to send!'
+                out = 0
+                self.state = 'data'
+                self.bits = 0
+            else:
+                out = 1
+        elif self.state == 'data':
+            # Extract the low bit and increment the counter.
+            out = self.data[0] & 1
+            self.data[0] >>= 1
+            self.bits += 1
+
+            # If we've now sent 8b we need to transition to the next 8b
+            # transaction through idle. If we've done all 16b then we can pop
+            # the buffer and return to reset.
+            if self.bits == 8:
+                self.state = 'idle_hi'
+            elif self.bits == 16:
+                self.data.pop(0)
+                self.state = 'idle_lo'
+        elif self.state == 'idle_hi':
+            # Pull high to reset.
+            out = 1
+            self.state = 'start_hi'
+        elif self.state == 'start_hi':
+            # Pull low to start new 8b transaction.
+            out = 0
+            self.state = 'data'
+        else:
+            raise Exception(f'Unknown state: {self.state}')
+
+        assert out is not None, 'Cannot output None on UTX!'
+
+        return out

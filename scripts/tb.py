@@ -59,6 +59,12 @@ class Callback(sim.Callback):
         self.log(f'SIM_UTX: value={value:#06x}')
         self.tb.sim_utx.append(value)
 
+    # Read the next value from the UART.
+    def read_uart(self):
+        value = self.tb.sim_urx.pop(0)
+        self.log(f'SIM_URX: value={value:#06x}')
+        return value
+
 
 # Bench used with cocotb to run tests on the RTL.
 class TestBench:
@@ -90,12 +96,17 @@ class TestBench:
         self.ref_utx = self.config.get('output', [])
         self.ref_utx += [ord(x) for x in '@@END@@']
 
+        # Values to be sent into the UART.
+        self.sim_urx = list(self.config.get('input', []))
+        self.rtl_urx = list(self.sim_urx)
+
         # Exit code from the test.
         self.exit_code = None
 
         # Create UART handlers for connecting to the RTL. Bench is receiving TX
         # data hence why URX pushes to UTX.
         self.urx = uart.URX(lambda x: self.rtl_utx.append(x))
+        self.utx = uart.UTX(self.rtl_urx)
 
         # Signal set when we've seen the test end condition.
         self.end_of_test = Event()
@@ -129,6 +140,7 @@ class TestBench:
         cocotb.start_soon(self._run_mem(self.mem_hi))
         cocotb.start_soon(self._check_instr())
         cocotb.start_soon(self._check_uart())
+        cocotb.start_soon(self._send_uart())
 
         self.log('BENCH: RESET BEGIN')
 
@@ -276,6 +288,8 @@ class TestBench:
         # left in the buffers.
         assert not self.sim_utx, 'outstanding sim utx'
         assert not self.rtl_utx, 'outstanding rtl utx'
+        assert not self.sim_urx, 'outstanding sim urx'
+        assert not self.rtl_urx, 'outstanding rtl urx'
 
     # Continuously check UART data.
     async def _check_uart(self):
@@ -289,3 +303,15 @@ class TestBench:
 
             self.urx.rising_edge(tx.value)
             self._check_uart_data()
+
+    # Send new data into the chip via UART as requested by the ready signal.
+    async def _send_uart(self):
+        ready = self.dut.uart_rx_rdy
+        data = self.dut.uart_rx
+
+        # Wait for reset then stream in data as requested.
+        await RisingEdge(self.dut.rst_n)
+
+        while True:
+            await RisingEdge(self.dut.gck)
+            data.value = self.utx.rising_edge(ready.value)

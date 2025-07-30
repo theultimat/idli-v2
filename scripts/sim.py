@@ -323,7 +323,7 @@ class Sim:
         value = self.cb.read_uart() & 0xffff
 
         self._log(f'URX    0x{value:04x}')
-        self.regs[a] = value
+        self._write_reg(a, value)
 
     # Cond state configuration instruction.
     def _cex(self, mnem, m=None):

@@ -309,6 +309,9 @@ class TestBench:
         ready = self.dut.uart_rx_rdy
         data = self.dut.uart_rx
 
+        # Make sure data starts as IDLE before reset.
+        data.setimmediatevalue(1)
+
         # Wait for reset then stream in data as requested.
         await RisingEdge(self.dut.rst_n)
 

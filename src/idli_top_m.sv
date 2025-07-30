@@ -40,6 +40,10 @@ module idli_top_m import idli_pkg::*; (
   logic   utx_vld;
   logic   utx_acp;
 
+  slice_t urx_data;
+  logic   urx_vld;
+  logic   urx_acp;
+
   // TODO Move the counter into the sync/control block.
   ctr_t ctr_q;
   always_ff @(posedge i_top_gck, negedge i_top_rst_n) begin
@@ -89,7 +93,11 @@ module idli_top_m import idli_pkg::*; (
 
     .o_ex_utx_data  (utx_data),
     .o_ex_utx_vld   (utx_vld),
-    .i_ex_utx_acp   (utx_acp)
+    .i_ex_utx_acp   (utx_acp),
+
+    .i_ex_urx_data  (urx_data),
+    .i_ex_urx_vld   (urx_vld),
+    .o_ex_urx_acp   (urx_acp)
   );
 
 
@@ -106,10 +114,23 @@ module idli_top_m import idli_pkg::*; (
   );
 
 
+  idli_urx_m urx_u (
+    .i_urx_gck    (i_top_gck),
+    .i_urx_rst_n  (i_top_rst_n),
+
+    .i_urx_ctr    (ctr_q),
+    .o_urx_data   (urx_data),
+    .o_urx_vld    (urx_vld),
+    .i_urx_acp    (urx_acp),
+
+    .i_urx_data   (i_top_uart_rx)
+  );
+
+
   // Tie off unused signals for now.
   always_comb o_top_io_pins = 'x;
 
   logic _unused;
-  always_comb _unused = &{1'b0, i_top_uart_rx, i_top_io_pins};
+  always_comb _unused = &{1'b0, i_top_io_pins};
 
 endmodule

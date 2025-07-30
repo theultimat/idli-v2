@@ -22,7 +22,12 @@ module idli_ex_m import idli_pkg::*; (
   // UART TX interface.
   output var slice_t  o_ex_utx_data,
   output var logic    o_ex_utx_vld,
-  input  var logic    i_ex_utx_acp
+  input  var logic    i_ex_utx_acp,
+
+  // UART RX interface.
+  input  var slice_t  i_ex_urx_data,
+  input  var logic    i_ex_urx_vld,
+  output var logic    o_ex_urx_acp
 );
 
   // Whether instruction is valid and new (i.e. first cycle).
@@ -36,6 +41,7 @@ module idli_ex_m import idli_pkg::*; (
   // Stall reasons for instruction.
   logic stall_sqi;
   logic stall_utx;
+  logic stall_urx;
 
   // Decoded operand information.
   dst_t dst;
@@ -195,7 +201,7 @@ module idli_ex_m import idli_pkg::*; (
   end
 
   // Instruction should be run if we have something valid don't need to stall.
-  always_comb run_instr = enc_vld_q && ~|{stall_sqi, stall_utx};
+  always_comb run_instr = enc_vld_q && ~|{stall_sqi, stall_utx, stall_urx};
 
   // Instruction may be skipped based on the conditional execution state. The
   // state holds a run of bits indicating that an instruction should be run if
@@ -213,14 +219,14 @@ module idli_ex_m import idli_pkg::*; (
     SRC_REG:            lhs_data = lhs_data_reg;
     SRC_PC:             lhs_data = pc_next;
     SRC_SQI:            lhs_data = i_ex_data;
-    default: /* UART */ lhs_data = 'x;
+    default: /* UART */ lhs_data = i_ex_urx_data;
   endcase
 
   always_comb unique case (rhs)
     SRC_REG:            rhs_data = rhs_data_reg;
     SRC_PC:             rhs_data = pc_next;
     SRC_SQI:            rhs_data = i_ex_data;
-    default: /* UART */ rhs_data = 'x;
+    default: /* UART */ rhs_data = i_ex_urx_data;
   endcase
 
   // Carry in for ALU comes from the encoding on the first cycle of an
@@ -295,7 +301,12 @@ module idli_ex_m import idli_pkg::*; (
 
   // UART TX instructions can only run if the block is accepting and we have
   // all of our data.
-  always_comb stall_utx= dst == DST_UART && !i_ex_utx_acp && !stall_sqi;
+  always_comb stall_utx = dst == DST_UART && !i_ex_utx_acp && !stall_sqi;
+
+  // UART RX is similar to TX except we need to wait for there to be something
+  // to read out of the RX buffer. We don't need to wait for SQI as it
+  // shouldn't be active at the same time as URX.
+  always_comb stall_urx = (lhs == SRC_UART || rhs == SRC_UART) && !i_ex_urx_vld;
 
   // Redirect is happening if this instruction is actually being executed and
   // it wrtes to the PC.
@@ -315,8 +326,15 @@ module idli_ex_m import idli_pkg::*; (
                            && run_instr
                            && !skip_instr;
 
+  // UART RX data can be accepted when we're waiting for UART data at we're
+  // about to start on a new 4 GCK cycle.
+  always_comb o_ex_urx_acp = enc_vld_q
+                          && run_instr
+                          && (lhs == SRC_UART || rhs == SRC_UART)
+                          && !skip_instr;
+
   // We need to stall the memory if any of the stall reasons are set except
   // for we're waiting for SQI data.
-  always_comb o_ex_stall = |{stall_utx};
+  always_comb o_ex_stall = |{stall_utx, stall_urx};
 
 endmodule

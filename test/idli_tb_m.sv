@@ -123,7 +123,9 @@ module idli_tb_m import idli_pkg::*; ();
   // Predicate register state.
   always_comb pred = top_u.ex_u.pred_q;
 
-  // TODO Set this high when stalled on URX instruction.
-  always_comb uart_rx_rdy = '0;
+  // Wait until EX is stalled waiting for UART data and we're not about to
+  // have a full buffer to process.
+  always_comb uart_rx_rdy = top_u.ex_u.stall_urx
+                         && top_u.urx_u.bits_q != 4'd15;
 
 endmodule

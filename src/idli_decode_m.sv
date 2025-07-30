@@ -128,10 +128,12 @@ module idli_decode_m import idli_pkg::*; (
   // but this isn't always the case:
   //  1) LD[M]/ST[M] write to ZR to discard the address.
   //  2) LD+/-ST/... write to B instead of A.
+  //  3) URX and GETP write A but it's in the location of C.
   always_comb unique casez ({enc_q[0], enc_q[3]})
     8'b011?_????,
     8'b100?_????: o_de_dst_reg = REG_ZR;
     8'b1010_0???: o_de_dst_reg = reg_t'(enc_q[2]);  // B
+    8'b1101_????: o_de_dst_reg = reg_t'(enc_q[3]);  // C
     default:      o_de_dst_reg = reg_t'(enc_q[1]);  // A
   endcase
 

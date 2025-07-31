@@ -217,14 +217,14 @@ module idli_ex_m import idli_pkg::*; (
   // TODO Implement UART!
   always_comb unique case (lhs)
     SRC_REG:            lhs_data = lhs_data_reg;
-    SRC_PC:             lhs_data = pc_next;
+    SRC_PC:             lhs_data = pc;
     SRC_SQI:            lhs_data = i_ex_data;
     default: /* UART */ lhs_data = i_ex_urx_data;
   endcase
 
   always_comb unique case (rhs)
     SRC_REG:            rhs_data = rhs_data_reg;
-    SRC_PC:             rhs_data = pc_next;
+    SRC_PC:             rhs_data = pc;
     SRC_SQI:            rhs_data = i_ex_data;
     default: /* UART */ rhs_data = i_ex_urx_data;
   endcase

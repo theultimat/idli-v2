@@ -306,7 +306,8 @@ class Sim:
         # Write link register with next sequential instruction, accounting for
         # the immediate.
         if mnem[-1] == 'l':
-            self._write_reg(isa.REGS['lr'], self.pc + int(imm is not None))
+            lr = (self.pc + int(imm is not None)) & 0xffff
+            self._write_reg(isa.REGS['lr'], lr)
 
         return (lhs + rhs) & 0xffff
 

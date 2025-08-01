@@ -334,7 +334,7 @@ module idli_ex_m import idli_pkg::*; (
                           && !skip_instr;
 
   // We need to stall the memory if any of the stall reasons are set except
-  // for we're waiting for SQI data.
-  always_comb o_ex_stall = |{stall_utx, stall_urx};
+  // for we're waiting for SQI data if the instruction is valid.
+  always_comb o_ex_stall = |{stall_utx, stall_urx} && enc_vld_q;
 
 endmodule

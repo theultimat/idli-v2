@@ -15,5 +15,7 @@ test_main:
     utx     r2              # uart(tmp0)
     utx     r3              # uart(tmp1)
     utx     r4              # uart(tmp2)
+    ld      r5, r1, -1      # tmp = ptr[-1]
+    utx     r5              #¢ uart(tmp)
     mov     r1, zr          # out = 0
     ret                     # return out

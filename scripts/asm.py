@@ -26,6 +26,22 @@ def abort(prefix, *args):
     sys.exit(1)
 
 
+# Parse immediate.
+def parse_imm(prefix, value):
+    # Immediate can be either signed or unsigned so make sure
+    # it's within the maximum range of min_signed, max_unsigned.
+    imm = int(value, 0)
+    if imm < -32768 or imm > 65535:
+        abort(prefix, f'Out of range immediate: {imm}')
+
+    # Immediates are represented as signed internally so convert
+    # into signed range if required.
+    if imm > 32767:
+        imm -= 1 << 16
+
+    return imm
+
+
 # Parse a directive.
 def parse_directive(args, tree, dir_path, prefix, labels, items):
     if tree.data == 'directive_include':
@@ -37,6 +53,12 @@ def parse_directive(args, tree, dir_path, prefix, labels, items):
     if tree.data == 'directive_space':
         for i in range(int(tree.children[0].value, 0)):
             items[f'{prefix}.space{i}'] = isa.RawData(0)
+        return
+
+    # .int adds the specified value.
+    if tree.data == 'directive_int':
+        value = parse_imm(prefix, tree.children[0].value)
+        items[f'{prefix}.int'] = isa.RawData(value)
         return
 
     abort(prefix, f'Unsupported directive: {tree.data}')
@@ -126,17 +148,7 @@ def parse_instr(args, tree, prefix, need_conds, items):
                     if ops[op] == isa.REGS['sp']:
                         abort(prefix, 'Cannot use SP in C operand.')
                 elif token.type == 'IMMEDIATE':
-                    # Immediate can be either signed or unsigned so make sure
-                    # it's within the maximum range of min_signed, max_unsigned.
-                    imm = int(token.value, 0)
-                    if imm < -32768 or imm > 65535:
-                        abort(prefix, f'Out of range immediate: {imm}')
-
-                    # Immediates are represented as signed internally so convert
-                    # into signed range if required.
-                    if imm > 32767:
-                        imm -= 1 << 16
-
+                    imm = parse_imm(prefix, token.value)
                     ops[op] = isa.REGS['sp']
                     ops['imm'] = imm
                 elif token.type == 'LABEL_REF':

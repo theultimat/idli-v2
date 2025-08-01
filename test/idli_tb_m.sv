@@ -126,6 +126,7 @@ module idli_tb_m import idli_pkg::*; ();
   // Wait until EX is stalled waiting for UART data and we're not about to
   // have a full buffer to process.
   always_comb uart_rx_rdy = top_u.ex_u.stall_urx
-                         && top_u.urx_u.bits_q != 4'd15;
+                         && top_u.urx_u.bits_q != 4'd15
+                         && top_u.ex_u.enc_vld_q;
 
 endmodule

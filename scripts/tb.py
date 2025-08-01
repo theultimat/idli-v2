@@ -69,7 +69,13 @@ class Callback(sim.Callback):
     def write_mem(self, addr, value):
         self.log(f'SIM_MEM_WR: addr={addr:#06x} value={value:#06x}')
         self.tb.sim_st_data[addr] = value
-        self.mem[addr] = value
+        self.mem[addr] = struct.pack('>H', value)
+
+    # Load value from memory.
+    def read_mem(self, addr):
+        value, = struct.unpack('>H', self.mem[addr])
+        self.log(f'SIM_MEM_RD: addr={addr:#06x} value={value:#06x}')
+        return value
 
 
 # Bench used with cocotb to run tests on the RTL.

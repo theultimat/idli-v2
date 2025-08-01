@@ -52,6 +52,10 @@ class Memory:
 
             return
 
+        # By default return nothing, but if a write was performed then return
+        # the address and value.
+        write = {}
+
         # CS is low so the memory is active and the next action to take depends
         # on the current state.
         if self.state is None:
@@ -101,6 +105,7 @@ class Memory:
 
             self.log(f'Write 0x{self.addr:04x}: 0x{value:02x}')
             self.data[self.addr] = value
+            write[self.addr] = value
             self.addr = (self.addr + 1) & self.addr_mask
 
             # In sequential mode we continually receive bytes so go back to the
@@ -113,6 +118,8 @@ class Memory:
             self.state = 'read1' if self.state[-1] == '0' else 'read0'
         else:
             raise Exception(f'Unknown state: {self.state}')
+
+        return write
 
     # Called on the falling edge of the clock, returning the 4b data that was
     # read from the memory.

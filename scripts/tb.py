@@ -65,6 +65,12 @@ class Callback(sim.Callback):
         self.log(f'SIM_URX: value={value:#06x}')
         return value
 
+    # Record value stored to memory.
+    def write_mem(self, addr, value):
+        self.log(f'SIM_MEM_WR: addr={addr:#06x} value={value:#06x}')
+        self.tb.sim_st_data[addr] = value
+        self.mem[addr] = value
+
 
 # Bench used with cocotb to run tests on the RTL.
 class TestBench:
@@ -99,6 +105,11 @@ class TestBench:
         # Values to be sent into the UART.
         self.sim_urx = list(self.config.get('input', []))
         self.rtl_urx = list(self.sim_urx)
+
+        # Store data to check for an instruction.
+        self.sim_st_data = {}
+        self.rtl_st_data_lo = {}
+        self.rtl_st_data_hi = {}
 
         # Exit code from the test.
         self.exit_code = None
@@ -171,18 +182,21 @@ class TestBench:
             cs = self.dut.mem_lo_cs
             sio_in = self.dut.mem_lo_in
             sio_out = self.dut.mem_lo_out
+            st_data = self.rtl_st_data_lo
         else:
             sck = self.dut.mem_hi_sck
             cs = self.dut.mem_hi_cs
             sio_in = self.dut.mem_hi_in
             sio_out = self.dut.mem_hi_out
+            st_data = self.rtl_st_data_hi
 
         # Wait for chip to come out of reset.
         await RisingEdge(self.dut.rst_n)
 
         while True:
             await RisingEdge(sck)
-            mem.rising_edge(cs.value, sio_out.value)
+            if writes := mem.rising_edge(cs.value, sio_out.value):
+                rtl_st_data.update(writes)
 
             await FallingEdge(sck)
             if (data := mem.falling_edge()) is not None:
@@ -211,6 +225,7 @@ class TestBench:
             self.sim.tick()
             self._check_reg_writes()
             self._check_pred_writes()
+            self._check_mem_writes()
 
     # Check outstanding register writes match.
     def _check_reg_writes(self):
@@ -318,3 +333,34 @@ class TestBench:
         while True:
             await RisingEdge(self.dut.gck)
             data.value = self.utx.rising_edge(ready.value)
+
+    # Check store data is correct.
+    def _check_mem_writes(self):
+        # Merge the writes to high and low memory into single values.
+        addrs = set(self.rtl_st_data_lo.keys())
+        addrs |= set(self.rtl_st_data_hi.keys())
+
+        rtl_data = {}
+        for addr in addrs:
+            lo = self.rtl_st_data_lo.get(addr, self.mem_lo.data[addr])
+            hi = self.rtl_st_data_hi.get(addr, self.mem_hi.data[addr])
+
+            data = 0
+            data |= (lo & 0x0f) << 0
+            data |= (hi & 0x0f) << 4
+            data |= (lo & 0xf0) << 4
+            data |= (hi & 0xf0) << 8
+
+            rtl_data[addr] = data
+
+        # Sort both sim and RTL into ascending order so they should match.
+        rtl_data = {k: rtl_data[k] for k in sorted(rtl_data)}
+        sim_data = {k: self.sim_st_data[k] for k in sorted(self.sim_st_data)}
+
+        # Make sure the data matched between the two.
+        assert sim_data == rtl_data, f'store data'
+
+        # Reset for next instruction.
+        self.rtl_st_data_lo = {}
+        self.rtl_st_data_hi = {}
+        self.sim_st_data = {}

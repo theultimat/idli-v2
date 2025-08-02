@@ -81,8 +81,10 @@ module idli_tb_m import idli_pkg::*; ();
   always_comb ctr = top_u.ctr_q;
 
   // Instruction has just finished if we're at the end of a 4 GCK period and
-  // run_instr was set in the execution wrapper.
-  always_comb instr_done_d = &ctr && top_u.ex_u.run_instr;
+  // run_instr was set in the execution wrapper. Special handling for memory
+  // operations as these span multiple cycles.
+  always_comb instr_done_d = &ctr && top_u.ex_u.run_instr
+                          && (!top_u.ex_u.mem_op || top_u.ex_u.mem_op_last);
 
   // Flop and reset required values.
   always_ff @(posedge gck, negedge rst_n) begin

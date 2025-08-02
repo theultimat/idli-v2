@@ -34,8 +34,12 @@ module idli_decode_m import idli_pkg::*; (
   output var aux_t      o_de_aux,
 
   // Conditional execution signals.
-  output  var cond_t    o_de_cond,
-  output  var logic     o_de_cond_wr
+  output var cond_t     o_de_cond,
+  output var logic      o_de_cond_wr,
+
+  // Memory operation specific signals.
+  output var reg_t      o_de_mem_first,
+  output var reg_t      o_de_mem_last
 );
 
   // Instruction being decoded and whether it's valid.
@@ -206,5 +210,16 @@ module idli_decode_m import idli_pkg::*; (
   // execute the next instruction if P is true only.
   always_comb o_de_cond = enc_q[0] == 4'b1110 ? cond_t'({enc_q[2], enc_q[3]})
                                               : cond_t'(2'b11);
+
+  // First memory register always comes from the the bits typically used for
+  // operand A.
+  always_comb o_de_mem_first = reg_t'(enc_q[1]);
+
+  // Last memory register is taken from the standard B operand location for
+  // LDM and STM, and is the same as the first register for all other LD/ST.
+  always_comb unique casez (enc_q[0])
+    4'b1?0?:  o_de_mem_last = reg_t'(enc_q[2]);
+    default:  o_de_mem_last = o_de_mem_first;
+  endcase
 
 endmodule

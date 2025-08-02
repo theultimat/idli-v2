@@ -150,8 +150,9 @@ module idli_decode_m import idli_pkg::*; (
   endcase
 
   // When a register LHS is almost always taken from B except for J[L], URX,
-  // UTX, GETP, and PUTP, which all offset from ZR.
+  // UTX, GETP, PUTP, and LDM/STM which all offset from ZR.
   always_comb unique casez (enc_q[0])
+    4'b100?,
     4'b1100,
     4'b1101:  o_de_lhs_reg = REG_ZR;
     default:  o_de_lhs_reg = reg_t'(enc_q[2]);  // B
@@ -177,7 +178,6 @@ module idli_decode_m import idli_pkg::*; (
   // Force RHS to ZR as descibed above. Don't need to worry about operand
   // being set incorrectly for shifts as it's unused anyway.
   always_comb unique casez ({enc_q[0], enc_q[2]})
-    8'b100?_????,
     8'b1010_????,
     8'b1101_??10: o_de_rhs_reg = REG_ZR;
     default:      o_de_rhs_reg = reg_t'(enc_q[3]);  // C

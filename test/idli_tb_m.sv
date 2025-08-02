@@ -84,7 +84,8 @@ module idli_tb_m import idli_pkg::*; ();
   // run_instr was set in the execution wrapper. Special handling for memory
   // operations as these span multiple cycles.
   always_comb instr_done_d = &ctr && top_u.ex_u.run_instr
-                          && (!top_u.ex_u.mem_op || top_u.ex_u.mem_op_last);
+                          && (~|top_u.ex_u.mem_state_q || top_u.ex_u.mem_op_last)
+                          && !top_u.ex_u.mem_op;
 
   // Flop and reset required values.
   always_ff @(posedge gck, negedge rst_n) begin

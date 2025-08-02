@@ -119,6 +119,7 @@ module idli_ex_m import idli_pkg::*; (
   reg_t mem_first_raw;
   reg_t mem_last_q;
   reg_t mem_last_raw;
+  reg_t mem_first_d;
 
 
   // Decode instruction to get control signals. Note that we only flop an
@@ -415,9 +416,18 @@ module idli_ex_m import idli_pkg::*; (
       mem_first_q <= mem_first_raw;
       mem_last_q  <= mem_last_raw;
     end
-    else if (&i_ex_ctr && mem_state_q == STATE_DATA && enc_vld_q) begin
-      mem_first_q <= mem_first_q + 4'b1;
-      mem_last_q  <= mem_last_q + 4'b1;
+    else if (&i_ex_ctr) begin
+      mem_first_q <= mem_first_d;
+    end
+  end
+
+  // Next register is incremented on the first cycle of valid memory data
+  // unless it's the final register.
+  always_comb begin
+    mem_first_d = mem_first_q;
+
+    if (mem_state_q == STATE_DATA && enc_vld_q && !mem_op_last) begin
+      mem_first_d += 4'b1;
     end
   end
 
@@ -428,7 +438,7 @@ module idli_ex_m import idli_pkg::*; (
 
     // TODO Assume LD for now.
     if (mem_op || mem_state_q == STATE_DATA) begin
-      enc = '{4'hf, 4'h0, mem_first_q, 4'h0}; // ADD A, ZR, SQI
+      enc = '{4'hf, 4'h0, mem_first_d, 4'h0}; // ADD A, ZR, SQI
     end
   end
 

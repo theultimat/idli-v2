@@ -76,6 +76,9 @@ module idli_sqi_m import idli_pkg::*; (
   // Whether the memory has ever been redirected.
   logic redirected_q;
 
+  // Whether state changed on this cycle.
+  logic changed_q;
+
   // Internal buffer for reversing endianness of data -- core is LE but
   // memories are BE.
   idli_sqi_buf_m buf_u (
@@ -98,10 +101,12 @@ module idli_sqi_m import idli_pkg::*; (
     if (!i_sqi_rst_n) begin
       state_q       <= STATE_RESET;
       redirected_q  <= '0;
+      changed_q     <= '0;
     end
     else if (&i_sqi_ctr) begin
       state_q       <= state_d;
       redirected_q  <= redirected_q || i_sqi_redirect;
+      changed_q     <= state_q != state_d;
     end
   end
 
@@ -159,7 +164,7 @@ module idli_sqi_m import idli_pkg::*; (
   // LO memory shadows the HI memory with cycle of delay for INSTR and ADDR,
   // followed by the output of the internal buffer for DATA.
   always_comb unique case (state_q)
-    STATE_DATA: o_sqi_lo_sio = o_sqi_slice;
+    STATE_DATA: o_sqi_lo_sio = changed_q ? hi_sio_q : o_sqi_slice;
     default:    o_sqi_lo_sio = hi_sio_q;
   endcase
 

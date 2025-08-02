@@ -622,7 +622,7 @@ if __name__ == '__main__':
 
     # Check data received over UART matches expected. Convert values to unsigned
     # for performing comparison to avoid thinking about signs.
-    if args.yaml and args.yaml['output']:
+    if args.yaml and args.yaml.get('output'):
         ref = [x & 0xffff for x in args.yaml['output']]
         if (data := uart_tx[:-len(end_of_test) - 1]) != ref:
             raise Exception(

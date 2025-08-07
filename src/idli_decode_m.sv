@@ -39,7 +39,8 @@ module idli_decode_m import idli_pkg::*; (
 
   // Memory operation specific signals.
   output var reg_t      o_de_mem_first,
-  output var reg_t      o_de_mem_last
+  output var reg_t      o_de_mem_last,
+  output var mem_op_t   o_de_mem_op
 );
 
   // Instruction being decoded and whether it's valid.
@@ -220,6 +221,13 @@ module idli_decode_m import idli_pkg::*; (
   always_comb unique casez (enc_q[0])
     4'b1?0?:  o_de_mem_last = reg_t'(enc_q[2]);
     default:  o_de_mem_last = o_de_mem_first;
+  endcase
+
+  // Memory operation can be read directly from the encoding.
+  always_comb unique casez (enc_q[0])
+    4'b011?,
+    4'b100?:  o_de_mem_op = mem_op_t'(enc_q[0][0]);
+    default:  o_de_mem_op = mem_op_t'(enc_q[3][0]);
   endcase
 
 endmodule

@@ -35,6 +35,8 @@ module idli_top_m import idli_pkg::*; (
   logic   ex_redirect;
   slice_t ex_data;
   logic   ex_stall;
+  logic   ex_mem_wr;
+  logic   wr_acp;
 
   slice_t utx_data;
   logic   utx_vld;
@@ -58,13 +60,14 @@ module idli_top_m import idli_pkg::*; (
 
     .i_sqi_ctr        (ctr_q),
     .i_sqi_redirect   (ex_redirect),
-    .i_sqi_wr_en      ('0),
+    .i_sqi_wr_en      (ex_mem_wr),
     .i_sqi_stall      (ex_stall),
 
     .i_sqi_slice      (ex_data),
     .o_sqi_slice      (mem_data),
     .o_sqi_instr      (instr),
     .o_sqi_instr_vld  (instr_vld),
+    .o_sqi_wr_acp     (wr_acp),
 
     .o_sqi_lo_sck     (o_top_mem_lo_sck),
     .o_sqi_lo_cs      (o_top_mem_lo_cs),
@@ -90,6 +93,8 @@ module idli_top_m import idli_pkg::*; (
     .o_ex_redirect  (ex_redirect),
     .o_ex_data      (ex_data),
     .o_ex_stall     (ex_stall),
+    .o_ex_mem_wr    (ex_mem_wr),
+    .i_ex_mem_acp   (wr_acp),
 
     .o_ex_utx_data  (utx_data),
     .o_ex_utx_vld   (utx_vld),

@@ -18,6 +18,8 @@ module idli_ex_m import idli_pkg::*; (
   output var logic    o_ex_redirect,
   output var slice_t  o_ex_data,
   output var logic    o_ex_stall,
+  output var logic    o_ex_mem_wr,
+  input  var logic    i_ex_mem_acp,
 
   // UART TX interface.
   output var slice_t  o_ex_utx_data,
@@ -121,6 +123,10 @@ module idli_ex_m import idli_pkg::*; (
   reg_t mem_last_raw;
   reg_t mem_first_d;
 
+  // Memory operation. Only valid when in progress.
+  mem_op_t mem_op_raw;
+  mem_op_t mem_op_q;
+
 
   // Decode instruction to get control signals. Note that we only flop an
   // encoding if the instruction actually exectued (or we didn't have one).
@@ -155,7 +161,8 @@ module idli_ex_m import idli_pkg::*; (
     .o_de_cond_wr   (cond_wr),
 
     .o_de_mem_first (mem_first_raw),
-    .o_de_mem_last  (mem_last_raw)
+    .o_de_mem_last  (mem_last_raw),
+    .o_de_mem_op    (mem_op_raw)
   );
 
   // Register file.
@@ -334,9 +341,15 @@ module idli_ex_m import idli_pkg::*; (
   // Instruction needs to stall if this is its first cycle but it reads from
   // SQI. In this case we need to wait for the data to be reversed in the SQI
   // block so we can read it out in 4b slices. We may also need to stall on
-  // SQI for LD instructions while waiting for the redirect to take place.
-  always_comb stall_sqi = enc_new_q && (lhs == SRC_SQI || rhs == SRC_SQI)
-                       || mem_state_q == STATE_DATA && !enc_vld_q;
+  // SQI for LD instructions while waiting for the redirect to take place or
+  // ST until block is ready to accept data.
+  always_comb begin
+    stall_sqi = enc_new_q && (lhs == SRC_SQI || rhs == SRC_SQI);
+
+    if (mem_state_q == STATE_DATA) begin
+      stall_sqi = mem_op_q == MEM_OP_LD ? !enc_vld_q : !i_ex_mem_acp;
+    end
+  end
 
   // UART TX instructions can only run if the block is accepting and we have
   // all of our data.
@@ -358,12 +371,17 @@ module idli_ex_m import idli_pkg::*; (
   // don't have a valid instruction, in which case we output the PC. This
   // ensures the initial redirect at the start of time will start from address
   // zero. We also need to make sure the LD/ST address is taken from the
-  // correct register.
+  // correct register and ST data is written.
   always_comb begin
     o_ex_data = pc;
 
-    if (enc_vld_q && !mem_op_last) begin
-      o_ex_data = aux == AUX_SQI_LHS ? lhs_data_reg : alu_out;
+    if (!mem_op_last) begin
+      if (enc_vld_q) begin
+        o_ex_data = aux == AUX_SQI_LHS ? lhs_data_reg : alu_out;
+      end
+      else if (mem_state_q == STATE_DATA) begin
+        o_ex_data = alu_out;
+      end
     end
   end
 
@@ -414,7 +432,8 @@ module idli_ex_m import idli_pkg::*; (
   always_ff @(posedge i_ex_gck) begin
     if (~|i_ex_ctr && mem_op) begin
       mem_first_q <= mem_first_raw;
-      mem_last_q  <= mem_last_raw;
+      mem_last_q  <= mem_last_raw + reg_t'(mem_op_raw == MEM_OP_ST);
+      mem_op_q    <= mem_op_raw;
     end
     else if (&i_ex_ctr) begin
       mem_first_q <= mem_first_d;
@@ -426,8 +445,9 @@ module idli_ex_m import idli_pkg::*; (
   always_comb begin
     mem_first_d = mem_first_q;
 
-    if (mem_state_q == STATE_DATA && enc_vld_q && !mem_op_last) begin
-      mem_first_d += 4'b1;
+    if (mem_state_q == STATE_DATA && !mem_op_last) begin
+      mem_first_d += mem_op_q == MEM_OP_LD ? reg_t'(enc_vld_q)
+                                           : reg_t'(i_ex_mem_acp);
     end
   end
 
@@ -436,9 +456,11 @@ module idli_ex_m import idli_pkg::*; (
   always_comb begin
     enc = i_ex_enc;
 
-    // TODO Assume LD for now.
+    // LD -> ADD A, ZR, SQI
+    // ST -> ADD ZR, A, ZR
     if (mem_op || mem_state_q == STATE_DATA) begin
-      enc = '{4'hf, 4'h0, mem_first_d, 4'h0}; // ADD A, ZR, SQI
+      enc = mem_op_q == MEM_OP_LD ? '{REG_SP, REG_ZR, mem_first_d, 4'h0}
+                                  : '{REG_ZR, mem_first_d, REG_ZR, 4'h0};
     end
   end
 
@@ -451,14 +473,26 @@ module idli_ex_m import idli_pkg::*; (
                         || mem_state_d == STATE_DATA;
 
   // Last cycle of memory operation when we've written the final register.
-  always_comb mem_op_last = enc_vld_q
-                         && mem_first_q == mem_last_q
-                         && mem_state_q == STATE_DATA;
+  // For ST this is the cycle *after* the final register so the PC can be
+  // written after the final data.
+  always_comb begin
+    if (mem_op_q == MEM_OP_LD) begin
+      mem_op_last = enc_vld_q && mem_first_q == mem_last_q
+                              && mem_state_q == STATE_DATA;
+    end
+    else begin
+      mem_op_last = i_ex_mem_acp && mem_first_q == mem_last_q
+                                 && mem_state_q == STATE_DATA;
+    end
+  end
 
   // Increment PC when we have a valid instruction, we're not stalling, and
   // we're not part way through a memory operation.
   always_comb pc_inc = enc_vld_q
                     && !o_ex_stall
                     && mem_state_q != STATE_DATA;
+
+  // Write enable is only set for store instructions.
+  always_comb o_ex_mem_wr = mem_op_q == MEM_OP_ST && mem_state_q == STATE_DATA;
 
 endmodule

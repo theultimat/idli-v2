@@ -21,6 +21,7 @@ module idli_sqi_m import idli_pkg::*; (
   output var slice_t  o_sqi_slice,
   output var data_t   o_sqi_instr,
   output var logic    o_sqi_instr_vld,
+  output var logic    o_sqi_wr_acp,
 
   // Interface with the low memory.
   output var logic    o_sqi_lo_sck,
@@ -118,7 +119,7 @@ module idli_sqi_m import idli_pkg::*; (
       STATE_RESET:        state_d = STATE_INSTR;
       STATE_INSTR:        state_d = STATE_ADDR_HI;
       STATE_ADDR_HI:      state_d = STATE_ADDR_LO;
-      STATE_ADDR_LO:      state_d = i_sqi_wr_en ? STATE_DATA : STATE_DUMMY;
+      STATE_ADDR_LO:      state_d = STATE_DUMMY;
       STATE_DUMMY:        state_d = STATE_DATA;
       default: /* DATA */ state_d = i_sqi_redirect ? STATE_RESET : STATE_DATA;
     endcase
@@ -128,13 +129,15 @@ module idli_sqi_m import idli_pkg::*; (
   // the low bit of the counter to ensure we get SCK high on the second GCK
   // cycle of the 4 GCK period. At times we need to pause SCK so the clock
   // will be tied zero to hold memory until data is ready. If we're stalled
-  // then the clock stays at zero.
+  // then the clock stays at zero. Also pause clock when in DUMMY for a write
+  // so the core can write store data into the buffer.
   always_ff @(posedge i_sqi_gck, negedge i_sqi_rst_n) begin
     if (!i_sqi_rst_n) begin
       sck_q <= '0;
     end
     else begin
-      sck_q <= ~i_sqi_ctr[0] && !i_sqi_stall;
+      sck_q <= ~i_sqi_ctr[0] && !i_sqi_stall
+                             && !(state_q == STATE_DUMMY && i_sqi_wr_en);
     end
   end
 
@@ -164,7 +167,8 @@ module idli_sqi_m import idli_pkg::*; (
   // LO memory shadows the HI memory with cycle of delay for INSTR and ADDR,
   // followed by the output of the internal buffer for DATA.
   always_comb unique case (state_q)
-    STATE_DATA: o_sqi_lo_sio = changed_q ? hi_sio_q : o_sqi_slice;
+    STATE_DATA: o_sqi_lo_sio = changed_q && !i_sqi_wr_en ? hi_sio_q
+                                                         : o_sqi_slice;
     default:    o_sqi_lo_sio = hi_sio_q;
   endcase
 
@@ -179,6 +183,7 @@ module idli_sqi_m import idli_pkg::*; (
       // usual.
       unique case (state_q)
         STATE_DATA:     buf_push = !i_sqi_stall;
+        STATE_DUMMY:    buf_push = i_sqi_wr_en;
         STATE_ADDR_HI,
         STATE_ADDR_LO:  buf_push = sck_q;
         default:        buf_push = '0;
@@ -193,12 +198,19 @@ module idli_sqi_m import idli_pkg::*; (
   end
 
   // Data to push into the buffer comes from the memory if and only if we're
-  // in the DATA state and aren't being redirected.
-  always_comb unique case (state_q)
-    STATE_DATA: buf_push_slice = i_sqi_redirect ? i_sqi_slice :
-                                 i_sqi_ctr[0]   ? i_sqi_lo_sio : i_sqi_hi_sio;
-    default:    buf_push_slice = i_sqi_slice;
-  endcase
+  // in the DATA state and aren't being redirected. If we're writing then data
+  // always comes from the core.
+  always_comb begin
+    unique case (state_q)
+      STATE_DATA: buf_push_slice = i_sqi_redirect ? i_sqi_slice :
+                                   i_sqi_ctr[0]   ? i_sqi_lo_sio : i_sqi_hi_sio;
+      default:    buf_push_slice = i_sqi_slice;
+    endcase
+
+    if (i_sqi_wr_en) begin
+      buf_push_slice = i_sqi_slice;
+    end
+  end
 
   // Instruction will be ready for flopping by the decode unit on the final
   // DATA cycle in the 4 GCK period.
@@ -218,5 +230,8 @@ module idli_sqi_m import idli_pkg::*; (
       o_sqi_instr = {buf_push_slice, buf_data[2:0]};
     end
   end
+
+  // Hold off memory writes until we're in the DUMMY or DATA states.
+  always_comb o_sqi_wr_acp = state_q == STATE_DUMMY || state_q == STATE_DATA;
 
 endmodule

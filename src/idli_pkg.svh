@@ -21,6 +21,7 @@ typedef logic [3:0] reg_t;
 // Link register, zero register.
 localparam reg_t REG_ZR = reg_t'('d0);
 localparam reg_t REG_LR = reg_t'('d14);
+localparam reg_t REG_SP = reg_t'('d15);
 
 // Conditional execution state. Each bit indicates validity or whether an
 // instruction should be executed based on the value of P or its inverse.
@@ -86,6 +87,12 @@ typedef enum logic [1:0] {
   AUX_SQI_DST,
   AUX_SQI_LHS
 } aux_t;
+
+// Type of memory operation.
+typedef enum logic {
+  MEM_OP_LD,
+  MEM_OP_ST
+} mem_op_t;
 
 endpackage
 

@@ -202,7 +202,7 @@ class TestBench:
         while True:
             await RisingEdge(sck)
             if writes := mem.rising_edge(cs.value, sio_out.value):
-                rtl_st_data.update(writes)
+                st_data.update(writes)
 
             await FallingEdge(sck)
             if (data := mem.falling_edge()) is not None:
@@ -367,6 +367,6 @@ class TestBench:
         assert sim_data == rtl_data, f'store data'
 
         # Reset for next instruction.
-        self.rtl_st_data_lo = {}
-        self.rtl_st_data_hi = {}
-        self.sim_st_data = {}
+        self.rtl_st_data_lo.clear()
+        self.rtl_st_data_hi.clear()
+        self.sim_st_data.clear()

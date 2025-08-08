@@ -65,8 +65,9 @@ module idli_sqi_m import idli_pkg::*; (
   // Value of SCK, flopped to avoid glitches on the output.
   logic sck_q;
 
-  // Output value to the HI memory on the previous cycle.
+  // Output value to each memory on the previous cycle.
   slice_t hi_sio_q;
+  slice_t lo_sio_q;
 
   // Signals for the internal buffer.
   logic   buf_push;
@@ -79,6 +80,9 @@ module idli_sqi_m import idli_pkg::*; (
 
   // Whether state changed on this cycle.
   logic changed_q;
+
+  // Whether this transaction is a WRITE.
+  logic wr_en_q;
 
   // Internal buffer for reversing endianness of data -- core is LE but
   // memories are BE.
@@ -125,6 +129,13 @@ module idli_sqi_m import idli_pkg::*; (
     endcase
   end
 
+  // Flop write enable on first cycle of a new transaction.
+  always_ff @(posedge i_sqi_gck) begin
+    if (&i_sqi_ctr && state_q == STATE_RESET) begin
+      wr_en_q <= i_sqi_wr_en;
+    end
+  end
+
   // Flop the new value of SCK. In standard operation this is the *inverse* of
   // the low bit of the counter to ensure we get SCK high on the second GCK
   // cycle of the 4 GCK period. At times we need to pause SCK so the clock
@@ -137,7 +148,7 @@ module idli_sqi_m import idli_pkg::*; (
     end
     else begin
       sck_q <= ~i_sqi_ctr[0] && !i_sqi_stall
-                             && !(state_q == STATE_DUMMY && i_sqi_wr_en);
+                             && !(state_q == STATE_DUMMY && wr_en_q);
     end
   end
 
@@ -150,8 +161,11 @@ module idli_sqi_m import idli_pkg::*; (
 
   // Data to send to the memory depends on the state. For INSTR it's either
   // READ or WRITE, and for others the value should be read out of the buffer.
+  // For outgoing data need to make sure value stays the same on the pin for a
+  // complete SCK otherwise we may flop the wrong value.
   always_comb unique case (state_q)
-    STATE_INSTR:  o_sqi_hi_sio = i_sqi_ctr[1] ? {3'b1, ~i_sqi_wr_en} : '0;
+    STATE_INSTR:  o_sqi_hi_sio = i_sqi_ctr[1] ? {3'b1, ~wr_en_q} : '0;
+    STATE_DATA:   o_sqi_hi_sio = sck_q ? hi_sio_q : o_sqi_slice;
     default:      o_sqi_hi_sio = o_sqi_slice;
   endcase
 
@@ -162,14 +176,25 @@ module idli_sqi_m import idli_pkg::*; (
     o_sqi_lo_sck <= o_sqi_hi_sck;
     o_sqi_lo_cs  <= o_sqi_hi_cs;
     hi_sio_q     <= o_sqi_hi_sio;
+    lo_sio_q     <= o_sqi_lo_sio;
   end
 
   // LO memory shadows the HI memory with cycle of delay for INSTR and ADDR,
-  // followed by the output of the internal buffer for DATA.
+  // followed by the output of the internal buffer for DATA. Keep outgoing
+  // data high for complete SCK as with HI memory for store data -- we need to
+  // do this in RESET to account for the last nibble of a store just before we
+  // redirect.
   always_comb unique case (state_q)
-    STATE_DATA: o_sqi_lo_sio = changed_q && !i_sqi_wr_en ? hi_sio_q
-                                                         : o_sqi_slice;
-    default:    o_sqi_lo_sio = hi_sio_q;
+    STATE_RESET,
+    STATE_DATA: begin
+      if (wr_en_q) begin
+        o_sqi_lo_sio = sck_q ? o_sqi_slice : lo_sio_q;
+      end
+      else begin
+        o_sqi_lo_sio = changed_q ? hi_sio_q : o_sqi_slice;
+      end
+    end
+    default: o_sqi_lo_sio = hi_sio_q;
   endcase
 
   // Buffer update behaviour depends on whether we're redirected the memory or
@@ -183,7 +208,7 @@ module idli_sqi_m import idli_pkg::*; (
       // usual.
       unique case (state_q)
         STATE_DATA:     buf_push = !i_sqi_stall;
-        STATE_DUMMY:    buf_push = i_sqi_wr_en;
+        STATE_DUMMY:    buf_push = wr_en_q;
         STATE_ADDR_HI,
         STATE_ADDR_LO:  buf_push = sck_q;
         default:        buf_push = '0;
@@ -207,7 +232,7 @@ module idli_sqi_m import idli_pkg::*; (
       default:    buf_push_slice = i_sqi_slice;
     endcase
 
-    if (i_sqi_wr_en) begin
+    if (wr_en_q) begin
       buf_push_slice = i_sqi_slice;
     end
   end

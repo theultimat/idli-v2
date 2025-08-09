@@ -60,7 +60,8 @@ typedef enum logic [2:0] {
   CMP_OP_LTU,
   CMP_OP_GE,
   CMP_OP_GEU,
-  CMP_OP_ANY
+  CMP_OP_ANY,
+  CMP_OP_INP
 } cmp_op_t;
 
 // Possible destinations for operation output.
@@ -100,6 +101,14 @@ typedef enum logic [1:0] {
   COUNT_OP_ANDP,
   COUNT_OP_ORP
 } count_op_t;
+
+// Pin operation.
+typedef enum logic [1:0] {
+  PIN_OP_IN,
+  PIN_OP_OUT,
+  PIN_OP_OUTN,
+  PIN_OP_OUTP
+} pin_op_t;
 
 endpackage
 

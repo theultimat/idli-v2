@@ -4,32 +4,36 @@
 // Execution units and processor state.
 module idli_ex_m import idli_pkg::*; (
   // Clock and reset.
-  input  var logic    i_ex_gck,
-  input  var logic    i_ex_rst_n,
+  input  var logic      i_ex_gck,
+  input  var logic      i_ex_rst_n,
 
   // Sync counter and data from memory.
-  input  var ctr_t    i_ex_ctr,
-  input  var data_t   i_ex_enc,
-  input  var logic    i_ex_enc_vld,
-  input  var slice_t  i_ex_data,
+  input  var ctr_t      i_ex_ctr,
+  input  var data_t     i_ex_enc,
+  input  var logic      i_ex_enc_vld,
+  input  var slice_t    i_ex_data,
 
   // Write interface to memory and whether or not this is redirect data or a
   // stall is required.
-  output var logic    o_ex_redirect,
-  output var slice_t  o_ex_data,
-  output var logic    o_ex_stall,
-  output var logic    o_ex_mem_wr,
-  input  var logic    i_ex_mem_acp,
+  output var logic      o_ex_redirect,
+  output var slice_t    o_ex_data,
+  output var logic      o_ex_stall,
+  output var logic      o_ex_mem_wr,
+  input  var logic      i_ex_mem_acp,
 
   // UART TX interface.
-  output var slice_t  o_ex_utx_data,
-  output var logic    o_ex_utx_vld,
-  input  var logic    i_ex_utx_acp,
+  output var slice_t    o_ex_utx_data,
+  output var logic      o_ex_utx_vld,
+  input  var logic      i_ex_utx_acp,
 
   // UART RX interface.
-  input  var slice_t  i_ex_urx_data,
-  input  var logic    i_ex_urx_vld,
-  output var logic    o_ex_urx_acp
+  input  var slice_t    i_ex_urx_data,
+  input  var logic      i_ex_urx_vld,
+  output var logic      o_ex_urx_acp,
+
+  // IO pin interface.
+  input  var io_pins_t  i_ex_io_pins,
+  output var io_pins_t  o_ex_io_pins
 );
 
   // Memory operations occur over the course of multiple cycles, so we need
@@ -140,15 +144,22 @@ module idli_ex_m import idli_pkg::*; (
   logic      shift_c;
 
   // Count operation state and mode.
-  // verilator lint_off UNUSEDSIGNAL
   count_op_t  count_op_q;
   count_op_t  count_op_raw;
-  // verilator lint_on UNUSEDSIGNAL
   slice_t     count_raw;
   slice_t     count_q;
   logic       count_dec;
   logic       carry_set;
   logic       count_first_q;
+
+  // Input and output pins.
+  io_pins_t   in_pins_q;
+  io_pins_t   out_pins_q;
+  logic [1:0] pin_idx;
+  reg_t       pin_reg;
+  pin_op_t    pin_op;
+  logic       run_pin_op;
+  slice_t     pin_data;
 
 
   // Decode instruction to get control signals. Note that we only flop an
@@ -185,14 +196,18 @@ module idli_ex_m import idli_pkg::*; (
     .o_de_mem_op    (mem_op_raw),
 
     .o_de_count_op  (count_op_raw),
-    .o_de_count     (count_raw)
+    .o_de_count     (count_raw),
+
+    .o_de_pin_op    (pin_op),
+    .o_de_pin_reg   (pin_reg),
+    .o_de_pin_idx   (pin_idx)
   );
 
   // Register file.
   idli_rf_m rf_u (
     .i_rf_gck       (i_ex_gck),
 
-    .i_rf_lhs       (lhs_reg),
+    .i_rf_lhs       (run_pin_op ? pin_reg : lhs_reg),
     .o_rf_lhs_data  (lhs_data_reg),
     .o_rf_lhs_next  (lhs_data_reg_next),
     .o_rf_lhs_prev  (lhs_data_reg_prev),
@@ -346,6 +361,7 @@ module idli_ex_m import idli_pkg::*; (
         CMP_OP_LTU:             pred_d = !alu_c;
         CMP_OP_GE:              pred_d = alu_n == alu_v;
         CMP_OP_GEU:             pred_d = alu_c;
+        CMP_OP_INP:             pred_d = in_pins_q[pin_idx];
         default: /* NE, ANY */  pred_d = !alu_z;
       endcase
 
@@ -390,18 +406,26 @@ module idli_ex_m import idli_pkg::*; (
     if (pipe == PIPE_COUNT) begin
       dst_reg = REG_ZR;
     end
+    else if (run_pin_op) begin
+      dst_reg = pin_reg;
+    end
   end
 
   // Write enable for destination register is based on whether we're actually
   // writing to a register and whether the instruction is actually being
   // executed.
-  always_comb dst_reg_wr = (dst == DST_REG || aux == AUX_LR)
-                        && run_instr
-                        && !skip_instr;
+  always_comb begin
+    dst_reg_wr = (dst == DST_REG || aux == AUX_LR) && run_instr && !skip_instr;
+
+    if (run_pin_op && pin_op == PIN_OP_IN) begin
+      dst_reg_wr = '1;
+    end
+  end
 
   // Register write data depends on the pipe and auxiliary write status.
   always_comb dst_data = aux  == AUX_LR     ? pc_next   :
-                         pipe == PIPE_SHIFT ? shift_out : alu_out;
+                         pipe == PIPE_SHIFT ? shift_out :
+                         pipe == PIPE_IO    ? pin_data  : alu_out;
 
   // Instruction needs to stall if this is its first cycle but it reads from
   // SQI. In this case we need to wait for the data to be reversed in the SQI
@@ -422,12 +446,17 @@ module idli_ex_m import idli_pkg::*; (
 
   // UART TX instructions can only run if the block is accepting and we have
   // all of our data.
-  always_comb stall_utx = dst == DST_UART && !i_ex_utx_acp && !stall_sqi;
+  always_comb stall_utx = dst == DST_UART
+                       && !i_ex_utx_acp
+                       && !stall_sqi
+                       && pipe == PIPE_ALU;
 
   // UART RX is similar to TX except we need to wait for there to be something
   // to read out of the RX buffer. We don't need to wait for SQI as it
   // shouldn't be active at the same time as URX.
-  always_comb stall_urx = (lhs == SRC_UART || rhs == SRC_UART) && !i_ex_urx_vld;
+  always_comb stall_urx = (lhs == SRC_UART || rhs == SRC_UART)
+                       && !i_ex_urx_vld
+                       && pipe == PIPE_ALU;
 
   // Redirect is happening if this instruction is actually being executed and
   // it writes to the PC, is the address of a memory operation, or is
@@ -619,5 +648,38 @@ module idli_ex_m import idli_pkg::*; (
       count_first_q <= pipe == PIPE_COUNT;
     end
   end
+
+  // Always flop incoming pins on each cycle.
+  always_ff @(posedge i_ex_gck) begin
+    in_pins_q <= i_ex_io_pins;
+  end
+
+  // Run signal but exclusively for pins and accounting for skips.
+  always_comb run_pin_op = run_instr && !skip_instr
+                                     && pipe == PIPE_IO;
+
+  // Pin data is to/from the pin on the first cycle and zero for all others.
+  always_comb begin
+    pin_data = '0;
+
+    if (~|i_ex_ctr) begin
+      unique case (pin_op)
+        PIN_OP_IN:    pin_data = slice_t'(in_pins_q[pin_idx]);
+        PIN_OP_OUT:   pin_data = slice_t'(lhs_data_reg[0]);
+        PIN_OP_OUTN:  pin_data = slice_t'({3'b0, ~lhs_data_reg[0]});
+        default:      pin_data = slice_t'(pred_q);
+      endcase
+    end
+  end
+
+  // Flop output pin value on the first cycle.
+  always_ff @(posedge i_ex_gck) begin
+    if (run_pin_op && ~|i_ex_ctr) begin
+      out_pins_q[pin_idx] <= pin_data[0];
+    end
+  end
+
+  // Output current pin state.
+  always_comb o_ex_io_pins = out_pins_q;
 
 endmodule

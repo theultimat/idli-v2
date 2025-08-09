@@ -6,46 +6,51 @@
 // signals for execution on the fly while the SQI buffer is being overwritten.
 module idli_decode_m import idli_pkg::*; (
   // Clock and reset.
-  input  var logic      i_de_gck,
+  input  var logic        i_de_gck,
   // verilator lint_off UNUSEDSIGNAL
-  input  var logic      i_de_rst_n,
+  input  var logic        i_de_rst_n,
   // verilator lint_on UNUSEDSIGNAL
 
   // Encoding from memory and the sync counter.
-  input  var ctr_t      i_de_ctr,
-  input  var data_t     i_de_enc,
-  input  var logic      i_de_enc_vld,
+  input  var ctr_t        i_de_ctr,
+  input  var data_t       i_de_enc,
+  input  var logic        i_de_enc_vld,
 
   // Execution unit control signals.
-  output var pipe_t     o_de_pipe,
-  output var alu_op_t   o_de_alu_op,
-  output var logic      o_de_alu_inv,
-  output var logic      o_de_alu_cin,
-  output var cmp_op_t   o_de_cmp_op,
-  output var shift_op_t o_de_shift_op,
+  output var pipe_t       o_de_pipe,
+  output var alu_op_t     o_de_alu_op,
+  output var logic        o_de_alu_inv,
+  output var logic        o_de_alu_cin,
+  output var cmp_op_t     o_de_cmp_op,
+  output var shift_op_t   o_de_shift_op,
 
   // Operand locations.
-  output var dst_t      o_de_dst,
-  output var reg_t      o_de_dst_reg,
-  output var src_t      o_de_lhs,
-  output var reg_t      o_de_lhs_reg,
-  output var src_t      o_de_rhs,
-  output var reg_t      o_de_rhs_reg,
-  output var aux_t      o_de_aux,
+  output var dst_t        o_de_dst,
+  output var reg_t        o_de_dst_reg,
+  output var src_t        o_de_lhs,
+  output var reg_t        o_de_lhs_reg,
+  output var src_t        o_de_rhs,
+  output var reg_t        o_de_rhs_reg,
+  output var aux_t        o_de_aux,
 
   // Conditional execution signals.
-  output var cond_t     o_de_cond,
-  output var logic      o_de_cond_wr,
-  output var logic      o_de_cond_op,
+  output var cond_t       o_de_cond,
+  output var logic        o_de_cond_wr,
+  output var logic        o_de_cond_op,
 
   // Memory operation specific signals.
-  output var reg_t      o_de_mem_first,
-  output var reg_t      o_de_mem_last,
-  output var mem_op_t   o_de_mem_op,
+  output var reg_t        o_de_mem_first,
+  output var reg_t        o_de_mem_last,
+  output var mem_op_t     o_de_mem_op,
 
   // Counter operation signals.
-  output var count_op_t o_de_count_op,
-  output var slice_t    o_de_count
+  output var count_op_t   o_de_count_op,
+  output var slice_t      o_de_count,
+
+  // IO pin signals.
+  output var pin_op_t     o_de_pin_op,
+  output var reg_t        o_de_pin_reg,
+  output var logic [1:0]  o_de_pin_idx
 );
 
   // Instruction being decoded and whether it's valid.
@@ -245,5 +250,10 @@ module idli_decode_m import idli_pkg::*; (
     8'b1110_???0: o_de_cond_op = '1;
     default:      o_de_cond_op = '0;
   endcase
+
+  // Pin signals always come from the same slice of the encoding.
+  always_comb o_de_pin_op  = pin_op_t'(enc_q[2][3:2]);
+  always_comb o_de_pin_reg = reg_t'(enc_q[3]);
+  always_comb o_de_pin_idx = enc_q[2][1:0];
 
 endmodule

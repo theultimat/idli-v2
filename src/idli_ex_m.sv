@@ -358,9 +358,13 @@ module idli_ex_m import idli_pkg::*; (
   // SQI. In this case we need to wait for the data to be reversed in the SQI
   // block so we can read it out in 4b slices. We may also need to stall on
   // SQI for LD instructions while waiting for the redirect to take place or
-  // ST until block is ready to accept data.
+  // ST until block is ready to accept data. Also make sure this is the ALU
+  // pipe as no other instructions should be able to stall. COND is marked as
+  // going down the ALU pipe but is a special case that should be ignored.
   always_comb begin
-    stall_sqi = enc_new_q && (lhs == SRC_SQI || rhs == SRC_SQI);
+    stall_sqi = enc_new_q && (lhs == SRC_SQI || rhs == SRC_SQI)
+                          && !cond_wr
+                          && pipe == PIPE_ALU;
 
     if (mem_state_q == STATE_DATA) begin
       stall_sqi = mem_op_q == MEM_OP_LD ? !enc_vld_q : !i_ex_mem_acp;

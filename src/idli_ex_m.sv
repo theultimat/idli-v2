@@ -84,6 +84,8 @@ module idli_ex_m import idli_pkg::*; (
   slice_t lhs_data;
   slice_t rhs_data;
   slice_t lhs_data_reg;
+  logic   lhs_data_reg_next;
+  logic   lhs_data_reg_prev;
   slice_t rhs_data_reg;
   slice_t dst_data;
 
@@ -127,6 +129,13 @@ module idli_ex_m import idli_pkg::*; (
   mem_op_t mem_op_raw;
   mem_op_t mem_op_q;
 
+  // Pipe for instruction.
+  pipe_t pipe;
+
+  // Shift operation and result.
+  shift_op_t shift_op;
+  slice_t    shift_out;
+
 
   // Decode instruction to get control signals. Note that we only flop an
   // encoding if the instruction actually exectued (or we didn't have one).
@@ -138,16 +147,12 @@ module idli_ex_m import idli_pkg::*; (
     .i_de_enc       (enc),
     .i_de_enc_vld   (de_enc_vld),
 
-    // verilator lint_off PINCONNECTEMPTY
-    .o_de_pipe      (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_de_pipe      (pipe),
     .o_de_alu_op    (alu_op),
     .o_de_alu_inv   (alu_inv),
     .o_de_alu_cin   (alu_cin_raw),
     .o_de_cmp_op    (cmp_op),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_de_shift_op  (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_de_shift_op  (shift_op),
 
     .o_de_dst       (dst),
     .o_de_dst_reg   (dst_reg_raw),
@@ -171,10 +176,8 @@ module idli_ex_m import idli_pkg::*; (
 
     .i_rf_lhs       (lhs_reg),
     .o_rf_lhs_data  (lhs_data_reg),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_rf_lhs_next  (),
-    .o_rf_lhs_prev  (),
-    // verilator lint_on PINCONNECTEMPTY
+    .o_rf_lhs_next  (lhs_data_reg_next),
+    .o_rf_lhs_prev  (lhs_data_reg_prev),
 
     .i_rf_rhs       (rhs_reg),
     .o_rf_rhs_data  (rhs_data_reg),
@@ -219,6 +222,19 @@ module idli_ex_m import idli_pkg::*; (
 
     .o_pc           (pc),
     .o_pc_next      (pc_next)
+  );
+
+  // Shift unit.
+  idli_shift_m shift_u (
+    .i_shift_gck    (i_ex_gck),
+
+    .i_shift_ctr    (i_ex_ctr),
+    .i_shift_op     (shift_op),
+
+    .i_shift_in       (lhs_data_reg),
+    .i_shift_in_next  (lhs_data_reg_next),
+    .i_shift_in_prev  (lhs_data_reg_prev),
+    .o_shift_out      (shift_out)
   );
 
 
@@ -335,8 +351,8 @@ module idli_ex_m import idli_pkg::*; (
                         && !skip_instr;
 
   // Register write data depends on the pipe and auxiliary write status.
-  // TODO Implement other pipes! Assumes ALU for now.
-  always_comb dst_data = aux == AUX_LR ? pc_next : alu_out;
+  always_comb dst_data = aux  == AUX_LR     ? pc_next   :
+                         pipe == PIPE_SHIFT ? shift_out : alu_out;
 
   // Instruction needs to stall if this is its first cycle but it reads from
   // SQI. In this case we need to wait for the data to be reversed in the SQI

@@ -105,7 +105,7 @@ class TestBench:
         self.rtl_utx = []
 
         # Expected values from the UART with the end of test appended.
-        self.ref_utx = self.config.get('output', [])
+        self.ref_utx = [x & 0xffff for x in self.config.get('output', [])]
         self.ref_utx += [ord(x) for x in '@@END@@']
 
         # Values to be sent into the UART.

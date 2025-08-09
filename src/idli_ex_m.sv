@@ -674,7 +674,7 @@ module idli_ex_m import idli_pkg::*; (
 
   // Flop output pin value on the first cycle.
   always_ff @(posedge i_ex_gck) begin
-    if (run_pin_op && ~|i_ex_ctr) begin
+    if (run_pin_op && ~|i_ex_ctr && pin_op != PIN_OP_IN) begin
       out_pins_q[pin_idx] <= pin_data[0];
     end
   end

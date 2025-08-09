@@ -43,6 +43,7 @@ module idli_tb_m import idli_pkg::*; ();
   data_t reg_data [NUM_REGS-1:1];
   logic pred_sb;
   logic pred;
+  io_pins_t pins_out_sb;
 
   // PC of the most recent instruction.
   data_t pc;
@@ -94,6 +95,7 @@ module idli_tb_m import idli_pkg::*; ();
       reg_sb       <= '0;
       pred_sb      <= '0;
       pc           <= '0;
+      pins_out_sb  <= '0;
     end
     else begin
       instr_done_q <= instr_done_d;
@@ -107,6 +109,11 @@ module idli_tb_m import idli_pkg::*; ();
       // As above for predicate register.
       if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_P) begin
         pred_sb <= !top_u.ex_u.skip_instr;
+      end
+
+      // As above for output pins.
+      if (ctr == '0 && top_u.ex_u.run_pin_op && top_u.ex_u.pin_op != PIN_OP_IN) begin
+        pins_out_sb[top_u.ex_u.pin_idx] <= '1;
       end
 
       // PC should be saved when instruction is new in EX.

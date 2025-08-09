@@ -77,6 +77,11 @@ class Callback(sim.Callback):
         self.log(f'SIM_MEM_RD: addr={addr:#06x} value={value:#06x}')
         return value
 
+    # Write an output pin.
+    def write_pin(self, pin, value):
+        self.log(f'SIM_OUT: pin={pin:d} value={value}')
+        self.tb.sim_out_pin[pin] = value
+
 
 # Bench used with cocotb to run tests on the RTL.
 class TestBench:
@@ -124,6 +129,10 @@ class TestBench:
         # data hence why URX pushes to UTX.
         self.urx = uart.URX(lambda x: self.rtl_utx.append(x))
         self.utx = uart.UTX(self.rtl_urx)
+
+        # Output pins written this cycle.
+        self.sim_out_pin = {}
+        self.rtl_out_pin = {}
 
         # Signal set when we've seen the test end condition.
         self.end_of_test = Event()
@@ -232,6 +241,7 @@ class TestBench:
             self._check_reg_writes()
             self._check_pred_writes()
             self._check_mem_writes()
+            self._check_pin_writes()
 
     # Check outstanding register writes match.
     def _check_reg_writes(self):
@@ -370,3 +380,25 @@ class TestBench:
         self.rtl_st_data_lo.clear()
         self.rtl_st_data_hi.clear()
         self.sim_st_data.clear()
+
+    # Check sim and RTL both wrote the same pins with the same values.
+    def _check_pin_writes(self):
+        rtl_sb = self.dut.pins_out_sb
+
+        # Check both thought a write had occurred.
+        sim = (1 << next(iter(self.sim_out_pin))) if self.sim_out_pin else 0
+        rtl = rtl_sb.value
+        assert sim == rtl, 'out pin written'
+
+        if not rtl:
+            return
+
+        # Check values are the same.
+        sim = f'{next(iter(self.sim_out_pin.values())):01b}'
+        rtl = (rtl.integer & -rtl.integer).bit_length() - 1
+        rtl = self.dut.pins_out[rtl].value.binstr
+        assert sim == rtl, 'out pin value'
+
+        # Clear for next cycle.
+        self.sim_out_pin.clear()
+        rtl_sb.setimmediatevalue(0)

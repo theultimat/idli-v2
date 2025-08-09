@@ -104,6 +104,7 @@ module idli_ex_m import idli_pkg::*; (
   cond_t  cond_q;
   cond_t  cond_wr_data;
   logic   cond_wr;
+  logic   cond_op;
 
   // Current and next sequential PC value. Typically used for updating LR.
   slice_t pc;
@@ -135,6 +136,19 @@ module idli_ex_m import idli_pkg::*; (
   // Shift operation and result.
   shift_op_t shift_op;
   slice_t    shift_out;
+  logic      shift_in_prev;
+  logic      shift_c;
+
+  // Count operation state and mode.
+  // verilator lint_off UNUSEDSIGNAL
+  count_op_t  count_op_q;
+  count_op_t  count_op_raw;
+  // verilator lint_on UNUSEDSIGNAL
+  slice_t     count_raw;
+  slice_t     count_q;
+  logic       count_dec;
+  logic       carry_set;
+  logic       count_first_q;
 
 
   // Decode instruction to get control signals. Note that we only flop an
@@ -164,10 +178,14 @@ module idli_ex_m import idli_pkg::*; (
 
     .o_de_cond      (cond_wr_data),
     .o_de_cond_wr   (cond_wr),
+    .o_de_cond_op   (cond_op),
 
     .o_de_mem_first (mem_first_raw),
     .o_de_mem_last  (mem_last_raw),
-    .o_de_mem_op    (mem_op_raw)
+    .o_de_mem_op    (mem_op_raw),
+
+    .o_de_count_op  (count_op_raw),
+    .o_de_count     (count_raw)
   );
 
   // Register file.
@@ -233,8 +251,9 @@ module idli_ex_m import idli_pkg::*; (
 
     .i_shift_in       (lhs_data_reg),
     .i_shift_in_next  (lhs_data_reg_next),
-    .i_shift_in_prev  (lhs_data_reg_prev),
-    .o_shift_out      (shift_out)
+    .i_shift_in_prev  (shift_in_prev),
+    .o_shift_out      (shift_out),
+    .o_shift_cout     (shift_c)
   );
 
 
@@ -290,13 +309,26 @@ module idli_ex_m import idli_pkg::*; (
   endcase
 
   // Carry in for ALU comes from the encoding on the first cycle of an
-  // instruction or the saved value if we're mid-operation.
-  // TODO Account for the CARRY instruction setting persistent flags!
-  always_comb alu_cin = |i_ex_ctr ? carry_q : alu_cin_raw;
+  // instruction or the saved value if we're mid-operation. If CARRY is active
+  // then the saved value should continue to be passed forward.
+  always_comb alu_cin = |i_ex_ctr || carry_set ? carry_q : alu_cin_raw;
 
-  // Save carry flag for the next slice of an operation.
+  // Save carry flag for the next slice of an operation, resetting on the
+  // first cycle that CARRY is set.
   always_ff @(posedge i_ex_gck) begin
-    carry_q <= alu_c;
+    if (&i_ex_ctr && pipe == PIPE_COUNT && count_op_raw == COUNT_OP_CARRY) begin
+      carry_q <= '0;
+    end
+    else if (run_instr && !skip_instr) begin
+      // Make sure to set from the correct pipe or leave the same if
+      // unmodified.
+      if (pipe == PIPE_ALU) begin
+        carry_q <= alu_c;
+      end
+      else if (pipe == PIPE_SHIFT && &i_ex_ctr) begin
+        carry_q <= shift_c;
+      end
+    end
   end
 
   // Predicate register is written on the final cycle of an instruction based
@@ -316,6 +348,16 @@ module idli_ex_m import idli_pkg::*; (
         CMP_OP_GEU:             pred_d = alu_c;
         default: /* NE, ANY */  pred_d = !alu_z;
       endcase
+
+      // Apply modifier from ANDP/ORP if required.
+      if (count_q > '0) begin
+        if (count_op_q == COUNT_OP_ANDP) begin
+          pred_d &= pred_q;
+        end
+        else if (count_op_q == COUNT_OP_ORP) begin
+          pred_d |= pred_q;
+        end
+      end
     end
   end
 
@@ -340,8 +382,15 @@ module idli_ex_m import idli_pkg::*; (
   end
 
   // Destination register comes from the encoding but may also be LR from the
-  // auxiliary write operation.
-  always_comb dst_reg = aux == AUX_LR ? REG_LR : dst_reg_raw;
+  // auxiliary write operation. All COUNT operations are redirected to write
+  // ZR as we don't care what the output was from ALU/SHIFT.
+  always_comb begin
+    dst_reg = aux == AUX_LR ? REG_LR : dst_reg_raw;
+
+    if (pipe == PIPE_COUNT) begin
+      dst_reg = REG_ZR;
+    end
+  end
 
   // Write enable for destination register is based on whether we're actually
   // writing to a register and whether the instruction is actually being
@@ -363,7 +412,7 @@ module idli_ex_m import idli_pkg::*; (
   // going down the ALU pipe but is a special case that should be ignored.
   always_comb begin
     stall_sqi = enc_new_q && (lhs == SRC_SQI || rhs == SRC_SQI)
-                          && !cond_wr
+                          && !cond_op
                           && pipe == PIPE_ALU;
 
     if (mem_state_q == STATE_DATA) begin
@@ -514,5 +563,61 @@ module idli_ex_m import idli_pkg::*; (
 
   // Write enable is only set for store instructions.
   always_comb o_ex_mem_wr = mem_op_q == MEM_OP_ST && mem_state_q == STATE_DATA;
+
+  // Update the counter value. If this is a count operation then we should
+  // store the new value in the register, otherwise we should decrement the
+  // counter until it reaches zero when an instruction is run. This should
+  // only apply to memory operations on their final cycles. Note that the
+  // counter decreases even if the instruction is skipped due to predication.
+  always_ff @(posedge i_ex_gck, negedge i_ex_rst_n) begin
+    if (!i_ex_rst_n) begin
+      count_q <= '0;
+    end
+    else if (&i_ex_ctr && run_instr) begin
+      if (pipe == PIPE_COUNT && !skip_instr) count_q <= count_raw;
+      else if (count_dec)                    count_q <= count_q - 4'b1;
+    end
+  end
+
+  // Condition under which we should decrement the counter.
+  always_comb count_dec = count_q > '0
+                       && !mem_op
+                       && (mem_state_q != STATE_DATA || mem_op_last);
+
+  // Update count operation when we have a valid count instruction.
+  always_ff @(posedge i_ex_gck) begin
+    if (&i_ex_ctr && run_instr && !skip_instr && pipe == PIPE_COUNT) begin
+      count_op_q <= count_op_raw;
+    end
+  end
+
+  // Set when we want to chain the previous carry into the next instruction.
+  always_comb carry_set = count_q > '0 && count_op_q == COUNT_OP_CARRY;
+
+  // Shift input previous bit comes from the register unless CARRY is set in
+  // which case we forward it on. Only valid on the final cycle as this only
+  // applies to right shifts. Also note we need to make sure the correct bit
+  // gets fed in for the non-CARRY cases, including the first cycle after the
+  // carry has been set.
+  always_comb begin
+    shift_in_prev = lhs_data_reg_prev;
+
+    if (shift_op != SHIFT_OP_ROL && &i_ex_ctr) begin
+      if (count_first_q) begin
+        shift_in_prev = shift_op == SHIFT_OP_SRL ? '0 : lhs_data_reg[3];
+      end
+      else if (carry_set) begin
+        shift_in_prev = carry_q;
+      end
+    end
+  end
+
+  // Remember if this is the first cycle for which a COUNT operation has been
+  // set.
+  always_ff @(posedge i_ex_gck) begin
+    if (&i_ex_ctr && run_instr && !skip_instr) begin
+      count_first_q <= pipe == PIPE_COUNT;
+    end
+  end
 
 endmodule

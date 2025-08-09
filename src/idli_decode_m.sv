@@ -36,11 +36,16 @@ module idli_decode_m import idli_pkg::*; (
   // Conditional execution signals.
   output var cond_t     o_de_cond,
   output var logic      o_de_cond_wr,
+  output var logic      o_de_cond_op,
 
   // Memory operation specific signals.
   output var reg_t      o_de_mem_first,
   output var reg_t      o_de_mem_last,
-  output var mem_op_t   o_de_mem_op
+  output var mem_op_t   o_de_mem_op,
+
+  // Counter operation signals.
+  output var count_op_t o_de_count_op,
+  output var slice_t    o_de_count
 );
 
   // Instruction being decoded and whether it's valid.
@@ -59,7 +64,7 @@ module idli_decode_m import idli_pkg::*; (
     12'b1010_????_101?,
     12'b1010_????_110?: o_de_pipe = PIPE_SHIFT;
     12'b1101_???0_????: o_de_pipe = PIPE_IO;
-    12'b1110_????_????: o_de_pipe = PIPE_FE;
+    12'b1110_???1_????: o_de_pipe = PIPE_COUNT;
     default:            o_de_pipe = PIPE_ALU;
   endcase
 
@@ -227,6 +232,18 @@ module idli_decode_m import idli_pkg::*; (
     4'b011?,
     4'b100?:  o_de_mem_op = mem_op_t'(enc_q[0][0]);
     default:  o_de_mem_op = mem_op_t'(enc_q[3][0]);
+  endcase
+
+  // Count operation can be read directly from the encodings.
+  always_comb o_de_count_op = count_op_t'(enc_q[2][1:0]);
+
+  // Counter value is always the final slice.
+  always_comb o_de_count = enc_q[3];
+
+  // Signal to pick up COND instruction only.
+  always_comb unique casez ({enc_q[0], enc_q[1]})
+    8'b1110_???0: o_de_cond_op = '1;
+    default:      o_de_cond_op = '0;
   endcase
 
 endmodule

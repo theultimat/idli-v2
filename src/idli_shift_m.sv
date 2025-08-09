@@ -14,7 +14,8 @@ module idli_shift_m import idli_pkg::*; (
   input  var slice_t      i_shift_in,
   input  var logic        i_shift_in_next,
   input  var logic        i_shift_in_prev,
-  output var slice_t      o_shift_out
+  output var slice_t      o_shift_out,
+  output var logic        o_shift_cout
 );
 
   // Possible shift directions.
@@ -40,8 +41,8 @@ module idli_shift_m import idli_pkg::*; (
   always_comb unique case (i_shift_op)
     SHIFT_OP_ROR: next_bit = ~|i_shift_ctr ? stash_q : i_shift_in_next;
     SHIFT_OP_ROL: next_bit = ~|i_shift_ctr ? i_shift_in_prev : stash_q;
-    SHIFT_OP_SRL: next_bit = &i_shift_ctr ? '0 : i_shift_in_next;
-    default:      next_bit = &i_shift_ctr ? i_shift_in[3] : i_shift_in_next;
+    SHIFT_OP_SRL: next_bit = &i_shift_ctr ? i_shift_in_prev : i_shift_in_next;
+    default:      next_bit = &i_shift_ctr ? i_shift_in_prev : i_shift_in_next;
   endcase
 
   // Output is based on the next bit and direction.
@@ -54,6 +55,15 @@ module idli_shift_m import idli_pkg::*; (
   always_ff @(posedge i_shift_gck) begin
     if (~&i_shift_ctr) begin
       stash_q <= dir == DIR_L ? i_shift_in[3] : i_shift_in[0];
+    end
+  end
+
+  // Carry out of shift is flopped on the first cycle as we only care about
+  // right shifts. This is then flopped by EX at the end of the instruction to
+  // avoid carrying in its own carry out.
+  always_ff @(posedge i_shift_gck) begin
+    if (~|i_shift_ctr) begin
+      o_shift_cout <= i_shift_in[0];
     end
   end
 

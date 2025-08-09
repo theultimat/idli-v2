@@ -28,12 +28,12 @@ localparam reg_t REG_SP = reg_t'('d15);
 typedef logic [7:0] cond_t;
 
 // Whether to take the final result from the ALU, shifter, IO pins, or
-// frontend state.
+// counter state.
 typedef enum logic [1:0] {
   PIPE_ALU,
   PIPE_SHIFT,
   PIPE_IO,
-  PIPE_FE
+  PIPE_COUNT
 } pipe_t;
 
 // Operations supported by the ALU.
@@ -93,6 +93,13 @@ typedef enum logic {
   MEM_OP_LD,
   MEM_OP_ST
 } mem_op_t;
+
+// Counter operations.
+typedef enum logic [1:0] {
+  COUNT_OP_CARRY,
+  COUNT_OP_ANDP,
+  COUNT_OP_ORP
+} count_op_t;
 
 endpackage
 

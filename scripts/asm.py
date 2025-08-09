@@ -169,6 +169,11 @@ def parse_instr(args, tree, prefix, need_conds, items):
                 if imm < 0 or imm > 15:
                     abort(prefix, f'Out of range immediate: {token.value}')
                 ops[op] = imm
+            elif op == 'n':
+                imm = int(token.value)
+                if imm < 0 or imm > 3:
+                    abort(prefix, f'Invalid pin: {imm}')
+                ops[op] = imm
             else:
                 abort(prefix, f'Unexpected operand type: {op}')
 

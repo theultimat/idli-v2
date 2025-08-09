@@ -14,8 +14,11 @@ test_init:
     mov     r13, zr
     mov     lr, zr
     mov     sp, zr
-    nex     zr, zr          # clear predicate and cond state
-    inc.t   r1, r1
+    ne      zr, zr          # clear predicate
+    out     0, zr           # clear output pins
+    out     1, zr
+    out     2, zr
+    out     3, zr
     jl      $test_main      # jump to main test program
     utx     '@'             # send end of test message
     utx     '@'

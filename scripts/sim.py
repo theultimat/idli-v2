@@ -41,6 +41,10 @@ class Callback:
     def fetch(self, pc):
         return None
 
+    # Called when writing an output pin.
+    def write_pin(self, pin, value):
+        pass
+
 
 # Behavioural simulator of the core. Not cycle accurate.
 class Sim:
@@ -72,6 +76,9 @@ class Sim:
 
         # Number of times tick() has been called.
         self.ticks = 0
+
+        # Output pins.
+        self.out_pins = [None] * 4
 
         # Functions for running each instruction type.
         self.funcs = {
@@ -124,9 +131,9 @@ class Sim:
             'bl':       self._jmp,
             'jl':       self._jmp,
             'in':       None,
-            'out':      None,
-            'out1':     None,
-            'outp':     None,
+            'out':      self._out,
+            'outn':     self._out,
+            'outp':     self._out,
             'utx':      self._utx,
             'carry':    self._carry,
             'putp':     self._putp,
@@ -238,6 +245,12 @@ class Sim:
         self._log(f'COND   {value_str}')
         self.cond = value
         self.cb.write_cond(value)
+
+    # Write output pin.
+    def _write_out_pin(self, pin, value):
+        self._log(f'OUT    {pin:3}       0x{value:x}')
+        self.out_pins[pin] = value
+        self.cb.write_pin(pin, value)
 
     # Log if verbose is enabled.
     def _log(self, *args):
@@ -486,10 +499,22 @@ class Sim:
         self._write_reg(a, value)
 
     # Set predicate register.
-    def _putp(self, mnem, c=None):
+    def _putp(self, mnem, c=None, imm=None):
         value = self.regs[c] if c != isa.REGS['sp'] else imm
         value &= 1
         self._write_pred(value)
+
+    # Set output pin.
+    def _out(self, mnem, n=None, c=None, imm=None):
+        value = self.regs[c] if c != isa.REGS['sp'] else imm
+        value &= 1
+
+        if mnem == 'outn':
+            value = ~value & 1
+        elif mnem == 'outp':
+            value = int(self.pred)
+
+        self._write_out_pin(n, value)
 
 
 # Parse command line arguments.

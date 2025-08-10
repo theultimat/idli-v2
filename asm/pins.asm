@@ -12,4 +12,5 @@ test_main:
     inp     2           # p &= pin2
     inpx    0           # p &= pin0
     b.t     @1b         # if p: goto 1b
-    ret                 # return
+    in      r1, 1       # out = in1
+    ret                 # return out

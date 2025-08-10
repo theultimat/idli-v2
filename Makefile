@@ -123,7 +123,7 @@ TEST_ASM  := $(patsubst $(TEST_ROOT)/bias/%.yaml,$(ASM_ROOT)/tgen/%.asm,$(TEST_B
 
 $(ASM_ROOT)/tgen/%.asm: $(TEST_ROOT)/bias/%.yaml
 	@mkdir -p $(@D)
-	$(TGEN) $(TGEN_DEBUG) --bias $< --output $@
+	$(TGEN) $(TGEN_DEBUG) --bias $< --output $@ --seed 0x$(shell md5sum --quiet $<)
 
 tgen: $(TEST_ASM)
 

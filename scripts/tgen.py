@@ -97,7 +97,7 @@ def parse_args():
     parser.add_argument(
         '-s',
         '--seed',
-        type=int,
+        type=lambda x: int(x, 0),
         default=0xdeadbeef,
         help='Random number generator seed.',
     )

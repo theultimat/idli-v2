@@ -45,6 +45,10 @@ class Callback:
     def write_pin(self, pin, value):
         pass
 
+    # Read value of a pin.
+    def read_pin(self, pin):
+        return None
+
 
 # Behavioural simulator of the core. Not cycle accurate.
 class Sim:
@@ -116,7 +120,7 @@ class Sim:
             'ge':       self._cmp,
             'geu':      self._cmp,
             'any':      self._cmp,
-            'inp':      None,
+            'inp':      self._in,
             'eqx':      self._cmp,
             'nex':      self._cmp,
             'ltx':      self._cmp,
@@ -124,13 +128,13 @@ class Sim:
             'gex':      self._cmp,
             'geux':     self._cmp,
             'anyx':     self._cmp,
-            'inpx':     None,
+            'inpx':     self._in,
             'addpc':    self._addpc,
             'b':        self._jmp,
             'j':        self._jmp,
             'bl':       self._jmp,
             'jl':       self._jmp,
-            'in':       None,
+            'in':       self._in,
             'out':      self._out,
             'outn':     self._out,
             'outp':     self._out,
@@ -248,7 +252,7 @@ class Sim:
 
     # Write output pin.
     def _write_out_pin(self, pin, value):
-        self._log(f'OUT    {pin:3}       0x{value:x}')
+        self._log(f'OUT    {pin:1}         0x{value:x}')
         self.out_pins[pin] = value
         self.cb.write_pin(pin, value)
 
@@ -517,6 +521,21 @@ class Sim:
 
         self._write_out_pin(n, value)
 
+    # Read input pin.
+    def _in(self, mnem, n=None, a=None):
+        value = self.cb.read_pin(n) & 1
+        self._log(f'IN     {n:1}         0x{value:x}')
+
+        if mnem == 'in':
+            self._write_reg(a, value)
+        elif mnem.startswith('inp'):
+            self._write_pred(value)
+
+            if mnem[-1] == 'x':
+                self._write_cond(0b11)
+        else:
+            raise NotImplementedError()
+
 
 # Parse command line arguments.
 def parse_args():
@@ -574,12 +593,16 @@ if __name__ == '__main__':
     uart_tx = []
     uart_rx = [] if not args.yaml else args.yaml.get('input', [])
 
+    # Input pins.
+    input_pin = [] if not args.yaml else args.yaml.get('input_pin', [])
+
     class Cb(Callback):
         # Load binary into memory.
         def __init__(self, path, uart_tx, uart_rx):
             self.mem = {}
             self.uart_tx = uart_tx
             self.uart_rx = uart_rx
+            self.pins = [None] * 4
 
             with open(path, 'rb') as f:
                 data = f.read()
@@ -621,6 +644,10 @@ if __name__ == '__main__':
 
             return struct.unpack('>H', self.mem[addr])[0]
 
+        # Input pins.
+        def read_pin(self, pin):
+            return self.pins[pin]
+
     # End of test is signalled by receiving the string @@END@@ over UART
     # followed by the exit code of test_main.
     end_of_test = [ord(x) for x in '@@END@@']
@@ -630,6 +657,13 @@ if __name__ == '__main__':
     sim = Sim(cb, args.verbose)
 
     for _ in range(args.timeout):
+        # Update input pins.
+        while input_pin and sim.ticks >= input_pin[0]['time']:
+            pins = input_pin.pop(0)['pins']
+            for k, v in pins.items():
+                cb.pins[k] = v
+
+        # Run single tick.
         sim.tick()
 
         # Look for the end of test value in the UART buffer followed by the

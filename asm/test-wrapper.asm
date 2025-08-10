@@ -20,6 +20,7 @@ test_init:
     out     2, zr
     out     3, zr
     jl      $test_main      # jump to main test program
+test_ret:
     utx     '@'             # send end of test message
     utx     '@'
     utx     'E'

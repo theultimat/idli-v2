@@ -112,3 +112,19 @@ run_icarus: $(SIM_TEST) $(VENV) sv2v
 	$(ICARUS_DEBUG)
 
 .PHONY: run_veri run_icarus
+
+
+# Regenerate random tests.
+TGEN_DEBUG := $(if $(DEBUG),--verbose,)
+TGEN       := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/tgen.py
+
+TEST_BIAS := $(wildcard $(TEST_ROOT)/bias/*.yaml)
+TEST_ASM  := $(patsubst $(TEST_ROOT)/bias/%.yaml,$(ASM_ROOT)/tgen/%.asm,$(TEST_BIAS))
+
+$(ASM_ROOT)/tgen/%.asm: $(TEST_ROOT)/bias/%.yaml
+	@mkdir -p $(@D)
+	$(TGEN) $(TGEN_DEBUG) --bias $< --output $@
+
+tgen: $(TEST_ASM)
+
+.PHONY: tgen

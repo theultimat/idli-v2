@@ -506,13 +506,14 @@ class Sim:
 
     # Set output pin.
     def _out(self, mnem, n=None, c=None, imm=None):
-        value = self.regs[c] if c != isa.REGS['sp'] else imm
-        value &= 1
-
-        if mnem == 'outn':
-            value = ~value & 1
-        elif mnem == 'outp':
+        if mnem == 'outp':
             value = int(self.pred)
+        else:
+            value = self.regs[c] if c != isa.REGS['sp'] else imm
+            value &= 1
+
+            if mnem == 'outn':
+                value = ~value & 1
 
         self._write_out_pin(n, value)
 

@@ -82,6 +82,12 @@ class Callback(sim.Callback):
         self.log(f'SIM_OUT: pin={pin:d} value={value}')
         self.tb.sim_out_pin[pin] = value
 
+    # Read an input pin.
+    def read_pin(self, pin):
+        value = (self.tb.in_pins >> pin) & 1
+        self.log(f'SIM_IN: pin={pin:d} value={value}')
+        return value
+
 
 # Bench used with cocotb to run tests on the RTL.
 class TestBench:
@@ -133,6 +139,10 @@ class TestBench:
         # Output pins written this cycle.
         self.sim_out_pin = {}
         self.rtl_out_pin = {}
+
+        # Input pins and sequence to write.
+        self.in_pins = 0
+        self.in_pins_next = self.config.get('input_pin', [])
 
         # Signal set when we've seen the test end condition.
         self.end_of_test = Event()
@@ -221,6 +231,11 @@ class TestBench:
     # model implementation.
     async def _check_instr(self):
         done = self.dut.instr_done_q
+        time = 0
+
+        # Reset pins to zero.
+        pins = self.dut.pins_in
+        pins.setimmediatevalue(self.in_pins)
 
         # Wait for reset to finish.
         await RisingEdge(self.dut.rst_n)
@@ -242,6 +257,17 @@ class TestBench:
             self._check_pred_writes()
             self._check_mem_writes()
             self._check_pin_writes()
+
+            # Update input pins.
+            while self.in_pins_next and time >= self.in_pins_next[0]['time']:
+                info = self.in_pins_next.pop(0)['pins']
+                for k, v in info.items():
+                    self.in_pins &= ~(1 << k)
+                    self.in_pins |= v << k
+                pins.setimmediatevalue(self.in_pins)
+
+            # Increment time counter once per instruction run.
+            time += 1
 
     # Check outstanding register writes match.
     def _check_reg_writes(self):

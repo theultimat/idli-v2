@@ -632,10 +632,9 @@ module idli_ex_m import idli_pkg::*; (
     shift_in_prev = lhs_data_reg_prev;
 
     if (shift_op != SHIFT_OP_ROL && &i_ex_ctr) begin
-      if (count_first_q) begin
-        shift_in_prev = shift_op == SHIFT_OP_SRL ? '0 : lhs_data_reg[3];
-      end
-      else if (carry_set) begin
+      shift_in_prev = shift_op == SHIFT_OP_SRL ? '0 : lhs_data_reg[3];
+
+      if (!count_first_q && carry_set) begin
         shift_in_prev = carry_q;
       end
     end

@@ -89,7 +89,7 @@ $(SV2V_ROOT)/%.v: %.sv $(SV_HEADERS)
 export SIM_TEST    ?= $(BUILD_ROOT)/$(ASM_ROOT)/smoke.out
 export SIM_TIMEOUT ?= 50000
 export SIM_DEBUG   ?= $(if $(DEBUG),--verbose,)
-export SIM_YAML    ?= $(ASM_ROOT)/$(notdir $(basename $(SIM_TEST))).yaml
+export SIM_YAML    ?= $(patsubst $(BUILD_ROOT)/%.out,%.yaml,$(SIM_TEST))
 
 SIM := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/sim.py $(SIM_DEBUG)
 

@@ -39,7 +39,7 @@ module idli_shift_m import idli_pkg::*; (
 
   // Next bit depends on the shift operation and cycle.
   always_comb unique case (i_shift_op)
-    SHIFT_OP_ROR: next_bit = ~|i_shift_ctr ? stash_q : i_shift_in_next;
+    SHIFT_OP_ROR: next_bit = &i_shift_ctr ? stash_q : i_shift_in_next;
     SHIFT_OP_ROL: next_bit = ~|i_shift_ctr ? i_shift_in_prev : stash_q;
     SHIFT_OP_SRL: next_bit = &i_shift_ctr ? i_shift_in_prev : i_shift_in_next;
     default:      next_bit = &i_shift_ctr ? i_shift_in_prev : i_shift_in_next;
@@ -51,10 +51,14 @@ module idli_shift_m import idli_pkg::*; (
     default: o_shift_out = {next_bit, i_shift_in[3:1]};
   endcase
 
-  // Update the saved bit between cycles.
+  // Update the saved bit between cycles. This only needs to be done for
+  // rotate operations.
   always_ff @(posedge i_shift_gck) begin
-    if (~&i_shift_ctr) begin
-      stash_q <= dir == DIR_L ? i_shift_in[3] : i_shift_in[0];
+    if (i_shift_op == SHIFT_OP_ROL && ~&i_shift_ctr) begin
+      stash_q <= i_shift_in[3];
+    end
+    else if (i_shift_op == SHIFT_OP_ROR && ~|i_shift_ctr) begin
+      stash_q <= i_shift_in[0];
     end
   end
 

@@ -70,8 +70,12 @@ def rand_instr(args, state):
 
             if op == 'c' and ops[op] == isa.REGS['sp']:
                 ops['imm'] = rand_imm()
+        elif op == 'm':
+            ops[op] = rand_imm(1, 7)
+        elif op == 'j':
+            ops[op] = rand_imm(0, 15)
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f'{op}')
 
     # Pick up the next condition code and assign to the instruction if required.
     cond = None
@@ -79,8 +83,10 @@ def rand_instr(args, state):
         cond = f'.{state.cond[0]}'
         state.cond = state.cond[1:]
     if mnem in SET_COND:
-        assert mnem != 'cex' # TODO
-        state.cond = 't'
+        if mnem == 'cex':
+            state.cond = ''.join(random.choices('tf', k=ops['m']))
+        else:
+            state.cond = 't'
 
     return isa.Instruction(mnem, ops, cond)
 

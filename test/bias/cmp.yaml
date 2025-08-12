@@ -1,0 +1,14 @@
+eq: 1
+ne: 1
+lt: 1
+ltu: 1
+ge: 1
+geu: 1
+any: 1
+eqx: 1
+nex: 1
+ltx: 1
+ltux: 1
+gex: 1
+geux: 1
+anyx: 1

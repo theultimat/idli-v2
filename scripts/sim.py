@@ -68,15 +68,11 @@ class Sim:
         self.pred = False
         self.cond = 0
 
-        # Reset carry state.
-        self.num_carry = 0
-        self.max_carry = 0
+        # Reset carry/pmod state.
+        self.num_count = 0
+        self.max_count = 0
+        self.count_op = None
         self.cin = 0
-
-        # Reset pmod state.
-        self.num_pmod = 0
-        self.max_pmod = 0
-        self.pmod_op = None
 
         # Number of times tick() has been called.
         self.ticks = 0
@@ -175,16 +171,12 @@ class Sim:
         else:
             self.pc = pc
 
-        # Update carry state for next instruction.
-        if self.num_carry < self.max_carry:
-            self.num_carry += 1
-
-        # Update pmod state, resetting back to standard operation once the
-        # counter elapses.
-        if self.num_pmod < self.max_pmod:
-            self.num_pmod += 1
-        if self.num_pmod >= self.max_pmod:
-            self.pmod_op = None
+        # Update count op state, resetting back to standard operation once
+        # the counter elapses.
+        if self.num_count < self.max_count:
+            self.num_count += 1
+        if self.num_count >= self.max_count:
+            self.count_op = None
 
         # Increment tick counter for logging.
         self.ticks += 1
@@ -234,9 +226,9 @@ class Sim:
 
     # Write the predicate register.
     def _write_pred(self, value):
-        if self.pmod_op == 'and':
+        if self.count_op == 'and':
             value = self.pred and value
-        elif self.pmod_op == 'or':
+        elif self.count_op == 'or':
             value = self.pred or value
 
         self._log(f'PRED   {int(value)}')
@@ -273,7 +265,9 @@ class Sim:
     def _add_sub(self, mnem, a=None, b=None, c=None, imm=None):
         lhs = self.regs[b]
         rhs = self.regs[c] if c != isa.REGS['sp'] else imm
-        cin = self.cin if self.num_carry < self.max_carry else 0
+        cin = 0
+        if self.count_op == 'carry' and self.num_count < self.max_count:
+            cin = self.cin
 
         value = lhs + rhs + cin if mnem == 'add' else lhs - rhs - cin
         self.cin = (value >> 16) & 1
@@ -432,6 +426,8 @@ class Sim:
         value = (lhs + rhs) & 0xffff
         self._write_reg(a, value)
 
+        print(f'{lhs:04x} {rhs:04x} {value:04x}')
+
     # Bitwise logical operations: AND/ANDN/OR/XOR.
     def _bitwise(self, mnem, a=None, b=None, c=None, imm=None):
         lhs = self.regs[b]
@@ -453,7 +449,9 @@ class Sim:
     # Shift and rotate instructions.
     def _shift(self, mnem, a=None, b=None):
         value = self.regs[b] & 0xffff
-        cin = self.cin if self.num_carry < self.max_carry else 0
+        cin = 0
+        if self.count_op == 'carry' and self.num_count < self.max_count:
+            cin = self.cin
 
         if mnem == 'srl':
             self.cin = value & 1
@@ -478,19 +476,20 @@ class Sim:
 
     # Update carry state.
     def _carry(self, mnem, j=None):
-        self.num_carry = -1
-        self.max_carry = j
+        self.num_count = -1
+        self.max_count = j
+        self.count_op = 'carry'
         self.cin = 0
 
-        self._log(f'CARRY  {self.max_carry}')
+        self._log(f'COUNT  {self.count_op:4}      {self.max_count}')
 
     # Update AND/OR state for P.
     def _andor_p(self, mnem, j=None):
-        self.num_pmod = -1
-        self.max_pmod = j
-        self.pmod_op = mnem[:-1]
+        self.num_count = -1
+        self.max_count = j
+        self.count_op = mnem[:-1]
 
-        self._log(f'PMOD   {self.pmod_op:4}      {self.max_pmod}')
+        self._log(f'COUNT  {self.count_op:4}      {self.max_count}')
 
     # Bitwise NOT.
     def _not(self, mnem, a=None, b=None):

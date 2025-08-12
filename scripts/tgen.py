@@ -3,7 +3,30 @@ import pathlib
 import random
 import yaml
 
+from dataclasses import dataclass
+
 import isa
+
+
+# Instructions that set conditional state.
+SET_COND = set([
+    'eqx',
+    'nex',
+    'ltx',
+    'ltux',
+    'gex',
+    'geux',
+    'anyx',
+    'inpx',
+    'cex',
+])
+
+
+# State for the generator.
+@dataclass
+class State:
+    # Condition codes remaining to be used.
+    cond: str = ''
 
 
 # Generate a random immediate.
@@ -24,9 +47,18 @@ def rand_init():
 
 
 # Generate a random instruction based on the bias.
-def rand_instr(args):
+def rand_instr(args, state):
     # Choose a random instruction mnemonic.
-    mnem = random.choices(args.mnems, args.weights)[0]
+    while True:
+        mnem = random.choices(args.mnems, args.weights)[0]
+
+        # Can't generate a conditional instruction in the shadow of another
+        # conditional instruction.
+        if state.cond and mnem in SET_COND:
+            continue
+
+        # All restrictions have been met so we can use this instruction.
+        break
 
     # Generate random operand values.
     op_names = set(k for k in isa.ENCODINGS[mnem] if k not in '01?')
@@ -41,15 +73,35 @@ def rand_instr(args):
         else:
             raise NotImplementedError()
 
-    return isa.Instruction(mnem, ops)
+    # Pick up the next condition code and assign to the instruction if required.
+    cond = None
+    if state.cond:
+        cond = f'.{state.cond[0]}'
+        state.cond = state.cond[1:]
+    if mnem in SET_COND:
+        assert mnem != 'cex' # TODO
+        state.cond = 't'
+
+    return isa.Instruction(mnem, ops, cond)
 
 
 # Generate end of test -- clear return register and branch back to the wrapper.
-def end_test():
-    return [
+def end_test(state):
+    instrs = []
+
+    # Pad out with conditional instructions to consume what remains.
+    for cond in state.cond:
+        instrs.append(
+            isa.Instruction('add', {'a': 0, 'b': 0, 'c': 0}, f'.{cond}'),
+        )
+
+    # Clear exit code and jump back to wrapper.
+    instrs += [
         isa.Instruction('add', {'a': 1, 'b': 0, 'c': 0}),
         isa.Instruction('j', {'c': isa.REGS['sp'], 'imm': '$test_ret'}),
     ]
+
+    return instrs
 
 
 # Generate output file.
@@ -132,11 +184,12 @@ if __name__ == '__main__':
     args = parse_args()
 
     # Generate the test.
+    state = State()
     instrs = rand_init()
     for _ in range(args.num_instr):
-        instr = rand_instr(args)
+        instr = rand_instr(args, state)
         instrs.append(instr)
-    instrs += end_test()
+    instrs += end_test(state)
 
     # Write to file.
     save(args, args.output, instrs)

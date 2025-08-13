@@ -164,7 +164,7 @@ def parse_args():
         '-n',
         '--num-instr',
         type=int,
-        default=250,
+        default=1000,
         help='Number of instructions to generate.',
     )
 

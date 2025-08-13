@@ -448,7 +448,7 @@ class Sim:
         else:
             raise NotImplementedError()
 
-        self._write_reg(a, value)
+        self._write_reg(a, value & 0xffff)
 
     # Shift and rotate instructions.
     def _shift(self, mnem, a=None, b=None):

@@ -15,6 +15,7 @@ module idli_decode_m import idli_pkg::*; (
   input  var ctr_t        i_de_ctr,
   input  var data_t       i_de_enc,
   input  var logic        i_de_enc_vld,
+  input  var logic        i_de_pred,
 
   // Execution unit control signals.
   output var pipe_t       o_de_pipe,
@@ -111,12 +112,14 @@ module idli_decode_m import idli_pkg::*; (
   //  3) MEM+ => A = B + ZR + 1
   //  4) +MEM => A = B + ZR + 1
   //  5) CMP  => A = B + ~C + 1 (ANY is don't care)
-  always_comb unique casez ({enc_q[0], enc_q[3]})
-    8'b0001_????,
-    8'b1010_10?0,
-    8'b1010_00??,
-    8'b1011_????: o_de_alu_cin = '1;
-    default:      o_de_alu_cin = '0;
+  //  6) GETP => A = ZR + ZR + P
+  always_comb unique casez ({enc_q[0], enc_q[2], enc_q[3]})
+    12'b0001_????_????,
+    12'b1010_????_10?0,
+    12'b1010_????_00??,
+    12'b1011_????_????: o_de_alu_cin = '1;
+    12'b1101_??10_????: o_de_alu_cin = i_de_pred;
+    default:            o_de_alu_cin = '0;
   endcase
 
   // Comparison operation is taken from encoding directly.

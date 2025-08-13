@@ -171,6 +171,7 @@ module idli_ex_m import idli_pkg::*; (
     .i_de_ctr       (i_ex_ctr),
     .i_de_enc       (enc),
     .i_de_enc_vld   (de_enc_vld),
+    .i_de_pred      (pred_q),
 
     .o_de_pipe      (pipe),
     .o_de_alu_op    (alu_op),

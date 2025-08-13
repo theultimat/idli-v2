@@ -344,8 +344,10 @@ class Sim:
 
     # Increment and decrement make use of ADD/SUB.
     def _inc_dec(self, mnem, a=None, b=None):
-        imm = -1 if mnem == 'dec' else 1
-        return self._add_sub('add', a=a, b=b, c=isa.REGS['sp'], imm=imm)
+        lhs = self.regs[b]
+        rhs = 1 if mnem == 'inc' else -1
+        value = (lhs + rhs) & 0xffff
+        self._write_reg(a, value)
 
     # Store to memory.
     def _st(self, mnem, a=None, b=None, c=None, imm=None):

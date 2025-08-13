@@ -24,6 +24,7 @@ module idli_decode_m import idli_pkg::*; (
   output var logic        o_de_alu_cin,
   output var cmp_op_t     o_de_cmp_op,
   output var shift_op_t   o_de_shift_op,
+  output var logic        o_de_carry_vld,
 
   // Operand locations.
   output var dst_t        o_de_dst,
@@ -127,6 +128,17 @@ module idli_decode_m import idli_pkg::*; (
 
   // Shift operation can be read directly from the encoding.
   always_comb o_de_shift_op = shift_op_t'(enc_q[3][1:0]);
+
+  // CARRY should only have impact on the following instructions:
+  //  1) ADD
+  //  2) SUB
+  //  3) SRL/SRA.
+  always_comb unique casez ({enc_q[0], enc_q[3]})
+    8'b0000_????,
+    8'b0001_????,
+    8'b1010_101?: o_de_carry_vld = '1;
+    default:      o_de_carry_vld = '0;
+  endcase
 
   // Destination is typically a register except for:
   //  1) CMP instructions write to the predicate register P.

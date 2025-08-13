@@ -151,6 +151,7 @@ module idli_ex_m import idli_pkg::*; (
   logic       count_dec;
   logic       carry_set;
   logic       count_first_q;
+  logic       carry_vld;
 
   // Input and output pins.
   io_pins_t   in_pins_q;
@@ -179,6 +180,7 @@ module idli_ex_m import idli_pkg::*; (
     .o_de_alu_cin   (alu_cin_raw),
     .o_de_cmp_op    (cmp_op),
     .o_de_shift_op  (shift_op),
+    .o_de_carry_vld (carry_vld),
 
     .o_de_dst       (dst),
     .o_de_dst_reg   (dst_reg_raw),
@@ -622,7 +624,8 @@ module idli_ex_m import idli_pkg::*; (
   end
 
   // Set when we want to chain the previous carry into the next instruction.
-  always_comb carry_set = count_q > '0 && count_op_q == COUNT_OP_CARRY;
+  always_comb carry_set = count_q > '0 && count_op_q == COUNT_OP_CARRY
+                                       && carry_vld;
 
   // Shift input previous bit comes from the register unless CARRY is set in
   // which case we forward it on. Only valid on the final cycle as this only

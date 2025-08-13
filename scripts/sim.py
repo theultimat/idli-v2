@@ -266,13 +266,17 @@ class Sim:
     def _add_sub(self, mnem, a=None, b=None, c=None, imm=None):
         lhs = self.regs[b]
         rhs = self.regs[c] if c != isa.REGS['sp'] else imm
-        cin = 0
+        cin = 0 if mnem == 'add' else 1
         if self.count_op == 'carry' and self.num_count < self.max_count:
             cin = self.cin
 
-        value = lhs + rhs + cin if mnem == 'add' else lhs - rhs - cin
+        if mnem == 'sub':
+            rhs = ~rhs & 0xffff
+
+        value = lhs + rhs + cin
         self.cin = (value >> 16) & 1
         value &= 0xffff
+
 
         self._write_reg(a, value)
 

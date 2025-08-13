@@ -147,9 +147,10 @@ class Sim:
         redirect = None
 
         # Fetch instruction and get the next sequential PC, then increment the
-        # PC register to account for the pipeline in the hardware.
+        # PC if the instruction has an immediate to account for it being
+        # fetched.
         instr, pc = self._fetch(self.pc)
-        self.pc += 1
+        self.pc += int('imm' in instr.ops)
 
         # Check if the instruction should run based on the predicate register
         # and cond state, and if so execute the instruction.
@@ -425,8 +426,6 @@ class Sim:
 
         value = (lhs + rhs) & 0xffff
         self._write_reg(a, value)
-
-        print(f'{lhs:04x} {rhs:04x} {value:04x}')
 
     # Bitwise logical operations: AND/ANDN/OR/XOR.
     def _bitwise(self, mnem, a=None, b=None, c=None, imm=None):

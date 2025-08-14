@@ -25,6 +25,7 @@ module idli_decode_m import idli_pkg::*; (
   output var cmp_op_t     o_de_cmp_op,
   output var shift_op_t   o_de_shift_op,
   output var logic        o_de_carry_vld,
+  output var logic        o_de_putp,
 
   // Operand locations.
   output var dst_t        o_de_dst,
@@ -138,6 +139,12 @@ module idli_decode_m import idli_pkg::*; (
     8'b0001_????,
     8'b1010_101?: o_de_carry_vld = '1;
     default:      o_de_carry_vld = '0;
+  endcase
+
+  // Need to detect PUTP especially to control write enable for P.
+  always_comb unique casez ({enc_q[0], enc_q[1], enc_q[2]})
+    12'b1101_???1_??11: o_de_putp = '1;
+    default:            o_de_putp = '0;
   endcase
 
   // Destination is typically a register except for:

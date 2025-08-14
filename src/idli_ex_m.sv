@@ -99,6 +99,7 @@ module idli_ex_m import idli_pkg::*; (
   // Predicate register for comparison results.
   logic pred_q;
   logic pred_d;
+  logic pred_wr_en;
 
   // Decoded comparison operation.
   cmp_op_t cmp_op;
@@ -133,6 +134,9 @@ module idli_ex_m import idli_pkg::*; (
   // Memory operation. Only valid when in progress.
   mem_op_t mem_op_raw;
   mem_op_t mem_op_q;
+
+  // Is this instruction PUTP?
+  logic putp;
 
   // Pipe for instruction.
   pipe_t pipe;
@@ -181,6 +185,7 @@ module idli_ex_m import idli_pkg::*; (
     .o_de_cmp_op    (cmp_op),
     .o_de_shift_op  (shift_op),
     .o_de_carry_vld (carry_vld),
+    .o_de_putp      (putp),
 
     .o_de_dst       (dst),
     .o_de_dst_reg   (dst_reg_raw),
@@ -355,18 +360,27 @@ module idli_ex_m import idli_pkg::*; (
   always_comb begin
     pred_d = pred_q;
 
+    // NEED TO SUPPORT PUTP!
+
     if (dst == DST_P && run_instr && !skip_instr) begin
-      // Value to write depends on the ALU flags and comparison operation that
-      // was performed.
-      unique case (cmp_op)
-        CMP_OP_EQ:              pred_d = alu_z;
-        CMP_OP_LT:              pred_d = alu_n != alu_v;
-        CMP_OP_LTU:             pred_d = !alu_c;
-        CMP_OP_GE:              pred_d = alu_n == alu_v;
-        CMP_OP_GEU:             pred_d = alu_c;
-        CMP_OP_INP:             pred_d = in_pins_q[pin_idx];
-        default: /* NE, ANY */  pred_d = !alu_z;
-      endcase
+      // PUTP needs special handling to take the bottom bit on the first
+      // cycle.
+      if (putp) begin
+        pred_d = alu_out[0];
+      end
+      else begin
+        // Value to write depends on the ALU flags and comparison operation that
+        // was performed.
+        unique case (cmp_op)
+          CMP_OP_EQ:              pred_d = alu_z;
+          CMP_OP_LT:              pred_d = alu_n != alu_v;
+          CMP_OP_LTU:             pred_d = !alu_c;
+          CMP_OP_GE:              pred_d = alu_n == alu_v;
+          CMP_OP_GEU:             pred_d = alu_c;
+          CMP_OP_INP:             pred_d = in_pins_q[pin_idx];
+          default: /* NE, ANY */  pred_d = !alu_z;
+        endcase
+      end
 
       // Apply modifier from ANDP/ORP if required.
       if (count_q > '0) begin
@@ -380,9 +394,20 @@ module idli_ex_m import idli_pkg::*; (
     end
   end
 
+  // Write enable for predicate is final cycle of all P writing operations
+  // except PUTP which must be written on the first cycle.
+  always_comb begin
+    pred_wr_en = dst == DST_P && run_instr && !skip_instr;
+
+    case (1'b1)
+      putp:     pred_wr_en &= ~|i_ex_ctr;
+      default:  pred_wr_en &= &i_ex_ctr;
+    endcase
+  end
+
   // Flop new value of P on final cycle of instruction.
   always_ff @(posedge i_ex_gck) begin
-    if (&i_ex_ctr) begin
+    if (pred_wr_en) begin
       pred_q <= pred_d;
     end
   end

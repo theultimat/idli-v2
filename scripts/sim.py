@@ -456,8 +456,13 @@ class Sim:
     # Shift and rotate instructions.
     def _shift(self, mnem, a=None, b=None):
         value = self.regs[b] & 0xffff
-        cin = 0
-        if self.count_op == 'carry' and self.num_count < self.max_count:
+
+        # Only valid for SRL and SRA.
+        cin = 0 if mnem == 'srl' else (value >> 15) & 1
+
+        # Shift through carry if this isn't the first cycle as we keep the
+        # correct initial value.
+        if self.count_op == 'carry' and 0 < self.num_count < self.max_count:
             cin = self.cin
 
         if mnem == 'srl':
@@ -466,13 +471,11 @@ class Sim:
         elif mnem == 'sra':
             self.cin = value & 1
             value >>= 1
-            value |= (value << 1) & 0x8000
+            value |= cin << 15
         elif mnem == 'ror':
-            self.cin = value & 1
             value |= (value & 1) << 16
             value >>= 1
         elif mnem == 'rol':
-            self.cin = (value >> 15) & 1
             value <<= 1
             value |= value >> 16
             value &= 0xffff

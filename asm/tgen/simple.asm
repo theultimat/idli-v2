@@ -1016,5 +1016,8 @@ test_main:
     ge r1, r5
     sra sp, r4
     srl r6, r13
+    add zr, zr, zr
+    add zr, zr, zr
+    add zr, zr, zr
     add r1, zr, zr
     j $test_ret

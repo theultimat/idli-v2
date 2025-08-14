@@ -28,6 +28,9 @@ class State:
     # Condition codes remaining to be used.
     cond: str = ''
 
+    # Number of count operations remaining.
+    count: int = 0
+
 
 # Generate a random immediate.
 def rand_imm(imin=0, imax=0xffff):
@@ -60,6 +63,10 @@ def rand_instr(args, state):
         # All restrictions have been met so we can use this instruction.
         break
 
+    # Decrement count op state.
+    if state.count > 0:
+        state.count -= 1
+
     # Generate random operand values.
     op_names = set(k for k in isa.ENCODINGS[mnem] if k not in '01?')
     op_names = sorted(op_names, key=lambda x: isa.OPERAND_ORDER.index(x))
@@ -74,6 +81,7 @@ def rand_instr(args, state):
             ops[op] = rand_imm(1, 7)
         elif op == 'j':
             ops[op] = rand_imm(0, 15)
+            state.count = ops[op]
         else:
             raise NotImplementedError(f'{op}')
 
@@ -95,11 +103,19 @@ def rand_instr(args, state):
 def end_test(state):
     instrs = []
 
+    def nop(cond=None):
+        return isa.Instruction('add', {'a': 0, 'b': 0, 'c': 0}, cond)
+
     # Pad out with conditional instructions to consume what remains.
     for cond in state.cond:
-        instrs.append(
-            isa.Instruction('add', {'a': 0, 'b': 0, 'c': 0}, f'.{cond}'),
-        )
+        instrs.append(nop(f'.{cond}'))
+        if state.count > 0:
+            state.count -= 1
+
+    # Pad out further to get through all of the count op state.
+    while state.count > 0:
+        instrs.append(nop())
+        state.count -= 1
 
     # Clear exit code and jump back to wrapper.
     instrs += [

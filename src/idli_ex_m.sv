@@ -336,19 +336,19 @@ module idli_ex_m import idli_pkg::*; (
   // then the saved value should continue to be passed forward.
   always_comb alu_cin = |i_ex_ctr || carry_set ? carry_q : alu_cin_raw;
 
-  // Save carry flag for the next slice of an operation, resetting on the
-  // first cycle that CARRY is set.
+  // Save carry flag if CARRY is active, otherwise clear the carry on the
+  // final cycle of an instruction.
   always_ff @(posedge i_ex_gck) begin
-    if (&i_ex_ctr && pipe == PIPE_COUNT && count_op_raw == COUNT_OP_CARRY) begin
+    if (&i_ex_ctr && !carry_set) begin
       carry_q <= '0;
     end
     else if (run_instr && !skip_instr) begin
-      // Make sure to set from the correct pipe or leave the same if
-      // unmodified.
       if (pipe == PIPE_ALU) begin
         carry_q <= alu_c;
       end
       else if (pipe == PIPE_SHIFT && &i_ex_ctr) begin
+        // Only update on final cycle for shifts so we can shift right through
+        // the carry flag.
         carry_q <= shift_c;
       end
     end

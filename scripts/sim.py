@@ -277,6 +277,9 @@ class Sim:
         self.cin = (value >> 16) & 1
         value &= 0xffff
 
+        # Clear carry if persistence isn't set.
+        if self.count_op != 'carry':
+            self.cin = 0
 
         self._write_reg(a, value)
 
@@ -475,6 +478,10 @@ class Sim:
             value &= 0xffff
         else:
             raise NotImplementedError()
+
+        # Clear carry if not enabled.
+        if self.count_op != 'carry':
+            self.cin = 0
 
         self._write_reg(a, value)
 

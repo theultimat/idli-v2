@@ -333,8 +333,12 @@ module idli_ex_m import idli_pkg::*; (
 
   // Carry in for ALU comes from the encoding on the first cycle of an
   // instruction or the saved value if we're mid-operation. If CARRY is active
-  // then the saved value should continue to be passed forward.
-  always_comb alu_cin = |i_ex_ctr || carry_set ? carry_q : alu_cin_raw;
+  // then the saved value should continue to be passed forward. On the first
+  // cycle of a CARRY we need to pass in the original value to ensure the
+  // operation is correct (e.g. CIN must be set for first of a SUB).
+
+  always_comb alu_cin = |i_ex_ctr || carry_set && !count_first_q ? carry_q
+                                                                 : alu_cin_raw;
 
   // Save carry flag if CARRY is active, otherwise clear the carry on the
   // final cycle of an instruction.

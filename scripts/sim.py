@@ -267,7 +267,7 @@ class Sim:
         lhs = self.regs[b]
         rhs = self.regs[c] if c != isa.REGS['sp'] else imm
         cin = 0 if mnem == 'add' else 1
-        if self.count_op == 'carry' and self.num_count < self.max_count:
+        if self.count_op == 'carry' and 0 < self.num_count < self.max_count:
             cin = self.cin
 
         if mnem == 'sub':

@@ -142,14 +142,18 @@ class Sim:
             'cex':      self._cex,
         }
 
-    # Run a single instruction.
-    def tick(self):
+    # Run a single instruction. If an instruction is passed in this will be
+    # executed and no fetch will be performed.
+    def tick(self, instr=None):
         redirect = None
 
         # Fetch instruction and get the next sequential PC, then increment the
         # PC if the instruction has an immediate to account for it being
         # fetched.
-        instr, pc = self._fetch(self.pc)
+        if instr:
+            pc = self.pc + instr.size()
+        else:
+            instr, pc = self._fetch(self.pc)
         self.pc += int('imm' in instr.ops)
 
         # Check if the instruction should run based on the predicate register

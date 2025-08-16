@@ -217,8 +217,9 @@ module idli_sqi_m import idli_pkg::*; (
     else begin
       // If we've never redirected then data can always be pushed into the
       // buffer -- address should be held at zero on reset and once we hit
-      // DATA we'll stay there until redirect.
-      buf_push = '1;
+      // DATA we'll stay there until redirect. Still need to account for
+      // stalls though!
+      buf_push = !i_sqi_stall;
     end
   end
 

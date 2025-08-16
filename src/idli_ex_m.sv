@@ -423,13 +423,19 @@ module idli_ex_m import idli_pkg::*; (
   // Update the conditional execution state. If this is written by an
   // instruction then on the final cycle write in the new value from the
   // encoding. If not, the value shifts right by one for each instruction.
+  // Special care needs to be taken for memory operations as these span
+  // multiple cycles.
   always_ff @(posedge i_ex_gck, negedge i_ex_rst_n) begin
     if (!i_ex_rst_n) begin
       cond_q <= cond_t'('0);
     end
     else if (&i_ex_ctr && run_instr) begin
-      cond_q <= cond_wr && !skip_instr ? cond_wr_data
-                                       : cond_t'({1'b0, cond_q[7:1]});
+      if (cond_wr && !skip_instr) begin
+        cond_q <= cond_wr_data;
+      end
+      else if (mem_state_q != STATE_DATA) begin
+        cond_q <= cond_t'({1'b0, cond_q[7:1]});
+      end
     end
   end
 

@@ -13,6 +13,7 @@
     add r13, zr, 0xce63
     add lr, zr, 0xf487
     add sp, zr, 0x2750
+    putp zr
     jl r4
         .org 0x84c3
     jl r7

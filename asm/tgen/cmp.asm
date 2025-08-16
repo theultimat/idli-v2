@@ -13,6 +13,7 @@
     add r13, zr, 0xe389
     add lr, zr, 0x21e5
     add sp, zr, 0x2df3
+    putp zr
     ltx r13, r7
     eq.t r6, r2
     geux r7, r4

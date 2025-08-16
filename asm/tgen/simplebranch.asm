@@ -13,10 +13,11 @@
     add r13, zr, 0x2695
     add lr, zr, 0xc6e
     add sp, zr, 0xa510
+    putp zr
     getp lr
     ne r8, r13
     b r8
-        .org 0xf6aa
+        .org 0xf6ab
     dec r13, r2
     add r12, lr, r11
     getp r2
@@ -31,7 +32,7 @@
     sra r4, r2
     sra r6, r5
     b 0xd3de
-        .org 0xca96
+        .org 0xca97
     addpc lr, r5
     any r7, 0xa981
     rol r9, lr
@@ -45,7 +46,7 @@
     rol r10, r5
     ltux zr, r8
     jl.t r9
-        .org 0xf424
+        .org 0xf426
     gex r12, 0x6fd7
     ge.t r12, r12
     dec r8, r3
@@ -54,7 +55,7 @@
     getp r11
     xor lr, r2, r8
     b r5
-        .org 0xf3eb
+        .org 0xf3ed
     geu zr, r3
     putp r12
     orp 4
@@ -904,8 +905,8 @@
     and r12, r6, r3
     ne r1, r11
     nex r7, r9
-    j.t 0x8a00
-        .org 0x8a00
+    b.t 0x8a00
+        .org 0x2e95
     inc r11, r12
     eqx sp, r3
     inc.t r5, r8

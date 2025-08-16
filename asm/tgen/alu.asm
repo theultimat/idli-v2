@@ -13,6 +13,7 @@
     add r13, zr, 0x8b45
     add lr, zr, 0x7551
     add sp, zr, 0xa351
+    putp zr
     dec r6, r1
     and r13, r7, r9
     add r8, r12, r4

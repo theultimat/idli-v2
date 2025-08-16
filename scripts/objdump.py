@@ -139,11 +139,12 @@ def merge_same(lines, sizes):
 
     addr = None
     value = None
+    size = None
 
     # Count occurrences of values in order.
     counts = []
     count = 1
-    for line, size in zip(lines, sizes):
+    for line, line_size in zip(lines, sizes):
         m = pattern.match(line)
         assert m, line
 
@@ -159,6 +160,7 @@ def merge_same(lines, sizes):
         addr = int(m.group('addr'), 16)
         value = m.group('value')
         count = 1
+        size = line_size
 
     # Close off open group.
     if count:

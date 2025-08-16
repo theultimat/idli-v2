@@ -74,7 +74,7 @@ def parse_directive(args, tree, dir_path, prefix, labels, items, addr, addrs):
 
     # .org changes the address
     if tree.data == 'directive_org':
-        addr = parse_imm(prefix, tree.children[0].value)
+        addr = int(tree.children[0].value, 0)
         if addr < 0 or addr > 0xffff:
             abort(prefix, f'Bad address: {addr:#x}')
         return addr

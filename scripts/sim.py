@@ -188,6 +188,11 @@ class Sim:
         if self.num_count >= self.max_count:
             self.count_op = None
 
+        # Clear carry if persistence isn't set.
+        CARRY_VLD = set(['add', 'sub', 'sra', 'srl'])
+        if self.count_op != 'carry' or instr.mnem not in CARRY_VLD:
+            self.cin = 0
+
         # Increment tick counter for logging.
         self.ticks += 1
 
@@ -285,10 +290,6 @@ class Sim:
         value = lhs + rhs + cin
         self.cin = (value >> 16) & 1
         value &= 0xffff
-
-        # Clear carry if persistence isn't set.
-        if self.count_op != 'carry':
-            self.cin = 0
 
         self._write_reg(a, value)
 
@@ -485,10 +486,6 @@ class Sim:
             value &= 0xffff
         else:
             raise NotImplementedError()
-
-        # Clear carry if not enabled.
-        if self.count_op != 'carry':
-            self.cin = 0
 
         self._write_reg(a, value)
 

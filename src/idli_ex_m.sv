@@ -347,7 +347,7 @@ module idli_ex_m import idli_pkg::*; (
   // Save carry flag if CARRY is active, otherwise clear the carry on the
   // final cycle of an instruction.
   always_ff @(posedge i_ex_gck) begin
-    if (&i_ex_ctr && !carry_set) begin
+    if (&i_ex_ctr && (!carry_set || !carry_vld)) begin
       carry_q <= '0;
     end
     else if (run_instr && !skip_instr) begin

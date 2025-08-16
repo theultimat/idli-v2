@@ -119,6 +119,10 @@ module idli_ex_m import idli_pkg::*; (
   // Whether operation is first or last of a memory operation.
   logic mem_op;
   logic mem_op_last;
+  logic mem_op_last_q;
+
+  // When to redirect at end of a memory operation.
+  logic mem_end_redirect;
 
   // State for the memory operation.
   state_t mem_state_q;
@@ -258,7 +262,7 @@ module idli_ex_m import idli_pkg::*; (
 
     .i_pc_ctr       (i_ex_ctr),
     .i_pc_inc       (pc_inc),
-    .i_pc_redirect  (o_ex_redirect && !mem_op && !mem_op_last),
+    .i_pc_redirect  (o_ex_redirect && !mem_op && !mem_end_redirect),
     .i_pc_data      (alu_out),
 
     .o_pc           (pc),
@@ -490,12 +494,17 @@ module idli_ex_m import idli_pkg::*; (
                        && !i_ex_urx_vld
                        && pipe == PIPE_ALU;
 
+  // Redirect at end of memory operation happens on last of LD and cycle after
+  // the last for ST.
+  always_comb mem_end_redirect = mem_op_q == MEM_OP_LD ? mem_op_last
+                                                       : mem_op_last_q;
+
   // Redirect is happening if this instruction is actually being executed and
   // it writes to the PC, is the address of a memory operation, or is
   // a redirect at the end of a memory operation.
   always_comb o_ex_redirect = run_instr
                            && !skip_instr
-                           && (dst == DST_PC || mem_op || mem_op_last);
+                           && (dst == DST_PC || mem_op || mem_end_redirect);
 
   // Data to write to the memory always comes from the ALU except for when we
   // don't have a valid instruction, in which case we output the PC. This
@@ -505,7 +514,7 @@ module idli_ex_m import idli_pkg::*; (
   always_comb begin
     o_ex_data = pc;
 
-    if (!mem_op_last) begin
+    if (!mem_end_redirect) begin
       if (enc_vld_q) begin
         o_ex_data = aux == AUX_SQI_LHS ? lhs_data_reg : alu_out;
       end
@@ -553,7 +562,7 @@ module idli_ex_m import idli_pkg::*; (
   // TODO Currently only supports LD, need ST support!
   always_comb unique case (mem_state_q)
     STATE_ADDR: mem_state_d = mem_op ? STATE_DATA : mem_state_q;
-    default:    mem_state_d = mem_op_last ? STATE_ADDR : STATE_DATA;
+    default:    mem_state_d = mem_end_redirect ? STATE_ADDR : STATE_DATA;
   endcase
 
   // Update start and end register for memory operations. This is taken from
@@ -562,7 +571,7 @@ module idli_ex_m import idli_pkg::*; (
   always_ff @(posedge i_ex_gck) begin
     if (~|i_ex_ctr && mem_op) begin
       mem_first_q <= mem_first_raw;
-      mem_last_q  <= mem_last_raw + reg_t'(mem_op_raw == MEM_OP_ST);
+      mem_last_q  <= mem_last_raw;
       mem_op_q    <= mem_op_raw;
     end
     else if (&i_ex_ctr) begin
@@ -616,6 +625,13 @@ module idli_ex_m import idli_pkg::*; (
     end
   end
 
+  // Flop last state for redirect at end of store.
+  always_ff @(posedge i_ex_gck) begin
+    if (&i_ex_ctr) begin
+      mem_op_last_q <= mem_op_last;
+    end
+  end
+
   // Increment PC when we have a valid instruction, we're not stalling, and
   // we're not part way through a memory operation.
   always_comb pc_inc = enc_vld_q
@@ -623,7 +639,8 @@ module idli_ex_m import idli_pkg::*; (
                     && mem_state_q != STATE_DATA;
 
   // Write enable is only set for store instructions.
-  always_comb o_ex_mem_wr = mem_op_q == MEM_OP_ST && mem_state_q == STATE_DATA;
+  always_comb o_ex_mem_wr = mem_op_q == MEM_OP_ST && mem_state_q == STATE_DATA
+                                                  && !mem_end_redirect;
 
   // Update the counter value. If this is a count operation then we should
   // store the new value in the register, otherwise we should decrement the

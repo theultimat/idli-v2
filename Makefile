@@ -42,7 +42,8 @@ $(VENV): $(VENV_REQ) $(VENV_DIR)
 
 # Build tests using the assembler.
 ASM_WRAPPER := $(ASM_ROOT)/test-wrapper.asm
-ASM_SOURCES := $(filter-out $(ASM_WRAPPER),$(wildcard $(ASM_ROOT)/*.asm))
+ASM_SOURCES := $(shell find $(ASM_ROOT) -type f -name '*.asm')
+ASM_SOURCES := $(filter-out $(ASM_WRAPPER),$(ASM_SOURCES))
 ASM_BINS    := $(patsubst %.asm,$(BUILD_ROOT)/%.out,$(ASM_SOURCES))
 
 AS_DEBUG := $(if $(DEBUG),--verbose,)
@@ -128,3 +129,10 @@ $(ASM_ROOT)/tgen/%.asm: $(TEST_ROOT)/bias/%.yaml
 tgen: $(TEST_ASM)
 
 .PHONY: tgen
+
+
+# Run full regression.
+regress:
+	./scripts/regress.sh
+
+.PHONY: regress

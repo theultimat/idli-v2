@@ -49,6 +49,10 @@ class Callback:
     def read_pin(self, pin):
         return None
 
+    # Called when instruction redirects PC.
+    def redirect(self, pc):
+        pass
+
 
 # Behavioural simulator of the core. Not cycle accurate.
 class Sim:
@@ -173,6 +177,7 @@ class Sim:
         if redirect:
             self._log(f'BRANCH 0x{redirect:04x}')
             self.pc = redirect
+            self.cb.redirect(redirect)
         else:
             self.pc = pc
 

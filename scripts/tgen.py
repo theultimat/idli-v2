@@ -4,7 +4,7 @@ import random
 import yaml
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import isa
 import sim
@@ -23,6 +23,9 @@ SET_COND = set([
     'cex',
 ])
 
+# Instruction redirects PC.
+REDIRECTS = set(['b', 'j', 'bl', 'jl'])
+
 
 # State for the generator.
 @dataclass
@@ -36,16 +39,52 @@ class State:
     # Simulator for getting runtime values from the test.
     sim_: sim.Sim = None
 
+    # Allocated addresses.
+    used_addrs: set = field(default_factory=set)
+
+    # Peek into the instruction stream.
+    instrs: list = None
+
 
 # Simulator callback.
 class Callback(sim.Callback):
     def __init__(self, state):
         self.state = state
 
+    def redirect(self, pc):
+        # Update PC to target in assembly file.
+        self.state.instrs.append(f'    .org {pc:#x}')
+
 
 # Generate a random immediate.
 def rand_imm(imin=0, imax=0xffff):
     return random.randint(imin, imax)
+
+
+# Check there's some space free after an address.
+def check_space(state, addr, space=16):
+    for i in range(space):
+        if addr + i in state.used_addrs:
+            return False
+
+    return True
+
+
+# Generate a random address that hasn't been used yet.
+def rand_addr(state, offset):
+    while True:
+        addr = rand_imm()
+        target = (addr + offset) & 0xffff
+        if check_space(state, target):
+            return addr
+
+
+# Allocate instruction addresses, making sure to account for immediate.
+def alloc_instr(state, instr):
+    for i in range(instr.size()):
+        addr = state.sim_.pc + i
+        assert addr not in state.used_addrs, f'{addr} {state.used_addrs}'
+        state.used_addrs.add(addr)
 
 
 # Generate test prefix -- randomly initialises registers to non-zero values.
@@ -55,7 +94,9 @@ def rand_init(state):
     for i in range(1, 16):
         ops = {'a': i, 'b': isa.REGS['zr'], 'c': isa.REGS['sp']}
         ops['imm'] = rand_imm()
+
         instrs.append(isa.Instruction('add', ops))
+        alloc_instr(state, instrs[-1])
 
         state.sim_.tick(instrs[-1])
 
@@ -73,12 +114,26 @@ def rand_instr(args, state):
         if state.cond and mnem in SET_COND:
             continue
 
+        # If we're at the end of memory then we need to redirect.
+        if state.sim_.pc >= 0xffff - 3:
+            mnem = random.choice(REDIRECTS)
+            break
+
+        # If next addresses (instr + imm) have been allocated we need to branch
+        # away now.
+        if any(state.sim_.pc + i in state.used_addrs for i in (1, 2, 3)):
+            mnem = random.choice(REDIRECTS)
+            break
+
         # All restrictions have been met so we can use this instruction.
         break
 
     # Decrement count op state.
     if state.count > 0:
         state.count -= 1
+
+    # Get current PC from simulator.
+    pc = state.sim_.pc
 
     # Generate random operand values.
     op_names = set(k for k in isa.ENCODINGS[mnem] if k not in '01?')
@@ -88,8 +143,36 @@ def rand_instr(args, state):
         if op in 'abcrs':
             ops[op] = rand_imm(0, 15)
 
-            if op == 'c' and ops[op] == isa.REGS['sp']:
-                ops['imm'] = rand_imm()
+            is_imm = op == 'c' and ops[op] == isa.REGS['sp']
+            is_addr = mnem in REDIRECTS
+
+            # Address offset needs to be accounted for when choosing an
+            # immediate value.
+            if is_addr:
+                if mnem in ('b', 'bl'):
+                    addr_base = (pc + 1) & 0xffff
+                elif mnem in ('j', 'jl'):
+                    addr_base = 0
+                else:
+                    raise NotImplementedError(mnem)
+
+            # If this is a branch and C is a register then we need to make sure
+            # the target is a valid address. If it isn't then we'll have to
+            # force an immediate instead.
+            if not is_imm and mnem in REDIRECTS:
+                base = pc if mnem in ('b', 'bl') else 0
+                offset = state.sim_.regs[ops[op]]
+                target = (base + offset) & 0xffff
+
+                if not check_space(state, target) or target == pc:
+                    ops[op] = isa.REGS['sp']
+                    is_imm = True
+
+            if is_imm:
+                if is_addr:
+                    ops['imm'] = rand_addr(state, addr_base)
+                else:
+                    ops['imm'] = rand_imm()
         elif op == 'm':
             ops[op] = rand_imm(1, 7)
         elif op == 'j':
@@ -128,12 +211,16 @@ def end_test(state):
     # Pad out with conditional instructions to consume what remains.
     for cond in state.cond:
         instrs.append(nop(f'.{cond}'))
+        alloc_instr(state, instrs[-1])
+        state.sim_.tick(instrs[-1])
         if state.count > 0:
             state.count -= 1
 
     # Pad out further to get through all of the count op state.
     while state.count > 0:
         instrs.append(nop())
+        alloc_instr(state, instrs[-1])
+        state.sim_.tick(instrs[-1])
         state.count -= 1
 
     # Send test end condition and exit code.
@@ -141,10 +228,17 @@ def end_test(state):
         instrs.append(
             isa.Instruction('utx', {'c': isa.REGS['sp'], 'imm': ord(c)})
         )
-    instrs.append(isa.Instruction('utx', {'c': 0}))
+        alloc_instr(state, instrs[-1])
+        state.sim_.tick(instrs[-1])
 
-    # Branch to self until exit.
+    instrs.append(isa.Instruction('utx', {'c': 0}))
+    alloc_instr(state, instrs[-1])
+    state.sim_.tick(instrs[-1])
+
+    # Branch to self until exit - don't both running as we don't want to
+    # generate another redirect label.
     instrs.append(isa.Instruction('b', {'c': isa.REGS['sp'], 'imm': 0xffff}))
+    alloc_instr(state, instrs[-1])
 
     return instrs
 
@@ -231,9 +325,11 @@ if __name__ == '__main__':
     state.sim_ = sim.Sim(Callback(state))
 
     instrs = rand_init(state)
+    state.instrs = instrs
     for _ in range(args.num_instr):
         instr = rand_instr(args, state)
         instrs.append(instr)
+        alloc_instr(state, instr)
 
         # Run instruction on simualtor to fire callbacks for dynamic values.
         # Use a copy as simulator modifies some instructions (e.g. CEX).

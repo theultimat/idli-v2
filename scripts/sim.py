@@ -398,7 +398,7 @@ class Sim:
             offset = 1 if '+' in mnem else -1
 
         final_addr = (base + offset) & 0xffff
-        addr = base + offset if mnem[-1] not in '+-' else base
+        addr = final_addr if mnem[-1] not in '+-' else base
 
         # Writeback if not about to overwrite with load data.
         if ('+' in mnem or '-' in mnem) and a != b:

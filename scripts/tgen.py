@@ -100,8 +100,11 @@ def rand_init(state):
 
         instrs.append(isa.Instruction('add', ops))
         alloc_instr(state, instrs[-1])
-
         state.sim_.tick(instrs[-1])
+
+    instrs.append(isa.Instruction('putp', {'c': 0}))
+    alloc_instr(state, instrs[-1])
+    state.sim_.tick(instrs[-1])
 
     return instrs
 

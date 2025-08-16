@@ -396,7 +396,7 @@ def encode(args, path, items, addrs):
     # Create binary in memory, padding out with NOPs in unassigned addresses.
     # Make sure to add the two exra NOPs to avoid prefetch reading invalid data.
     max_size = 64 * 1024
-    mem_size = max(addrs.values()) + 1 # +1 for possible immediate data
+    mem_size = max(addrs.values()) + 2 # +2 for possible immediate data
     mem_size += min(max_size - mem_size, 2)
 
     if mem_size >= max_size:

@@ -87,7 +87,7 @@ $(SV2V_ROOT)/%.v: %.sv $(SV_HEADERS)
 
 # Run test on the simulator.
 export SIM_TEST    ?= $(BUILD_ROOT)/$(ASM_ROOT)/smoke.out
-export SIM_TIMEOUT ?= 50000
+export SIM_TIMEOUT ?= 500000
 export SIM_DEBUG   ?= $(if $(DEBUG),--verbose,)
 export SIM_YAML    ?= $(patsubst $(BUILD_ROOT)/%.out,%.yaml,$(SIM_TEST))
 

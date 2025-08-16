@@ -59,12 +59,15 @@ string: "\"" STRING "\""
 directive: directive_include
          | directive_space
          | directive_int
+         | directive_org
 
 directive_include: ".include" string
 
 directive_space: ".space" INT
 
 directive_int: ".int" IMMEDIATE
+
+directive_org: ".org" IMMEDIATE
 
 PIN: "0".."3"
 

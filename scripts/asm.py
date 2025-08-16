@@ -42,37 +42,50 @@ def parse_imm(prefix, value):
     return imm
 
 
+# Assign address of an item.
+def set_addr(args, prefix, addr, addrs):
+    if addr in addrs:
+        abort(prefix, f'Address already in use: {addr:#x}')
+    addrs[prefix] = addr
+
+
 # Parse a directive.
-def parse_directive(args, tree, dir_path, prefix, labels, items):
+def parse_directive(args, tree, dir_path, prefix, labels, items, addr, addrs):
     if tree.data == 'directive_include':
         inc_path = dir_path/tree.children[0].children[0]
-        return parse(args, inc_path, prefix, labels, items)
+        *_, addr = parse(args, inc_path, prefix, labels, items, addr, addrs)
+        return addr
 
     # .space adds the specified number of zero items to reserve some space for
     # data in memory.
     if tree.data == 'directive_space':
         for i in range(int(tree.children[0].value, 0)):
             items[f'{prefix}.space{i}'] = isa.RawData(0)
-        return
+            set_addr(args, f'{prefix}.space{i}', addr, addrs)
+            addr += 1
+        return addr
 
     # .int adds the specified value.
     if tree.data == 'directive_int':
         value = parse_imm(prefix, tree.children[0].value)
         items[f'{prefix}.int'] = isa.RawData(value)
-        return
+        set_addr(args, f'{prefix}.int', addr, addrs)
+        return addr + 1
+
+    # .org changes the address
+    if tree.data == 'directive_org':
+        addr = parse_imm(prefix, tree.children[0].value)
+        if addr < 0 or addr > 0xffff:
+            abort(prefix, f'Bad address: {addr:#x}')
+        return addr
 
     abort(prefix, f'Unsupported directive: {tree.data}')
 
 
 # Parse a label declaration. If the label is local (i.e. only numeric) then
 # we can have multiple definitions, otherwise we must be unique.
-def parse_label(args, name, items, labels, prefix):
-    # Determine the address.
-    addr = 0
-    for i in items.values():
-        addr += i.size()
-
-    log(args, f'* Adding label "{name}" at address {addr}.')
+def parse_label(args, name, labels, prefix, addr):
+    log(args, f'* Adding label "{name}" at address 0x{addr:04x}.')
 
     # If this is the first time we've seen a label with this name then create
     # it and return.
@@ -108,7 +121,7 @@ def parse_char(prefix, c):
 
 
 # Parse a single instruction.
-def parse_instr(args, tree, prefix, need_conds, items):
+def parse_instr(args, tree, prefix, need_conds, items, addr, addrs):
     mnem = tree.children[0].value
     op_pattern = tree.data.split('_', 1)[-1]
     ops = {}
@@ -199,11 +212,22 @@ def parse_instr(args, tree, prefix, need_conds, items):
             abort(prefix, 'Cannot nest conditional state.')
 
     items[prefix] = instr
-    return new_conds
+    set_addr(args, prefix, addr, addrs)
+    return new_conds, instr.size()
 
 
 # Parse a single line of an input file.
-def parse_line(args, line, dir_path, prefix, need_conds, labels, items):
+def parse_line(
+    args,
+    line,
+    dir_path,
+    prefix,
+    need_conds,
+    labels,
+    items,
+    addr,
+    addrs
+):
     log(args, '*', line)
     args.indent += 1
 
@@ -224,24 +248,37 @@ def parse_line(args, line, dir_path, prefix, need_conds, labels, items):
     # Iterate through the trees for the line and parse based on the rule.
     for tree in trees:
         if tree.data == 'directive':
-            parse_directive(
+            new_addr = parse_directive(
                 args,
                 tree.children[0],
                 dir_path,
                 prefix,
                 labels,
                 items,
+                addr,
+                addrs,
             )
+
+            if new_addr is not None:
+                addr = new_addr
         elif tree.data == 'label':
             # Updates labels inline rather than returning.
-            parse_label(args, tree.children[0].value, items, labels, prefix)
+            parse_label(
+                args,
+                tree.children[0].value,
+                labels,
+                prefix,
+                addr
+            )
         elif tree.data == 'instr':
-            new_conds  = parse_instr(
+            new_conds, size  = parse_instr(
                 args,
                 tree.children[0],
                 prefix,
                 need_conds,
                 items,
+                addr,
+                addrs,
             )
 
             # Remove conditional or set new one if found.
@@ -249,15 +286,18 @@ def parse_line(args, line, dir_path, prefix, need_conds, labels, items):
                 need_conds -= 1
             if new_conds:
                 need_conds = new_conds
+
+            # Update address.
+            addr += size
         else:
             abort(prefix, f'Unrecognised rule: {tree.data}')
 
     args.indent -= 1
-    return need_conds
+    return need_conds, addr
 
 
 # Parse input file.
-def parse(args, path, prefix='', labels={}, items={}):
+def parse(args, path, prefix='', labels={}, items={}, addr=0, addrs={}):
     log(args, '* Parse file:', path)
     args.indent += 1
 
@@ -270,7 +310,9 @@ def parse(args, path, prefix='', labels={}, items={}):
             if not (line := line.strip()):
                 continue
 
-            need_conds = parse_line(
+            log(args, f'* Address: 0x{addr:04x}')
+
+            need_conds, addr = parse_line(
                 args,
                 line,
                 path.parent,
@@ -278,10 +320,12 @@ def parse(args, path, prefix='', labels={}, items={}):
                 need_conds,
                 labels,
                 items,
+                addr,
+                addrs,
             )
 
     args.indent -= 1
-    return items, labels
+    return items, labels, addrs, addr
 
 
 # Resolve labels to hold the correct immediate value.
@@ -308,7 +352,6 @@ def resolve_labels(args, items, labels):
         label = labels.get(name)
 
         if label is None:
-            print(labels)
             abort(prefix, f'Reference to undefined label: {name}')
 
         # Absolute references set the PC directly.
@@ -347,27 +390,41 @@ def resolve_labels(args, items, labels):
 
 
 # Write encodings to file.
-def encode(args, path, items):
+def encode(args, path, items, addrs):
     log(args, '- Writing output file:', path)
 
-    mem_size = 0
+    # Create binary in memory, padding out with NOPs in unassigned addresses.
+    # Make sure to add the two exra NOPs to avoid prefetch reading invalid data.
+    max_size = 64 * 1024
+    mem_size = max(addrs.values()) + 1 # +1 for possible immediate data
+    mem_size += min(max_size - mem_size, 2)
+
+    if mem_size >= max_size:
+        abort(path, f'Binary is too large: {mem_size}')
+
+    mem = bytearray(isa.RawData(0).encode() * mem_size)
+
+    # Iterate through all the items and set values at the appropriate address.
     prefixes = list(items.keys())
     items = list(items.values())
 
-    # Pad out with NOPs to prevent issues with prefetch reading bad data.
-    items.extend([isa.RawData(0)] * 2)
+    for i, item in enumerate(items):
+        try:
+            enc = item.encode(followers=items[i + 1:])
+        except Exception as e:
+            abort(prefixes[i], f'Encoding failed: {item}: {e}')
 
+        # Need to multiply address by two as bytearray is byte-indexed and
+        # each item is 16b.
+        addr = addrs[prefixes[i]] * 2
+
+        for x in enc:
+            mem[addr] = x
+            addr += 1
+
+    # Write to file.
     with open(path, 'wb') as f:
-        for i, item in enumerate(items):
-            try:
-                f.write(item.encode(followers=items[i + 1:]))
-            except Exception as e:
-                abort(prefixes[i], f'Encoding failed: {item}: {e}')
-
-            mem_size += item.size()
-
-    if mem_size >= 64 * 1024:
-        abort(path, f'Binary is too large: {mem_size}')
+        f.write(mem)
 
 
 # Parse command line arguments.
@@ -428,6 +485,6 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    items, labels = parse(args, args.input)
+    items, labels, addrs, _ = parse(args, args.input)
     resolve_labels(args, items, labels)
-    encode(args, args.output, items)
+    encode(args, args.output, items, addrs)

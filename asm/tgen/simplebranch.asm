@@ -893,8 +893,9 @@
     ltux r4, r7
     getp.t r10
     rol r5, r13
-    nex zr, r1
-    lt.t r5, r7
+    b r1
+        .org 0xc321
+    lt r5, r7
     getp r10
     nex r2, r2
     and.t r2, r13, r1
@@ -905,10 +906,10 @@
     and r12, r6, r3
     ne r1, r11
     nex r7, r9
-    b.t 0x8a00
-        .org 0x2e95
-    inc r11, r12
-    eqx sp, r3
+    jl.t 0x222c
+        .org 0x222c
+    cex 2
+    ge.f sp, r3
     inc.t r5, r8
     ge r9, zr
     eq r10, r12

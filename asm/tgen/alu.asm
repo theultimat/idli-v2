@@ -1,6 +1,3 @@
-    .include "../test-wrapper.asm"
-
-test_main:
     add r1, zr, 0xed95
     add r2, zr, 0xa274
     add r3, zr, 0x40b
@@ -1016,5 +1013,12 @@ test_main:
     andn r12, r13, r8
     add r7, r5, r8
     andn r3, r4, r13
-    add r1, zr, zr
-    j $test_ret
+    utx 0x40
+    utx 0x40
+    utx 0x45
+    utx 0x4e
+    utx 0x44
+    utx 0x40
+    utx 0x40
+    utx zr
+    b 0xffff

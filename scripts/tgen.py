@@ -35,6 +35,12 @@ MEM_OP = {
     '+st':  'b',
     'st-':  'b',
     '-st':  'b',
+    'ld':   'c',
+    'ldm':  'b',
+    'ld+':  'b',
+    '+ld':  'b',
+    'ld-':  'b',
+    '-ld':  'b',
 }
 
 
@@ -56,6 +62,9 @@ class State:
     # Peek into the instruction stream.
     instrs: list = None
 
+    # Addresses loaded from and value loaded.
+    ld_mem: dict = field(default_factory=dict)
+
 
 # Simulator callback.
 class Callback(sim.Callback):
@@ -70,6 +79,15 @@ class Callback(sim.Callback):
     def write_mem(self, addr, value):
         assert addr not in self.state.used_addrs
         self.state.used_addrs.add(addr)
+
+    def read_mem(self, addr):
+        if addr in self.state.ld_mem:
+            return self.state.ld_mem[addr]
+
+        assert addr not in self.state.used_addrs
+        self.state.used_addrs.add(addr)
+        self.state.ld_mem[addr] = rand_imm()
+        return self.state.ld_mem[addr]
 
 
 # Generate a random immediate.
@@ -217,10 +235,14 @@ def rand_instr(args, state):
                 if not check_space(state, target, num_regs):
                     mnem = 'st' if 'st' in mnem else 'ld'
                     if ldmstm:
-                        ops['a'] = ops['r']
-                        ops['b'] = ops['s']
+                        a = ops['r']
+                        b = ops['s']
                         del ops['r']
                         del ops['s']
+
+                        # Recreate dict to ensure operand A comes before B in
+                        # insertion order.
+                        ops = {'a': a, 'b': b}
 
                     addr_base = state.sim_.regs[ops['b']]
                     ops['c'] = isa.REGS['sp']
@@ -405,6 +427,11 @@ if __name__ == '__main__':
         state.sim_.tick(deepcopy(instr))
 
     instrs += end_test(state)
+
+    # Add any load data entries to the list.
+    for addr, value in state.ld_mem.items():
+        instrs.append(f'    .org {addr:#x}')
+        instrs.append(f'    .int {value:#x}')
 
     # Write to file.
     save(args, args.output, instrs)

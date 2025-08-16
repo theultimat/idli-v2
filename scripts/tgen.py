@@ -63,6 +63,9 @@ def rand_imm(imin=0, imax=0xffff):
 
 # Check there's some space free after an address.
 def check_space(state, addr, space=16):
+    if addr + space > 0xffff:
+        return False
+
     for i in range(space):
         if addr + i in state.used_addrs:
             return False
@@ -116,13 +119,13 @@ def rand_instr(args, state):
 
         # If we're at the end of memory then we need to redirect.
         if state.sim_.pc >= 0xffff - 3:
-            mnem = random.choice(REDIRECTS)
+            mnem = random.choice(list(REDIRECTS))
             break
 
         # If next addresses (instr + imm) have been allocated we need to branch
         # away now.
         if any(state.sim_.pc + i in state.used_addrs for i in (1, 2, 3)):
-            mnem = random.choice(REDIRECTS)
+            mnem = random.choice(list(REDIRECTS))
             break
 
         # All restrictions have been met so we can use this instruction.

@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+import re
 import struct
 
 import isa
@@ -106,7 +107,7 @@ def decode(data, max_items=None):
     return items
 
 
-# Return objdump as a list of strings.
+# Return objdump as a list of strings and sizes of each entry.
 def objdump(path):
     with open(path, 'rb') as f:
         data = f.read()
@@ -116,6 +117,7 @@ def objdump(path):
 
     # Pretty print the binary.
     lines = []
+    sizes = []
     pc = 0
     for item in items:
         # Prefix with raw data.
@@ -124,7 +126,60 @@ def objdump(path):
             raw += f' {struct.unpack_from(">H", data[pc * 2 + 2:])[0]:04x}'
 
         lines.append(f'{pc:04x}:  {raw:12}  {item}')
+        sizes.append(item.size())
         pc += item.size()
+
+    return lines, sizes
+
+
+# Merge lines that have the same data except for the address to avoid excessive
+# output.
+def merge_same(lines, sizes):
+    pattern = re.compile(r'^(?P<addr>[0-9a-f]+):(?P<value>.*)$')
+
+    addr = None
+    value = None
+
+    # Count occurrences of values in order.
+    counts = []
+    count = 1
+    for line, size in zip(lines, sizes):
+        m = pattern.match(line)
+        assert m, line
+
+        # If value is the same just bump the counter and keep going.
+        if m.group('value') == value:
+            count += 1
+            continue
+
+        # New value so push existing value/count and update search.
+        if addr is not None:
+            counts.append((addr, value, size, count))
+
+        addr = int(m.group('addr'), 16)
+        value = m.group('value')
+        count = 1
+
+    # Close off open group.
+    if count:
+        counts.append((addr, value, size, count))
+
+    # Regenerate lines, merging sequential entries that have more than
+    lines = []
+    for addr, value, size, count in counts:
+        if count < 3:
+            for _ in range(count):
+                lines.append(f'{addr:04x}:{value}')
+                addr += size
+            continue
+
+        lines.append(f'{addr:04x}:{value}')
+        addr += size
+
+        lines.append(' *')
+        addr += size * (count - 2)
+
+        lines.append(f'{addr:04x}:{value}')
 
     return lines
 
@@ -150,4 +205,6 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    print('\n'.join(objdump(args.input)))
+    lines, sizes = objdump(args.input)
+    lines = merge_same(lines, sizes)
+    print('\n'.join(lines))

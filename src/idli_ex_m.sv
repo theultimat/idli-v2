@@ -666,7 +666,7 @@ module idli_ex_m import idli_pkg::*; (
   // Condition under which we should decrement the counter.
   always_comb count_dec = count_q > '0
                        && !mem_op
-                       && (mem_state_q != STATE_DATA || mem_op_last);
+                       && (mem_state_q != STATE_DATA || mem_end_redirect);
 
   // Update count operation when we have a valid count instruction.
   always_ff @(posedge i_ex_gck) begin

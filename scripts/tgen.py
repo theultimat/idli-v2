@@ -3,9 +3,11 @@ import pathlib
 import random
 import yaml
 
+from copy import deepcopy
 from dataclasses import dataclass
 
 import isa
+import sim
 
 
 # Instructions that set conditional state.
@@ -31,6 +33,15 @@ class State:
     # Number of count operations remaining.
     count: int = 0
 
+    # Simulator for getting runtime values from the test.
+    sim_: sim.Sim = None
+
+
+# Simulator callback.
+class Callback(sim.Callback):
+    def __init__(self, state):
+        self.state = state
+
 
 # Generate a random immediate.
 def rand_imm(imin=0, imax=0xffff):
@@ -38,13 +49,15 @@ def rand_imm(imin=0, imax=0xffff):
 
 
 # Generate test prefix -- randomly initialises registers to non-zero values.
-def rand_init():
+def rand_init(state):
     instrs = []
 
     for i in range(1, 16):
         ops = {'a': i, 'b': isa.REGS['zr'], 'c': isa.REGS['sp']}
         ops['imm'] = rand_imm()
         instrs.append(isa.Instruction('add', ops))
+
+        state.sim_.tick(instrs[-1])
 
     return instrs
 
@@ -85,18 +98,24 @@ def rand_instr(args, state):
         else:
             raise NotImplementedError(f'{op}')
 
+    instr = isa.Instruction(mnem, ops)
+
     # Pick up the next condition code and assign to the instruction if required.
-    cond = None
     if state.cond:
-        cond = f'.{state.cond[0]}'
+        instr.cond = f'.{state.cond[0]}'
         state.cond = state.cond[1:]
     if mnem in SET_COND:
         if mnem == 'cex':
             state.cond = ''.join(random.choices('tf', k=ops['m']))
+
+            # Set cex_state for running on simulator.
+            instr.cex_mask = 1 << ops['m']
+            for i, x in enumerate(state.cond):
+                instr.cex_mask |= int(x == 't') << i
         else:
             state.cond = 't'
 
-    return isa.Instruction(mnem, ops, cond)
+    return instr
 
 
 # Generate end of test -- clear return register and branch back to the wrapper.
@@ -117,11 +136,15 @@ def end_test(state):
         instrs.append(nop())
         state.count -= 1
 
-    # Clear exit code and jump back to wrapper.
-    instrs += [
-        isa.Instruction('add', {'a': 1, 'b': 0, 'c': 0}),
-        isa.Instruction('j', {'c': isa.REGS['sp'], 'imm': '$test_ret'}),
-    ]
+    # Send test end condition and exit code.
+    for c in '@@END@@':
+        instrs.append(
+            isa.Instruction('utx', {'c': isa.REGS['sp'], 'imm': ord(c)})
+        )
+    instrs.append(isa.Instruction('utx', {'c': 0}))
+
+    # Branch to self until exit.
+    instrs.append(isa.Instruction('b', {'c': isa.REGS['sp'], 'imm': 0xffff}))
 
     return instrs
 
@@ -130,8 +153,6 @@ def end_test(state):
 def save(args, path, instrs):
     # Write out the assembly.
     with open(path, 'w') as f:
-        f.write('    .include "../test-wrapper.asm"\n\ntest_main:\n')
-
         for instr in instrs:
             f.write(f'    {instr}\n')
 
@@ -207,10 +228,17 @@ if __name__ == '__main__':
 
     # Generate the test.
     state = State()
-    instrs = rand_init()
+    state.sim_ = sim.Sim(Callback(state))
+
+    instrs = rand_init(state)
     for _ in range(args.num_instr):
         instr = rand_instr(args, state)
         instrs.append(instr)
+
+        # Run instruction on simualtor to fire callbacks for dynamic values.
+        # Use a copy as simulator modifies some instructions (e.g. CEX).
+        state.sim_.tick(deepcopy(instr))
+
     instrs += end_test(state)
 
     # Write to file.

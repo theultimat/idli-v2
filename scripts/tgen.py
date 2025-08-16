@@ -11,7 +11,7 @@ import sim
 
 
 # Instructions that set conditional state.
-SET_COND = set([
+SET_COND = [
     'eqx',
     'nex',
     'ltx',
@@ -21,10 +21,21 @@ SET_COND = set([
     'anyx',
     'inpx',
     'cex',
-])
+]
 
 # Instruction redirects PC.
-REDIRECTS = set(['b', 'j', 'bl', 'jl'])
+REDIRECTS = ['b', 'j', 'bl', 'jl']
+
+# Memory instructions and which operand should be treated as an address for
+# generation.
+MEM_OP = {
+    'st':   'c',
+    'stm':  'b',
+    'st+':  'b',
+    '+st':  'b',
+    'st-':  'b',
+    '-st':  'b',
+}
 
 
 # State for the generator.
@@ -54,6 +65,11 @@ class Callback(sim.Callback):
     def redirect(self, pc):
         # Update PC to target in assembly file.
         self.state.instrs.append(f'    .org {pc:#x}')
+
+    # Mark data accessed memory as used.
+    def write_mem(self, addr, value):
+        assert addr not in self.state.used_addrs
+        self.state.used_addrs.add(addr)
 
 
 # Generate a random immediate.
@@ -125,9 +141,9 @@ def rand_instr(args, state):
             mnem = random.choice(list(REDIRECTS))
             break
 
-        # If next addresses (instr + imm) have been allocated we need to branch
-        # away now.
-        if any(state.sim_.pc + i in state.used_addrs for i in (1, 2, 3)):
+        # If we're about to hit a range of memory we've already used then we
+        # need to redirect away.
+        if not check_space(state, state.sim_.pc, 16):
             mnem = random.choice(list(REDIRECTS))
             break
 
@@ -152,6 +168,9 @@ def rand_instr(args, state):
             is_imm = op == 'c' and ops[op] == isa.REGS['sp']
             is_addr = mnem in REDIRECTS
 
+            if mnem in MEM_OP:
+                is_addr = MEM_OP[mnem] == op
+
             # Address offset needs to be accounted for when choosing an
             # immediate value.
             if is_addr:
@@ -159,6 +178,15 @@ def rand_instr(args, state):
                     addr_base = (pc + 1) & 0xffff
                 elif mnem in ('j', 'jl'):
                     addr_base = 0
+                elif mnem in MEM_OP:
+                    if mnem[0] == '+':
+                        addr_base = 1
+                    elif mnem[0] == '-':
+                        addr_base = -1
+                    elif MEM_OP[mnem] == 'c':
+                        addr_base = state.sim_.regs[ops['b']]
+                    else:
+                        addr_base = 0
                 else:
                     raise NotImplementedError(mnem)
 
@@ -172,6 +200,41 @@ def rand_instr(args, state):
 
                 if not check_space(state, target) or target == pc:
                     ops[op] = isa.REGS['sp']
+                    is_imm = True
+
+            # If this is a memory operation without immediate and the address
+            # isn't valid then we need to replace the operation with a form that
+            # can take immediate.
+            if is_addr and mnem in MEM_OP and MEM_OP[mnem] == 'b':
+                target = (state.sim_.regs[ops[op]] + addr_base) & 0xffff
+
+                # LDM/STM have multiple registers.
+                if ldmstm := mnem in ('ldm', 'stm'):
+                    num_regs = ((ops['s'] - ops['r'] + 16) % 16) + 1
+                else:
+                    num_regs = 1
+
+                if not check_space(state, target, num_regs):
+                    mnem = 'st' if 'st' in mnem else 'ld'
+                    if ldmstm:
+                        ops['a'] = ops['r']
+                        ops['b'] = ops['s']
+                        del ops['r']
+                        del ops['s']
+
+                    addr_base = state.sim_.regs[ops['b']]
+                    ops['c'] = isa.REGS['sp']
+                    is_imm = True
+
+            # If this is a memory operation with register offset check address
+            # is valid or force immediate.
+            if is_addr and mnem in MEM_OP and MEM_OP[mnem] == 'c' and not is_imm:
+                addr_base = state.sim_.regs[ops['b']]
+                offset = state.sim_.regs[ops[op]]
+                target = (addr_base + offset) & 0xffff
+
+                if not check_space(state, target, 1):
+                    ops['c'] = isa.REGS['sp']
                     is_imm = True
 
             if is_imm:

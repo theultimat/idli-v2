@@ -302,7 +302,7 @@ class RawData:
         self.cex_mask = None
 
     def __str__(self):
-        return f'.int 0x{self.data:04X}'
+        return f'.int 0x{self.data:04x}'
 
     def num_cond(self):
         return 0

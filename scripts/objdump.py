@@ -42,54 +42,58 @@ def decode(data, max_items=None):
             if (enc & isa.OPCODE_MASKS[mnem]) == opcode:
                 matches.append(mnem)
 
-        if not matches:
-            # TODO Could be some int data but just explode for now.
-            raise Exception(f'No matches for encoding: 0x{enc:04x}')
-        if len(matches) > 1:
-            raise Exception(
-                f'Multiple candidates for encoding 0x{enc:04x}: '
-                f'{", ".join(matches)}'
-            )
+        if matches:
+            if len(matches) > 1:
+                raise Exception(
+                    f'Multiple candidates for encoding 0x{enc:04x}: '
+                    f'{", ".join(matches)}'
+                )
 
-        mnem = matches[0]
+            mnem = matches[0]
 
-        # Extract operand values from the encoding string.
-        enc_str = isa.ENCODINGS[mnem]
-        ops = {k: None for k in enc_str if k not in '01?'}
+            # Extract operand values from the encoding string.
+            enc_str = isa.ENCODINGS[mnem]
+            ops = {k: None for k in enc_str if k not in '01?'}
 
-        for k in ops:
-            mask = int(''.join('1' if x == k else '0' for x in enc_str), 2)
-            value = (enc & mask) >> ((mask & -mask).bit_length() - 1)
-            ops[k] = value
+            for k in ops:
+                mask = int(''.join('1' if x == k else '0' for x in enc_str), 2)
+                value = (enc & mask) >> ((mask & -mask).bit_length() - 1)
+                ops[k] = value
 
-        # Sort operands into order based on the expected precedence in the
-        # syntax string.
-        ops = {
-            k: ops[k]
-            for k in sorted(ops, key=lambda x: isa.OPERAND_ORDER.index(x))
-        }
+            # Sort operands into order based on the expected precedence in the
+            # syntax string.
+            ops = {
+                k: ops[k]
+                for k in sorted(ops, key=lambda x: isa.OPERAND_ORDER.index(x))
+            }
 
-        # If C is SP then the next 16b is an immediate so parse this too.
-        if ops.get('c') == isa.REGS['sp']:
-            ops['imm'], = struct.unpack('>h', data[:2])
-            data = data[2:]
+            # If C is SP then the next 16b is an immediate so parse this too.
+            if ops.get('c') == isa.REGS['sp']:
+                ops['imm'], = struct.unpack('>h', data[:2])
+                data = data[2:]
 
-        # If M is an op we need to parse the predicate state.
-        cex_mask = None
-        if ops.get('m'):
-            cex_mask = ops['m']
-            new_cond_state = _parse_op_m(ops['m'])
-            ops['m'] = len(new_cond_state)
+            # If M is an op we need to parse the predicate state.
+            cex_mask = None
+            if ops.get('m'):
+                cex_mask = ops['m']
+                new_cond_state = _parse_op_m(ops['m'])
+                ops['m'] = len(new_cond_state)
 
-        # Determine whether this instruction was conditional and set the flag
-        # appropriately based on the current state.
-        cond = None
-        if cond_state:
-            cond = f'.{cond_state[0]}'
-            cond_state = cond_state[1:]
+            # Determine whether this instruction was conditional and set the
+            # flag appropriately based on the current state.
+            cond = None
+            if cond_state:
+                cond = f'.{cond_state[0]}'
+                cond_state = cond_state[1:]
+
+            item = isa.Instruction(mnem, ops, cond, cex_mask)
+        else:
+            # Couldn't find a valid encoding so dump out raw integer.
+            item = isa.RawData(enc)
+
 
         # Add the instruction to the items list.
-        items.append(isa.Instruction(mnem, ops, cond, cex_mask))
+        items.append(item)
 
         # If the instruction sets conditional state save it.
         if items[-1].num_cond():

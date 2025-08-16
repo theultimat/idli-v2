@@ -329,18 +329,19 @@ def parse(args, path, prefix='', labels={}, items={}, addr=0, addrs={}):
 
 
 # Resolve labels to hold the correct immediate value.
-def resolve_labels(args, items, labels):
+def resolve_labels(args, items, labels, addrs):
     if not labels:
         return
 
     log(args, '* Resolving labels...')
     args.indent += 1
 
-    pc = 0
     for prefix, item in items.items():
         if not isinstance(ref := item.ops.get('imm'), str):
-            pc += item.size()
             continue
+
+        # Get address of this time.
+        pc = addrs[prefix]
 
         # Get the label name, accounting for forward/backward for locals.
         name = ref[1:]
@@ -384,7 +385,6 @@ def resolve_labels(args, items, labels):
             item.ops['imm'] = addr - (pc + 1)
 
         log(args, f'* Reference at 0x{pc}: {ref} ->', hex(item.ops["imm"]))
-        pc += item.size()
 
     args.indent -= 1
 
@@ -486,5 +486,5 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     items, labels, addrs, _ = parse(args, args.input)
-    resolve_labels(args, items, labels)
+    resolve_labels(args, items, labels, addrs)
     encode(args, args.output, items, addrs)

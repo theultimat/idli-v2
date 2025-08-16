@@ -374,22 +374,19 @@ class Sim:
             offset = 1 if '+' in mnem else -1
 
         # Address is base + offset unless we're post-increment.
-        addr = base + offset if mnem[-1] not in '+-' else base
-        addr &= 0xffff
+        final_addr = (base + offset) & 0xffff
+        addr = final_addr if mnem[-1] not in '+-' else base
 
-        # Write back register if pre-increment.
-        if mnem[0] in '+-':
-            self._write_reg(b, addr)
+        # Always write back address before memory operation so it's visible if
+        # storing the base.
+        if '+' in mnem or '-' in mnem:
+            self._write_reg(b, final_addr)
 
         # Store to memory - read data after address update in case base is the
         # value being stored.
         data = self.regs[a]
         self._log(f'ST     0x{addr:04x}    0x{data:04x}')
         self.cb.write_mem(addr, data)
-
-        # Write back register if post-increment.
-        if mnem[-1] in '+-':
-            self._write_reg(b, (base + offset) & 0xffff)
 
     # Load from memory - same as store but read data instead.
     def _ld(self, mnem, a=None, b=None, c=None, imm=None):
@@ -400,17 +397,15 @@ class Sim:
         else:
             offset = 1 if '+' in mnem else -1
 
+        final_addr = (base + offset) & 0xffff
         addr = base + offset if mnem[-1] not in '+-' else base
-        addr &= 0xffff
 
-        if mnem[0] in '+-':
-            self._write_reg(b, addr)
+        # Writeback if not about to overwrite with load data.
+        if ('+' in mnem or '-' in mnem) and a != b:
+            self._write_reg(b, final_addr)
 
         data = self.cb.read_mem(addr)
         self._log(f'LD     0x{addr:04x}    0x{data:04x}')
-
-        if mnem[-1] in '+-':
-            self._write_reg(b, (base + offset) & 0xffff)
 
         # Store load value after writeback in case A == B.
         self._write_reg(a, data)

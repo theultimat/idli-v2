@@ -169,6 +169,8 @@ module idli_ex_m import idli_pkg::*; (
   pin_op_t    pin_op;
   logic       run_pin_op;
   slice_t     pin_data;
+  logic       pin_sqi;
+  logic       pin_reg_sqi_data;
 
 
   // Decode instruction to get control signals. Note that we only flop an
@@ -486,6 +488,9 @@ module idli_ex_m import idli_pkg::*; (
     if (mem_state_q == STATE_DATA) begin
       stall_sqi = mem_op_q == MEM_OP_LD ? !enc_vld_q : !i_ex_mem_acp;
     end
+    else if (pipe == PIPE_IO && (pin_op == PIN_OP_OUT || pin_op == PIN_OP_OUTN)) begin
+      stall_sqi = enc_new_q && pin_sqi;
+    end
   end
 
   // UART TX instructions can only run if the block is accepting and we have
@@ -722,8 +727,8 @@ module idli_ex_m import idli_pkg::*; (
     if (~|i_ex_ctr) begin
       unique case (pin_op)
         PIN_OP_IN:    pin_data = slice_t'(in_pins_q[pin_idx]);
-        PIN_OP_OUT:   pin_data = slice_t'(lhs_data_reg[0]);
-        PIN_OP_OUTN:  pin_data = slice_t'({3'b0, ~lhs_data_reg[0]});
+        PIN_OP_OUT:   pin_data = slice_t'(pin_reg_sqi_data);
+        PIN_OP_OUTN:  pin_data = slice_t'({3'b0, ~pin_reg_sqi_data});
         default:      pin_data = slice_t'(pred_q);
       endcase
     end
@@ -738,5 +743,11 @@ module idli_ex_m import idli_pkg::*; (
 
   // Output current pin state.
   always_comb o_ex_io_pins = out_pins_q;
+
+  // Whether output pin value should be set from SQI or register.
+  always_comb pin_sqi = pin_reg == REG_SP;
+
+  // Data to set for output pin on OUT/OUTN, optionally coming from SQI.
+  always_comb pin_reg_sqi_data = pin_sqi ? i_ex_enc[0][0] : lhs_data_reg[0];
 
 endmodule

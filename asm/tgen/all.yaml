@@ -1,0 +1,96 @@
+input:
+- 8038
+- 32684
+- 39315
+- 7332
+- 46288
+- 52307
+- 30370
+- 11446
+input_pin:
+- pins:
+    0: 1
+    1: 0
+    2: 0
+    3: 1
+  time: 0
+- pins:
+    3: 0
+  time: 12
+- pins:
+    2: 0
+  time: 17
+- pins:
+    1: 0
+  time: 16
+- pins:
+    0: 1
+  time: 43
+- pins:
+    3: 0
+  time: 52
+- pins:
+    3: 1
+  time: 80
+- pins:
+    1: 0
+  time: 64
+- pins:
+    2: 0
+  time: 163
+- pins:
+    1: 1
+  time: 332
+- pins:
+    2: 1
+  time: 366
+- pins:
+    3: 1
+  time: 188
+- pins:
+    2: 1
+  time: 414
+- pins:
+    0: 1
+  time: 320
+- pins:
+    0: 0
+  time: 522
+- pins:
+    0: 0
+  time: 533
+- pins:
+    1: 0
+  time: 386
+- pins:
+    3: 1
+  time: 413
+- pins:
+    0: 0
+  time: 555
+- pins:
+    3: 0
+  time: 621
+- pins:
+    1: 0
+  time: 810
+- pins:
+    0: 1
+  time: 940
+- pins:
+    3: 0
+  time: 808
+output:
+- 0
+- 43574
+- 24896
+- 55569
+- 3726
+- 53154
+- 47115
+- 20785
+- 19034
+- 43999
+- 14169
+- 46288
+- 2650

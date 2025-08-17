@@ -457,7 +457,9 @@ module idli_ex_m import idli_pkg::*; (
   // writing to a register and whether the instruction is actually being
   // executed.
   always_comb begin
-    dst_reg_wr = (dst == DST_REG || aux == AUX_LR) && run_instr && !skip_instr;
+    dst_reg_wr = run_instr && !skip_instr
+                           && (dst == DST_REG || aux == AUX_LR)
+                           && (pipe == PIPE_ALU || pipe == PIPE_SHIFT);
 
     if (run_pin_op && pin_op == PIN_OP_IN) begin
       dst_reg_wr = '1;

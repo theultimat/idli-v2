@@ -71,6 +71,12 @@ class State:
     # Whether test has finished.
     finished: bool = False
 
+    # Last time input pin was read.
+    pin_read_time: dict = field(default_factory=dict)
+
+    # Last value of an input pin.
+    pin_value: dict = field(default_factory=dict)
+
 
 # Simulator callback.
 class Callback(sim.Callback):
@@ -111,6 +117,44 @@ class Callback(sim.Callback):
             self.state.yaml_['output'] = []
 
         self.state.yaml_['output'].append(data)
+
+    # Generate random value for input pin.
+    def read_pin(self, pin):
+        # If first time reset all pins to random values.
+        if 'input_pin' not in self.state.yaml_:
+            self.state.pin_read_time = {i: 0 for i in range(4)}
+            self.state.pin_value = {i: rand_imm(0, 1) for i in range(4)}
+            self.state.yaml_['input_pin'] = [{
+                'time': 0,
+                'pins': dict(self.state.pin_value),
+            }]
+
+        # Choose a random time between the last time the pin was read and this
+        # cycle at which the pin can change value. It can't change before the
+        # previous time the pin was read and it must be far enough before the
+        # current read such that the value is updated by the bench and flopped
+        # before the read.
+        min_tick = self.state.pin_read_time[pin] + 1
+        max_tick = self.state.sim_.ticks - 2
+
+        self.state.pin_read_time[pin] = self.state.sim_.ticks + 1
+
+        # If ticks are too close together then don't change the value.
+        if max_tick <= min_tick:
+            return self.state.pin_value[pin]
+
+        tick = rand_imm(min_tick, max_tick)
+
+        # Randomise value for the pin.
+        value = rand_imm(0, 1)
+        self.state.pin_value[pin] = value
+
+        self.state.yaml_['input_pin'].append({
+            'time': tick,
+            'pins': {pin: value},
+        })
+
+        return value
 
 
 # Generate a random immediate.
@@ -292,6 +336,8 @@ def rand_instr(args, state):
         elif op == 'j':
             ops[op] = rand_imm(0, 15)
             state.count = ops[op]
+        elif op == 'n':
+            ops[op] = rand_imm(0, 3)
         else:
             raise NotImplementedError(f'{op}')
 

@@ -498,14 +498,16 @@ module idli_ex_m import idli_pkg::*; (
   always_comb stall_utx = dst == DST_UART
                        && !i_ex_utx_acp
                        && !stall_sqi
-                       && pipe == PIPE_ALU;
+                       && pipe == PIPE_ALU
+                       && !skip_instr;
 
   // UART RX is similar to TX except we need to wait for there to be something
   // to read out of the RX buffer. We don't need to wait for SQI as it
   // shouldn't be active at the same time as URX.
   always_comb stall_urx = (lhs == SRC_UART || rhs == SRC_UART)
                        && !i_ex_urx_vld
-                       && pipe == PIPE_ALU;
+                       && pipe == PIPE_ALU
+                       && !skip_instr;
 
   // Redirect at end of memory operation happens on last of LD and cycle after
   // the last for ST.

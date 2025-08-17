@@ -301,7 +301,7 @@ module idli_ex_m import idli_pkg::*; (
     if (&i_ex_ctr) begin
       enc_new_q <= i_ex_enc_vld
                 && (run_instr || !enc_vld_q)
-                && mem_state_q != STATE_DATA;
+                && (mem_state_q != STATE_DATA || mem_end_redirect);
     end
   end
 
@@ -318,7 +318,7 @@ module idli_ex_m import idli_pkg::*; (
   // instruction should be skipped, hence the inverse of P.
   always_comb unique casez (cond_q)
     8'b000000?: skip_instr = '0;
-    default:    skip_instr = cond_q[0] ? ~pred_q : pred_q;
+    default:    skip_instr = (cond_q[0] ? ~pred_q : pred_q) && mem_state_q != STATE_DATA;
   endcase
 
   // LHS/RHS data depends on the source value.
@@ -574,7 +574,6 @@ module idli_ex_m import idli_pkg::*; (
   end
 
   // Determine next state for the memory operation.
-  // TODO Currently only supports LD, need ST support!
   always_comb unique case (mem_state_q)
     STATE_ADDR: mem_state_d = mem_op ? STATE_DATA : mem_state_q;
     default:    mem_state_d = mem_end_redirect ? STATE_ADDR : STATE_DATA;

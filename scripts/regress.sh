@@ -2,6 +2,11 @@
 
 set -e
 
+unset SIM_TEST
+unset SIM_TIMEOUT
+unset SIM_DEBUG
+unset SIM_YAML
+
 make clean
 make -j8 asm
 make -j8 sv2v

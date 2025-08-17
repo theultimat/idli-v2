@@ -65,6 +65,12 @@ class State:
     # Addresses loaded from and value loaded.
     ld_mem: dict = field(default_factory=dict)
 
+    # YAML to dump for the test.
+    yaml_: dict = field(default_factory=dict)
+
+    # Whether test has finished.
+    finished: bool = False
+
 
 # Simulator callback.
 class Callback(sim.Callback):
@@ -88,6 +94,23 @@ class Callback(sim.Callback):
         self.state.used_addrs.add(addr)
         self.state.ld_mem[addr] = rand_imm()
         return self.state.ld_mem[addr]
+
+    # Generate random values on URX and save value on UTX.
+    def read_uart(self):
+        if 'input' not in self.state.yaml_:
+            self.state.yaml_['input'] = []
+
+        self.state.yaml_['input'].append(rand_imm())
+        return self.state.yaml_['input'][-1]
+
+    def write_uart(self, data):
+        if self.state.finished:
+            return
+
+        if 'output' not in self.state.yaml_:
+            self.state.yaml_['output'] = []
+
+        self.state.yaml_['output'].append(data)
 
 
 # Generate a random immediate.
@@ -299,6 +322,9 @@ def end_test(state):
     def nop(cond=None):
         return isa.Instruction('add', {'a': 0, 'b': 0, 'c': 0}, cond)
 
+    # Mark test as finished so any UTX don't add to the expected output.
+    state.finished = True
+
     # Pad out with conditional instructions to consume what remains.
     for cond in state.cond:
         instrs.append(nop(f'.{cond}'))
@@ -335,16 +361,18 @@ def end_test(state):
 
 
 # Generate output file.
-def save(args, path, instrs):
+def save(args, path, instrs, state):
     # Write out the assembly.
     with open(path, 'w') as f:
         for instr in instrs:
             f.write(f'    {instr}\n')
 
     # Write out the YAML descriptor.
-    # TODO Actually do something with the YAML.
     with open(path.with_suffix('.yaml'), 'w') as f:
-        f.write('\n')
+        if state.yaml_:
+            f.write(yaml.dump(state.yaml_))
+        else:
+            f.write('\n')
 
 
 # Parse command line arguments.
@@ -434,4 +462,4 @@ if __name__ == '__main__':
         instrs.append(f'    .int {value:#x}')
 
     # Write to file.
-    save(args, args.output, instrs)
+    save(args, args.output, instrs, state)

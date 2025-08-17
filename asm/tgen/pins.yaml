@@ -1,0 +1,889 @@
+input_pin:
+- pins:
+    0: 0
+    1: 1
+    2: 0
+    3: 1
+  time: 0
+- pins:
+    0: 1
+  time: 2
+- pins:
+    2: 0
+  time: 9
+- pins:
+    3: 1
+  time: 15
+- pins:
+    0: 1
+  time: 19
+- pins:
+    2: 1
+  time: 23
+- pins:
+    1: 0
+  time: 9
+- pins:
+    2: 0
+  time: 31
+- pins:
+    3: 1
+  time: 31
+- pins:
+    2: 0
+  time: 39
+- pins:
+    3: 0
+  time: 42
+- pins:
+    1: 1
+  time: 43
+- pins:
+    2: 1
+  time: 49
+- pins:
+    3: 0
+  time: 49
+- pins:
+    0: 0
+  time: 45
+- pins:
+    1: 1
+  time: 52
+- pins:
+    0: 1
+  time: 61
+- pins:
+    2: 1
+  time: 60
+- pins:
+    1: 0
+  time: 65
+- pins:
+    2: 0
+  time: 71
+- pins:
+    0: 1
+  time: 70
+- pins:
+    3: 0
+  time: 76
+- pins:
+    1: 0
+  time: 71
+- pins:
+    0: 1
+  time: 82
+- pins:
+    3: 0
+  time: 83
+- pins:
+    1: 0
+  time: 87
+- pins:
+    2: 1
+  time: 94
+- pins:
+    0: 0
+  time: 95
+- pins:
+    3: 0
+  time: 98
+- pins:
+    2: 1
+  time: 103
+- pins:
+    2: 1
+  time: 108
+- pins:
+    3: 0
+  time: 111
+- pins:
+    0: 1
+  time: 107
+- pins:
+    3: 1
+  time: 119
+- pins:
+    1: 1
+  time: 118
+- pins:
+    2: 0
+  time: 113
+- pins:
+    0: 0
+  time: 133
+- pins:
+    3: 0
+  time: 138
+- pins:
+    2: 1
+  time: 141
+- pins:
+    0: 0
+  time: 146
+- pins:
+    1: 0
+  time: 147
+- pins:
+    2: 1
+  time: 156
+- pins:
+    3: 0
+  time: 153
+- pins:
+    2: 0
+  time: 160
+- pins:
+    0: 0
+  time: 164
+- pins:
+    2: 0
+  time: 169
+- pins:
+    3: 1
+  time: 167
+- pins:
+    1: 0
+  time: 168
+- pins:
+    0: 0
+  time: 174
+- pins:
+    2: 1
+  time: 179
+- pins:
+    3: 0
+  time: 178
+- pins:
+    2: 1
+  time: 184
+- pins:
+    1: 0
+  time: 184
+- pins:
+    3: 1
+  time: 187
+- pins:
+    1: 0
+  time: 194
+- pins:
+    0: 1
+  time: 187
+- pins:
+    3: 0
+  time: 197
+- pins:
+    0: 0
+  time: 204
+- pins:
+    1: 0
+  time: 201
+- pins:
+    0: 1
+  time: 209
+- pins:
+    2: 0
+  time: 213
+- pins:
+    3: 0
+  time: 215
+- pins:
+    1: 1
+  time: 219
+- pins:
+    2: 0
+  time: 223
+- pins:
+    3: 1
+  time: 225
+- pins:
+    1: 1
+  time: 224
+- pins:
+    2: 0
+  time: 229
+- pins:
+    2: 1
+  time: 238
+- pins:
+    3: 1
+  time: 240
+- pins:
+    0: 1
+  time: 236
+- pins:
+    1: 0
+  time: 240
+- pins:
+    1: 1
+  time: 251
+- pins:
+    3: 0
+  time: 246
+- pins:
+    0: 1
+  time: 254
+- pins:
+    2: 0
+  time: 256
+- pins:
+    1: 1
+  time: 257
+- pins:
+    0: 1
+  time: 261
+- pins:
+    3: 0
+  time: 261
+- pins:
+    0: 0
+  time: 269
+- pins:
+    1: 0
+  time: 269
+- pins:
+    1: 0
+  time: 281
+- pins:
+    0: 1
+  time: 277
+- pins:
+    2: 1
+  time: 283
+- pins:
+    1: 0
+  time: 292
+- pins:
+    0: 0
+  time: 297
+- pins:
+    3: 1
+  time: 291
+- pins:
+    1: 1
+  time: 299
+- pins:
+    2: 1
+  time: 302
+- pins:
+    0: 1
+  time: 303
+- pins:
+    3: 1
+  time: 305
+- pins:
+    1: 0
+  time: 308
+- pins:
+    2: 0
+  time: 310
+- pins:
+    3: 1
+  time: 312
+- pins:
+    2: 0
+  time: 319
+- pins:
+    1: 0
+  time: 315
+- pins:
+    2: 0
+  time: 325
+- pins:
+    0: 1
+  time: 313
+- pins:
+    3: 0
+  time: 330
+- pins:
+    0: 0
+  time: 331
+- pins:
+    2: 0
+  time: 335
+- pins:
+    1: 0
+  time: 333
+- pins:
+    3: 1
+  time: 342
+- pins:
+    1: 1
+  time: 344
+- pins:
+    2: 0
+  time: 345
+- pins:
+    0: 0
+  time: 345
+- pins:
+    3: 0
+  time: 358
+- pins:
+    2: 0
+  time: 356
+- pins:
+    3: 1
+  time: 364
+- pins:
+    0: 0
+  time: 363
+- pins:
+    2: 1
+  time: 368
+- pins:
+    2: 0
+  time: 372
+- pins:
+    1: 1
+  time: 373
+- pins:
+    2: 0
+  time: 385
+- pins:
+    3: 0
+  time: 379
+- pins:
+    1: 1
+  time: 385
+- pins:
+    1: 0
+  time: 395
+- pins:
+    0: 0
+  time: 378
+- pins:
+    1: 0
+  time: 401
+- pins:
+    3: 1
+  time: 406
+- pins:
+    2: 1
+  time: 392
+- pins:
+    1: 0
+  time: 410
+- pins:
+    1: 1
+  time: 419
+- pins:
+    3: 0
+  time: 415
+- pins:
+    2: 1
+  time: 413
+- pins:
+    0: 0
+  time: 420
+- pins:
+    3: 0
+  time: 432
+- pins:
+    2: 1
+  time: 435
+- pins:
+    0: 1
+  time: 433
+- pins:
+    2: 0
+  time: 441
+- pins:
+    3: 0
+  time: 445
+- pins:
+    1: 1
+  time: 445
+- pins:
+    2: 1
+  time: 446
+- pins:
+    1: 0
+  time: 453
+- pins:
+    3: 0
+  time: 459
+- pins:
+    2: 1
+  time: 462
+- pins:
+    1: 1
+  time: 469
+- pins:
+    0: 1
+  time: 466
+- pins:
+    2: 1
+  time: 467
+- pins:
+    3: 1
+  time: 475
+- pins:
+    1: 0
+  time: 474
+- pins:
+    3: 1
+  time: 486
+- pins:
+    2: 0
+  time: 489
+- pins:
+    0: 1
+  time: 486
+- pins:
+    3: 0
+  time: 494
+- pins:
+    1: 1
+  time: 494
+- pins:
+    2: 1
+  time: 499
+- pins:
+    0: 1
+  time: 504
+- pins:
+    3: 1
+  time: 510
+- pins:
+    2: 0
+  time: 513
+- pins:
+    1: 1
+  time: 507
+- pins:
+    3: 1
+  time: 517
+- pins:
+    0: 1
+  time: 522
+- pins:
+    1: 0
+  time: 525
+- pins:
+    2: 0
+  time: 526
+- pins:
+    3: 1
+  time: 528
+- pins:
+    3: 1
+  time: 534
+- pins:
+    1: 0
+  time: 532
+- pins:
+    3: 0
+  time: 539
+- pins:
+    0: 1
+  time: 532
+- pins:
+    1: 1
+  time: 543
+- pins:
+    0: 1
+  time: 547
+- pins:
+    3: 0
+  time: 547
+- pins:
+    0: 1
+  time: 551
+- pins:
+    2: 1
+  time: 551
+- pins:
+    1: 1
+  time: 554
+- pins:
+    3: 1
+  time: 556
+- pins:
+    0: 0
+  time: 559
+- pins:
+    3: 1
+  time: 569
+- pins:
+    0: 0
+  time: 570
+- pins:
+    3: 1
+  time: 575
+- pins:
+    1: 0
+  time: 568
+- pins:
+    3: 0
+  time: 580
+- pins:
+    1: 1
+  time: 586
+- pins:
+    2: 0
+  time: 587
+- pins:
+    3: 1
+  time: 590
+- pins:
+    0: 1
+  time: 591
+- pins:
+    1: 0
+  time: 593
+- pins:
+    2: 1
+  time: 596
+- pins:
+    3: 0
+  time: 599
+- pins:
+    1: 0
+  time: 608
+- pins:
+    0: 0
+  time: 602
+- pins:
+    0: 0
+  time: 615
+- pins:
+    2: 1
+  time: 618
+- pins:
+    3: 0
+  time: 615
+- pins:
+    2: 1
+  time: 626
+- pins:
+    1: 0
+  time: 625
+- pins:
+    0: 0
+  time: 627
+- pins:
+    2: 1
+  time: 636
+- pins:
+    1: 1
+  time: 637
+- pins:
+    0: 0
+  time: 639
+- pins:
+    1: 1
+  time: 642
+- pins:
+    2: 1
+  time: 643
+- pins:
+    3: 0
+  time: 635
+- pins:
+    2: 1
+  time: 656
+- pins:
+    3: 1
+  time: 657
+- pins:
+    1: 0
+  time: 647
+- pins:
+    2: 0
+  time: 669
+- pins:
+    1: 1
+  time: 671
+- pins:
+    0: 1
+  time: 648
+- pins:
+    1: 0
+  time: 678
+- pins:
+    2: 0
+  time: 686
+- pins:
+    1: 0
+  time: 689
+- pins:
+    3: 0
+  time: 675
+- pins:
+    2: 0
+  time: 692
+- pins:
+    1: 0
+  time: 698
+- pins:
+    2: 0
+  time: 705
+- pins:
+    1: 0
+  time: 705
+- pins:
+    0: 0
+  time: 694
+- pins:
+    1: 1
+  time: 713
+- pins:
+    2: 1
+  time: 711
+- pins:
+    3: 1
+  time: 704
+- pins:
+    0: 0
+  time: 717
+- pins:
+    1: 0
+  time: 717
+- pins:
+    0: 1
+  time: 722
+- pins:
+    1: 0
+  time: 722
+- pins:
+    3: 0
+  time: 720
+- pins:
+    0: 0
+  time: 729
+- pins:
+    1: 1
+  time: 728
+- pins:
+    0: 0
+  time: 738
+- pins:
+    1: 0
+  time: 738
+- pins:
+    0: 0
+  time: 743
+- pins:
+    0: 1
+  time: 748
+- pins:
+    3: 1
+  time: 730
+- pins:
+    0: 1
+  time: 752
+- pins:
+    2: 1
+  time: 743
+- pins:
+    0: 1
+  time: 759
+- pins:
+    3: 0
+  time: 761
+- pins:
+    1: 0
+  time: 759
+- pins:
+    0: 0
+  time: 772
+- pins:
+    3: 0
+  time: 775
+- pins:
+    2: 1
+  time: 767
+- pins:
+    1: 0
+  time: 785
+- pins:
+    3: 1
+  time: 782
+- pins:
+    2: 0
+  time: 791
+- pins:
+    3: 0
+  time: 796
+- pins:
+    1: 1
+  time: 799
+- pins:
+    0: 1
+  time: 781
+- pins:
+    1: 0
+  time: 807
+- pins:
+    3: 1
+  time: 805
+- pins:
+    1: 0
+  time: 813
+- pins:
+    0: 0
+  time: 820
+- pins:
+    3: 0
+  time: 824
+- pins:
+    2: 0
+  time: 798
+- pins:
+    1: 0
+  time: 829
+- pins:
+    2: 0
+  time: 842
+- pins:
+    3: 1
+  time: 851
+- pins:
+    1: 0
+  time: 851
+- pins:
+    3: 1
+  time: 863
+- pins:
+    2: 1
+  time: 862
+- pins:
+    0: 1
+  time: 853
+- pins:
+    1: 1
+  time: 869
+- pins:
+    3: 0
+  time: 873
+- pins:
+    2: 0
+  time: 873
+- pins:
+    3: 0
+  time: 884
+- pins:
+    0: 1
+  time: 880
+- pins:
+    2: 0
+  time: 893
+- pins:
+    0: 1
+  time: 896
+- pins:
+    2: 0
+  time: 898
+- pins:
+    3: 0
+  time: 903
+- pins:
+    0: 0
+  time: 902
+- pins:
+    3: 1
+  time: 909
+- pins:
+    2: 0
+  time: 912
+- pins:
+    1: 0
+  time: 883
+- pins:
+    3: 1
+  time: 926
+- pins:
+    2: 0
+  time: 931
+- pins:
+    0: 0
+  time: 933
+- pins:
+    1: 1
+  time: 936
+- pins:
+    3: 0
+  time: 937
+- pins:
+    0: 0
+  time: 940
+- pins:
+    3: 0
+  time: 945
+- pins:
+    1: 0
+  time: 947
+- pins:
+    2: 1
+  time: 943
+- pins:
+    0: 0
+  time: 950
+- pins:
+    1: 1
+  time: 952
+- pins:
+    3: 1
+  time: 953
+- pins:
+    0: 0
+  time: 960
+- pins:
+    1: 1
+  time: 959
+- pins:
+    0: 0
+  time: 965
+- pins:
+    2: 1
+  time: 966
+- pins:
+    3: 1
+  time: 968
+- pins:
+    1: 1
+  time: 969
+- pins:
+    0: 1
+  time: 973
+- pins:
+    2: 0
+  time: 973
+- pins:
+    1: 0
+  time: 980
+- pins:
+    3: 0
+  time: 978
+- pins:
+    2: 0
+  time: 985
+- pins:
+    1: 1
+  time: 984
+- pins:
+    3: 1
+  time: 991
+- pins:
+    0: 1
+  time: 992
+- pins:
+    2: 1
+  time: 990
+- pins:
+    1: 1
+  time: 994
+- pins:
+    3: 0
+  time: 999
+- pins:
+    0: 1
+  time: 999
+- pins:
+    2: 1
+  time: 1003
+- pins:
+    0: 0
+  time: 1006

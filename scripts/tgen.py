@@ -299,7 +299,8 @@ def rand_instr(args, state):
                 else:
                     num_regs = 1
 
-                if not check_space(state, target, num_regs):
+                pc_hit = any(target + i == pc for i in range(num_regs))
+                if not check_space(state, target, num_regs) or pc_hit:
                     mnem = 'st' if 'st' in mnem else 'ld'
                     if ldmstm:
                         a = ops['r']
@@ -322,7 +323,7 @@ def rand_instr(args, state):
                 offset = state.sim_.regs[ops[op]]
                 target = (addr_base + offset) & 0xffff
 
-                if not check_space(state, target, 1):
+                if not check_space(state, target, 1) or target == pc:
                     ops['c'] = isa.REGS['sp']
                     is_imm = True
 

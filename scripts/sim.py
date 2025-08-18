@@ -49,8 +49,10 @@ class Callback:
     def read_pin(self, pin):
         return None
 
-    # Called when instruction redirects PC.
-    def redirect(self, pc):
+    # Called when instruction redirects PC. PC is the target we're redirecting
+    # to, NEXT_PC is the next sequential PC after the instruction that caused
+    # the redirect.
+    def redirect(self, pc, next_pc):
         pass
 
 
@@ -177,7 +179,7 @@ class Sim:
         if redirect:
             self._log(f'BRANCH 0x{redirect:04x}')
             self.pc = redirect
-            self.cb.redirect(redirect)
+            self.cb.redirect(redirect, pc)
         else:
             self.pc = pc
 

@@ -83,7 +83,16 @@ class Callback(sim.Callback):
     def __init__(self, state):
         self.state = state
 
-    def redirect(self, pc):
+    def redirect(self, pc, next_pc):
+        # If we have space and doing so won't cause an invalid cond state then
+        # write a couple of junk instructions in the branch shadow to make sure
+        # we don't execute them.
+        shadow = 2 * int(not self.state.cond)
+        for i in range(shadow):
+            if check_space(self.state, next_pc + i, 1):
+                val = rand_imm()
+                self.state.instrs.append(f'    .int {val:#4x}')
+
         # Update PC to target in assembly file.
         self.state.instrs.append(f'    .org {pc:#x}')
 

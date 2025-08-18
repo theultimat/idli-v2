@@ -1,12 +1,16 @@
 input:
 - 8038
+- 49156
+- 20934
 - 32684
 - 39315
+- 28159
 - 7332
 - 46288
 - 52307
 - 30370
 - 11446
+- 46823
 input_pin:
 - pins:
     0: 1
@@ -16,10 +20,7 @@ input_pin:
   time: 0
 - pins:
     3: 0
-  time: 12
-- pins:
-    2: 0
-  time: 17
+  time: 19
 - pins:
     1: 0
   time: 16
@@ -28,69 +29,64 @@ input_pin:
   time: 43
 - pins:
     3: 0
-  time: 52
+  time: 50
 - pins:
     3: 1
-  time: 80
+  time: 78
 - pins:
     1: 0
-  time: 64
-- pins:
-    2: 0
-  time: 163
-- pins:
-    1: 1
-  time: 332
+  time: 62
 - pins:
     2: 1
-  time: 366
-- pins:
-    3: 1
-  time: 188
+  time: 147
 - pins:
     2: 1
-  time: 414
+  time: 407
+- pins:
+    2: 1
+  time: 438
 - pins:
     0: 1
-  time: 320
+  time: 318
 - pins:
     0: 0
+  time: 482
+- pins:
+    0: 0
+  time: 521
+- pins:
+    1: 0
+  time: 168
+- pins:
+    3: 0
   time: 522
 - pins:
     0: 0
-  time: 533
-- pins:
-    1: 0
-  time: 386
-- pins:
-    3: 1
-  time: 413
-- pins:
-    0: 0
-  time: 555
+  time: 580
 - pins:
     3: 0
-  time: 621
+  time: 610
 - pins:
     1: 0
-  time: 810
+  time: 798
 - pins:
     0: 1
-  time: 940
+  time: 930
 - pins:
     3: 0
-  time: 808
+  time: 803
 output:
-- 0
 - 43574
-- 24896
-- 55569
+- 27437
+- 21175
+- 42351
 - 3726
-- 53154
+- 53155
 - 47115
-- 20785
+- 30973
 - 19034
 - 43999
-- 14169
+- 18403
+- 57798
 - 46288
 - 2650

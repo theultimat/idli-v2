@@ -493,8 +493,10 @@
     stm r2..r10, r12
     ld- r13, sp
     bl r5
+        .int 0x603e
+        .int 0x1705
         .org 0x140b
-    ld r8, r12, 0x8ba3
+    ld r12, r10, 0x8ba3
     +ld r6, r4
     st r4, r7, 0x295e
     -ld r1, r2
@@ -539,73 +541,80 @@
     -st r2, r13
     ld r1, r7, 0x5466
     b r11
+        .int 0xeac7
+        .int 0x8a6a
         .org 0x9321
-    ld r8, zr, 0x7839
-    ld+ r9, sp
-    ldm r6..r6, r11
-    ldm r2..r10, r12
-    ld+ sp, lr
-    ld r2, r7, 0x9a2f
-    ld r13, r12, 0x5800
+    add lr, r8, r9
+    -ld r10, r5
+    st- r6, r11
+    st+ sp, r6
+    +ld r10, r12
+    +ld r13, r10
+    st r7, r2, 0xc37a
+    ld+ r8, sp
+    ld r13, r2, 0xff0e
+    ld r10, r13, 0x5800
     +ld r12, r1
-    stm r2..r1, r7
-    -ld sp, r10
+    st r2, r1, 0xfb2b
+    st- r10, r11
     +st sp, r12
     ld- r1, r3
     -st r6, r4
     stm r7..r8, sp
     stm r12..r1, r1
-    +st lr, r11
-    ld- r1, r9
+    st lr, r11, 0xcbe3
+    st+ r1, r9
     st r10, sp, 0x697a
     st lr, r6, r10
-    ld r8, r10, 0x43be
-    st r8, r5, 0x4e3
-    ld r6, r1, 0xa8f0
+    ld- r8, r10
+    ld r8, r5, 0x4e3
+    st r6, r1, 0xa18c
+    st r5, r10, 0x25e4
     st- r5, r6
-    st r8, r4, 0x97b4
-    stm zr..r6, lr
-    -st r1, r6
-    +st r2, r1
-    -st r12, r7
-    j r2
-        .org 0x3e55
+    bl r4
+        .int 0x97b4
+        .int 0xd48
+        .org 0x60f2
+    st r6, lr, 0x3fbf
+    ld r11, r2, r1
+    st r7, r7, 0x276d
     -ld r1, r13
     st r7, sp, 0xf49c
-    -st r4, sp
-    ld r5, r13, 0xb9c4
-    -ld sp, r12
-    ld r12, r4, 0x9b19
-    ld r6, zr, 0x2073
-    st r11, r1, r11
-    ld+ lr, r8
-    ld lr, r11, 0x8ef6
-    ld r11, r11, 0x86ae
-    +st r9, r4
+    st r4, sp, 0x77af
+    st r5, r13, r11
+    ldm sp..r12, lr
+    ld r8, r7, lr
+    st r8, r6, 0xbc6f
+    st r4, r11, r11
+    -st r10, r8
+    st+ r9, r4
     st- r12, r11
     -ld r3, r13
     st r5, r9, r7
-    ld sp, r10, 0xd87c
-    ld r5, r4, 0xe48d
+    ld- sp, r10
+    st r13, r4, 0x5d54
+    st- lr, r6
     -ld r8, sp
     add r13, r2, r2
-    ld+ r9, lr
-    st r12, r4, 0xccf8
-    ld+ r4, r5
-    st- r11, lr
-    add r11, r7, r2
-    -ld r8, r4
+    ld r9, lr, 0x3d84
+    ld- r12, r8
+    -ld r4, r5
+    st r11, lr, 0xdc1
+    ld r7, r2, 0xbe40
+    -st r4, r10
     +st lr, r4
     st- r8, r11
-    -ld r2, lr
-    stm r1..r13, r8
-    +st r10, r5
-    ld r2, r7, 0x8391
-    ld r8, r8, r4
+    ld r2, lr, 0xbee6
+    ld r8, r10, r10
+    +ld r2, r7
+    -st r2, r8
+    st r8, r4, 0xccb9
     -st sp, r7
     ldm r11..r1, r12
-    st- r5, sp
-    st r11, zr, 0x7b38
+    j 0xb8ab
+        .int 0xef9
+        .int 0x7b38
+        .org 0xb8ab
     st+ r12, r13
     +st zr, r8
     ld+ sp, r11
@@ -623,126 +632,136 @@
     -ld r13, r10
     +st sp, r12
     +st r3, r13
-    ld r5, r13, 0xa500
-    ld r13, r4, r9
-    st r6, r11, 0x7096
-    ldm r12..r10, r8
-    add r2, r12, lr
-    st r3, r5, 0x3364
-    +st r4, r11
+    ld r5, r13, 0x2eb8
+    ld r9, r7, 0x6aeb
+    ld r4, r12, r10
+    st r11, sp, r6
+    -st sp, r4
+    st r9, r9, r9
+    add r2, r9, r13
+    st r3, zr, 0x23c7
+    ld- lr, r3
+    st r3, r4, 0xbe85
     add r1, r2, r10
     st zr, r3, r11
-    ld r4, r11, 0x84b
-    st+ r4, sp
-    ld r9, r7, r13
-    st r2, r13, 0x9380
+    ldm r4..r11, r2
+    st r10, r13, r2
+    st- sp, r9
     -ld r6, r10
     st+ zr, lr
     ld r6, sp, r3
-    ld- zr, r13
-    ld+ zr, r8
-    jl 0x58e9
-        .org 0x58e9
+    ld zr, r13, 0xbb08
+    +ld zr, r8
+    st r13, sp, 0x58e9
     +st sp, r12
     stm sp..r3, r7
-    st r5, r9, 0xefcc
-    -st r5, r6
+    stm r5..r9, r5
+    -ld r9, r5
     st r5, r13, lr
-    ld+ zr, sp
-    st r13, r6, r12
-    ld r12, lr, 0x81a0
-    st+ r8, r4
-    +st sp, r8
-    ld r1, r8, 0x3abb
-    ld r9, zr, 0xa283
+    ld zr, sp, 0xd9bb
+    st- r13, r6
+    ld r5, r12, 0xe03f
+    ld r7, r8, 0x4170
+    stm r8..r5, lr
+    st r1, r8, 0x3abb
+    stm r11..r13, r9
+    st r8, r10, r1
     ld r3, lr, 0xdb03
-    st r9, r5, 0xd854
-    ld+ zr, r4
+    st- r9, r5
+    ld zr, zr, 0x4b8c
     ld r7, r6, r2
-    -ld r13, r12
-    ld- r7, r7
+    ld r13, r12, 0x35c4
+    st- r7, r7
     -st r13, r2
-    ldm r1..lr, r9
-    stm lr..r6, r1
-    st+ r13, r6
-    stm sp..r5, sp
-    -st r1, r13
-    ld r12, r13, 0xe050
-    st- r3, r11
-    st+ r1, r2
-    +ld r3, r12
-    st r9, r12, 0x9a9b
+    ld r1, lr, 0x59f7
+    st lr, r11, r10
+    ld r3, r6, r9
+    st sp, r2, 0x67d5
+    st r13, r6, 0x5777
+    stm sp..r4, r1
+    ld- r12, r13
+    st+ lr, r4
+    ld r11, r1, r2
+    ld r3, r12, 0xa5b7
+    -st r12, r9
     -st r6, r10
     st r3, sp, 0xac5b
     +st r3, r4
-    st- r9, lr
-    -ld r7, r1
-    stm sp..zr, r5
-    st sp, r1, 0xf843
-    st+ r4, r8
+    st r9, lr, 0xdfa4
+    st r1, sp, 0xf08c
+    st r5, sp, 0x179d
+    st r3, r4, 0x837d
     -st sp, r11
     stm lr..lr, r3
     ld r6, r10, 0x118e
-    st r5, sp, 0x19f8
-    ld r10, r5, 0x98c2
-    ld sp, zr, 0x48cf
-    ld lr, r8, 0x544f
-    stm r6..sp, r2
-    ld lr, r4, 0xd095
-    ld r13, r11, r4
-    st r10, r5, 0xa66e
-    ldm r10..r4, lr
-    ld r8, zr, 0x9a4c
-    -ld zr, r10
-    +ld r3, r12
+    j 0x19f8
+        .int 0x6391
+        .int 0xa045
+        .org 0x19f8
+    -st r5, r9
+    ld sp, sp, 0xf6d
+    add r13, lr, r8
+    st r5, r5, 0x6f62
+    st sp, r2, 0x7380
+    st lr, r4, r13
+    st zr, zr, r13
+    ld r4, r10, 0x5023
+    ld r10, r4, 0x2184
+    add zr, r6, r4
+    -st r6, r9
+    -ld lr, r6
+    add r9, r8, lr
+    +ld r10, r11
+    -st r12, sp
     st r3, r4, 0x1c8d
-    st r5, r13, 0xf657
-    ld+ zr, r8
-    st r13, zr, 0xf05b
-    stm zr..sp, r7
-    ld- r2, r9
-    st+ sp, sp
-    ld sp, zr, 0x1b4c
-    st+ r11, r6
-    st r7, r8, 0x5ca2
-    ld r10, r7, 0x3f95
+    stm r5..r13, r10
+    -st sp, r7
+    ld r8, r7, 0x906
+    st zr, sp, 0xdd10
+    st r9, lr, 0xfacb
+    ldm sp..zr, r9
+    st r11, r6, 0x871b
+    st r8, r5, 0x9d40
+    st r7, r3, 0xa418
     ld sp, r3, lr
-    st+ zr, r2
-    st r8, r4, r4
-    ld r4, r9, 0xba38
-    -ld r4, sp
-    st+ r2, r10
-    st+ r6, r6
-    ld r13, r12, 0x9318
-    st r7, r5, r1
-    ld r12, r7, 0xa18b
-    ld zr, r2, 0x7bd8
-    st r7, r3, r12
+    st zr, r2, 0x8051
+    ld r4, r8, 0x475e
+    ld sp, r9, 0x40d8
+    ld r2, r10, r7
+    +st r7, r13
+    ld- r9, lr
+    st r5, r1, 0xe02
+    ld- r12, r8
+    st r5, zr, 0x2570
+    add r7, r6, r4
+    st r7, r3, 0xc0e6
     st lr, r4, r10
     ld lr, zr, lr
     -ld lr, r12
     st r2, r11, r9
     st r9, r7, r11
-    st zr, r2, 0xea99
-    ld r7, r10, 0xcc1d
-    st r12, r3, r10
-    st r5, zr, 0x7ff
-    st+ r6, r6
+    -st zr, r2
+    -ld r7, r10
+    st r8, r12, 0x3654
+    j 0x7ff
+        .int 0x6de4
+        .int 0x6da7
+        .org 0x7ff
     st r2, sp, r1
     st+ r4, lr
     st lr, r1, r10
-    st r7, r1, zr
-    stm r8..r11, lr
-    st+ lr, r3
-    ld r3, r5, 0x188b
+    st r7, r1, 0x89b0
+    ld lr, r3, 0xd273
+    st r5, r4, 0x4a5f
     st r13, zr, 0x8bc6
-    st r5, zr, 0x891f
-    ld r4, r12, 0xbe36
-    -ld lr, sp
-    ld r6, r2, 0x3f6a
-    ld r12, r2, r2
-    st- r13, r2
-    ld r10, r11, 0x5d2e
+    st r5, zr, 0x9c98
+    st+ r8, r8
+    ld r4, r12, r12
+    st+ sp, r9
+    -ld lr, r6
+    ld r1, zr, 0x2f1c
+    st r13, r2, 0xa41a
+    ld- r1, r5
     ldm r8..r7, r7
     ld r6, r9, 0x4dfc
     st- lr, r4
@@ -757,43 +776,60 @@
     ld+ r10, r8
     st- r3, r1
     st+ r11, lr
-    st r13, r8, 0xf844
-    ld r12, r13, 0x95e0
-    -ld r2, r5
-    -st r3, r7
-    st sp, r2, 0xecbf
-    st sp, r13, r6
-    -st r8, r1
-    +st r5, r9
-    st r10, zr, 0xc5f5
-    ldm r7..r3, lr
+    st r13, r8, 0x5eb5
+    ld r12, r13, r1
+    +st lr, r5
+    ld r5, r1, r11
+    st r7, r2, 0x2012
+    ld- lr, r3
+    st r13, r6, r8
+    st+ r9, r5
+    +ld lr, r10
+    ld- r7, r3
+    ld- r5, r12
+    -st sp, r4
+    stm r7..r1, r5
+    st r10, r6, r9
     +ld r1, sp
-    ldm lr..r2, r10
-    st r5, r9, lr
-    stm zr..r11, lr
-    ldm r10..sp, r11
-    +ld r2, r11
+    ld lr, r2, 0xa9f7
+    add r9, r1, r5
+    st lr, zr, 0x42f0
+    ld r10, sp, 0xbe56
+    b r4
+        .int 0x6066
+        .int 0xa1bc
+        .org 0x302
+    ld- r2, r11
     st- r4, r3
     st+ r8, r2
     ld+ r1, r12
     ld r10, r12, 0xb3c
     -ld sp, r5
-    stm r4..r7, r8
-    st r12, zr, 0x7d79
-    -ld r6, r6
-    ld r6, r11, 0x4a41
+    st r4, r7, 0xb7d0
+    ld- r7, sp
+    ld+ r7, r6
+    +st r11, r4
     ldm r4..r2, r6
     st r4, r2, 0x72ed
     -ld r9, r3
     ld+ r1, r10
     +ld zr, r7
-    ld r3, r9, r8
-    ldm r3..zr, r2
-    ldm r6..r4, r7
-    +ld lr, r12
-    -st r8, r13
-    +st r8, r5
-    st- r8, r3
+    b 0x8dd1
+        .int 0xbea
+        .int 0x38c9
+        .org 0x90e6
+    ld- zr, r2
+    add r10, r6, r2
+    st+ r6, r8
+    st- r12, r10
+    -st lr, r13
+    st- lr, r4
+    ld r6, r4, 0x546d
+    +ld r2, r5
+    ld+ r2, r9
+    +ld r3, r6
+    ld lr, r12, r5
+    ld r8, r5, 0x827b
     st r3, r7, 0x8230
     ld- r12, r3
     ld+ r3, r1
@@ -809,187 +845,201 @@
     -ld r12, lr
     -st r9, r6
     ld- r1, r8
-    ld r8, r7, 0x46a
-    st r6, zr, 0x2487
-    +ld r11, r2
+    -ld r8, r7
+    ld r6, zr, 0xa9a9
+    -st r2, r8
     ld r7, r9, 0x8de
     st- r2, r13
-    b 0x4c31
-        .org 0xa5fa
+    st zr, zr, 0x4c31
     +ld lr, r10
-    st- zr, r8
-    +ld r13, r10
-    st lr, r12, 0x8957
+    st zr, r8, 0x95cc
+    stm r10..r11, r5
+    -ld r12, sp
     ld r4, r11, r10
     ld+ r3, r12
     st lr, r6, r2
-    ld r2, r6, 0x28db
-    ld- r6, r3
-    stm r2..r5, r6
-    ld r8, r12, 0xb55b
+    +ld r2, r6
+    st r12, r6, 0x3241
+    st- r5, r2
+    ld r6, r13, 0xb55b
     -st r8, r11
     ld r3, r3, 0xa447
-    ldm r4..r1, r2
-    +st r1, r4
-    st r8, zr, r11
-    -st r6, sp
-    +ld r12, r9
-    ld+ r6, r6
-    st r8, r9, 0x5a26
-    +ld r10, r8
-    -st r3, lr
-    st r10, r11, 0x5259
+    ld r4, r1, 0xa514
+    st+ r8, r12
+    st+ r10, r2
+    stm r4..r3, lr
+    st r1, r12, 0x807f
+    b r4
+        .int 0x8d0a
+        .int 0x659
+        .org 0x51fa
+    ld r6, sp, 0xae20
+    st r9, r1, 0x67b7
+    ld r5, r1, 0x84bf
+    +st r5, r9
+    ld r10, r8, 0xcdce
+    -ld r10, r11
     -st r4, r10
     ld+ r8, r13
     st r1, r8, r13
     st r13, r5, r12
-    ld r8, r4, 0xf104
-    -ld r2, r12
+    ld+ r8, r4
+    st r3, r2, 0xbcfa
     st+ r11, r7
     st r9, r7, r2
-    -ld r9, r1
-    st sp, lr, 0xfc9a
-    add sp, r13, r10
-    -st zr, lr
-    +ld r2, r8
-    ld+ sp, r2
-    st r6, r8, 0xad2
-    add sp, lr, r11
-    ld r3, zr, 0x6b74
-    ld- r6, r5
-    st r6, zr, 0x3b54
-    ld r12, r13, r10
-    -ld r9, r9
-    +ld r13, r3
+    ld r9, r1, 0xf986
+    -st zr, r9
+    st r13, r10, r12
+    add r11, zr, r2
+    st+ r8, r4
+    ld sp, r2, 0x75cc
+    stm zr..zr, sp
+    st r11, lr, r12
+    stm r3..zr, r6
+    ldm r10..r6, r5
+    -st r9, r9
+    add r13, r3, r2
     ld zr, sp, r11
     ld- r13, r12
-    st zr, r3, 0x7b7a
-    st r11, r5, r13
-    st r12, r4, 0xae2f
-    ld r2, r7, 0x1536
-    ld r4, r2, 0x23f6
-    st- r4, sp
-    ld r6, r1, r7
-    -ld r8, r6
-    +st r7, r11
-    st r10, r2, 0x5220
-    -st r7, sp
-    ld r11, r11, 0xf923
-    st r3, r1, 0x1ac9
-    ld r11, r9, 0x6c68
-    ld zr, r13, 0x5729
-    st r3, r8, 0xd9d
-    -st r13, r6
-    ld sp, r8, r2
-    st r6, r7, zr
-    ld+ sp, r5
+    b r3
+        .int 0x7b7a
+        .int 0x6652
+        .org 0xfd8b
+    st- r11, r5
+    -ld r13, r8
+    ldm lr..r4, r2
+    -st lr, r2
+    ldm r4..sp, r3
+    st r5, r5, 0x7556
+    -ld r1, r11
+    st+ sp, sp
+    st- r3, r1
+    st- r1, r1
+    bl r9
+        .int 0xfd4e
+        .int 0x6c68
+        .org 0x8875
+    ld r12, zr, 0xde8f
+    st r6, r3, 0x84c1
+    ld r7, zr, 0x1c5c
+    st r3, r2, 0xf653
+    +ld r12, r6
+    add sp, r5, r4
     -ld lr, r1
     add r3, r3, lr
-    ld r7, r11, 0xe078
-    st r6, r7, r13
-    add r10, r2, r2
-    ldm r5..r10, r13
-    ld r1, r5, 0x2234
-    ld+ r6, r7
-    ld+ r8, r9
-    st+ r10, lr
+    ld r7, r11, r3
+    -ld lr, r6
+    ld- r9, r10
+    +st r2, r5
+    ld r5, r10, 0xd3f8
+    st- r6, lr
+    st+ sp, r9
+    ldm r1..r5, r12
+    -ld lr, r8
+    add r13, r10, lr
     st r8, zr, 0x21cf
-    st+ r4, r11
-    -ld zr, r5
-    ld sp, r5, r4
-    st r7, r9, 0x7213
-    -st r3, r8
-    -ld r6, sp
-    ld r2, sp, r12
-    ld r12, zr, r6
-    add r4, r13, r11
-    ldm r3..r6, r2
-    ld r2, r8, 0xb7c8
-    add sp, r11, r6
-    ldm r13..r1, r9
-    ld r12, r9, 0x6ae8
-    +ld lr, r7
-    ld- r2, r11
-    st+ r5, r10
-    st- r12, lr
-    b r4
-        .org 0xe0df
-    st+ r3, r13
-    ld r11, r12, r1
-    +st r3, r6
-    ld- sp, r1
-    +ld r7, r6
-    -ld r8, r5
-    ld r9, r10, 0xe8f9
-    st+ r2, r8
-    stm sp..r11, r10
-    -ld sp, r7
+    st r4, r11, 0xeb6a
+    st r5, zr, 0x22a8
+    st r5, r4, r3
+    st r7, r9, 0x3df5
+    ld r3, r8, 0x67d6
+    st- r2, r2
+    jl 0x4c15
+        .int 0x1ae2
+        .int 0xeda2
+        .org 0x4c15
+    ld zr, r6, 0xf2d5
+    +st r4, r13
+    -st r11, r4
+    -ld r6, r2
+    ld r3, r6, 0x2c46
+    st r11, zr, 0xf2ca
+    st- r11, r6
+    jl 0x92a3
+        .int 0x3748
+        .int 0x677a
+        .org 0x92a3
+    stm r3..r8, r3
+    ld r12, r9, 0xc251
+    -ld lr, r7
+    ld r2, r11, 0x98b5
+    +ld r9, r12
+    +ld zr, r4
+    ld r13, r2, r11
+    st r1, r2, r12
+    ldm r13..r5, sp
+    ld r7, r9, 0xa2f3
+    +st r1, r4
+    -ld r2, r8
+    -ld r11, r10
+    st- r7, r5
     st r8, zr, r1
-    ld zr, zr, 0x1a0d
-    st r1, r4, zr
-    st+ r7, r2
-    +st r4, r5
-    ld r5, r4, lr
-    st r9, r1, 0x3ec
-    st r1, r7, r7
-    st r8, r5, r5
-    ld+ r7, r12
-    st+ r12, r7
-    ld r9, r13, 0x6aff
-    st- r9, r8
-    j r13
-        .org 0x3749
+    ld zr, zr, 0x5725
+    st r4, zr, r9
+    ld+ r2, r3
+    -st r1, r9
+    stm r4..lr, sp
+    st r9, r1, 0xcea1
+    -ld r10, r1
+    ld+ r8, r5
+    ld r7, r12, 0xc4c
+    +st r9, r13
+    ld lr, r4, 0x90e0
+    -st r4, r13
     +st r5, r11
-    -st r3, r1
-    -st r5, r8
-    +st r10, r11
-    ld r7, lr, 0x827d
-    st r12, r13, 0x9f75
+    st r3, r1, 0x5bc6
+    +ld r2, r10
+    +ld r7, lr
+    ld r9, r12, 0xd545
     st r13, r3, 0x8819
-    ld+ r2, lr
-    add r5, r13, r7
-    st r4, r6, r4
-    st r5, r1, 0xcfe3
-    ld- r12, r2
-    ld- r9, r12
-    -st r10, r4
-    ld r6, r7, r13
-    +st zr, sp
-    ld r12, r3, r7
-    ld zr, sp, 0xf366
-    st r3, r11, 0xc8ea
-    -st r13, r5
+    ld r2, lr, 0xc367
+    ld r5, r13, 0x7c12
+    ld r3, r5, 0xcfe3
+    st r12, r2, 0xa335
+    ld r9, r12, 0x439e
+    ldm r9..r6, r7
+    stm lr..r3, r11
+    +ld lr, r13
     +ld r2, r12
     st r7, lr, r13
-    ld r2, r4, 0x1cbf
-    ld+ r8, r7
-    +st r4, r8
-    add r7, r8, r1
-    ld r11, r9, 0x1847
-    st+ r11, r9
+    ld- r2, r4
+    stm r8..r5, r8
+    ld+ r3, sp
+    b 0x1734
+        .int 0x435f
+        .int 0xdfd9
+        .org 0xaa15
+    st r9, r3, r1
+    st zr, r3, 0x9eae
     add r11, r7, r12
-    ld r2, lr, 0x865d
-    -st r9, r12
+    -ld r2, lr
+    ld+ r10, r9
     -st r9, r7
-    ld r10, r5, 0x769b
-    +st r9, sp
-    ld r7, r2, r13
+    ld+ r10, r5
+    ldm r7..r9, sp
+    st- r13, r8
     -st r2, r6
-    st r8, r12, 0xeb1b
-    ldm r2..r12, r2
+    -st r8, r12
+    -st r5, r2
+    ld- r9, r4
+    +ld r1, r9
+    -st r4, r9
     add r5, r2, lr
-    ldm lr..r12, r9
-    ld lr, r4, r10
-    stm r4..lr, r12
-    st r13, r4, 0xfee2
-    +st sp, r8
-    ld- r4, r2
-    st+ lr, sp
-    add lr, r7, r10
-    -ld r10, lr
-    ld sp, r13, 0xe5fb
-    ld lr, r7, r11
-    -st r2, r9
+    ld lr, r12, 0xdad8
+    st- r4, r3
+    st+ r4, r3
+    st r3, r12, 0xcf84
+    st sp, sp, r1
+    st r2, r12, lr
+    ld r10, r9, 0xe2b2
+    st- r13, r4
+    st sp, r9, 0x82a7
+    ld r4, r2, 0x72b9
+    st zr, r9, 0xe705
+    ld+ r4, r10
+    +ld sp, r13
+    +ld lr, r7
+    st r6, r2, r9
     ldm r10..r1, r5
     stm r5..r12, r10
     -st r7, r6
@@ -1000,27 +1050,12 @@
     ld r11, r4, r12
     stm r5..r2, r7
     +ld r5, r13
-    -ld zr, r3
-    st r3, r8, 0xb8b3
+    ld zr, r3, 0x89e5
+    stm r8..r9, r11
     ld zr, zr, 0xa1b6
-    st r2, r3, 0x7f36
-    add r5, r12, r7
-    ld r12, r10, r1
-    ld r3, r8, 0x1db4
-    -ld r1, r5
-    ld r3, r7, 0xf203
-    ldm r8..r8, r4
-    ldm r11..r9, lr
-    ld+ zr, r13
-    ldm sp..r5, r11
-    ldm r6..zr, r9
-    st+ r9, r5
-    +ld r12, r9
-    st+ zr, r3
-    +ld sp, r1
-    st+ lr, r8
-    -st lr, lr
-    ld r3, r4, 0x7916
+    st r2, r3, 0xcba
+    ld r12, r7, 0x3520
+    st r12, r10, 0x1da1
     utx 0x40
     utx 0x40
     utx 0x45
@@ -1722,7 +1757,7 @@
         .int 0x2cb4
         .org 0x328f
         .int 0xb40e
-        .org 0x10bd
+        .org 0xe409
         .int 0x8c47
         .org 0x926a
         .int 0xd8c2
@@ -1750,9 +1785,9 @@
         .int 0xfbb8
         .org 0x88d3
         .int 0x6c67
-        .org 0x8c46
+        .org 0x94e1
         .int 0x7ec
-        .org 0x33d5
+        .org 0x3b02
         .int 0x6d2
         .org 0xb2e
         .int 0x33f3
@@ -1760,7 +1795,7 @@
         .int 0x49ea
         .org 0x9268
         .int 0xada9
-        .org 0x8519
+        .org 0x8c46
         .int 0xf306
         .org 0x33f3
         .int 0xcdae
@@ -1804,97 +1839,93 @@
         .int 0xd631
         .org 0x5454
         .int 0x8d38
-        .org 0x7839
-        .int 0xe4c2
-        .org 0x85f5
-        .int 0xa0b0
-        .org 0x7edd
-        .int 0xf7e2
-        .org 0x6cbc
-        .int 0x3290
+        .org 0xbace
+        .int 0xe113
         .org 0x6cbd
-        .int 0xa101
-        .org 0x6cbe
-        .int 0xd3f6
-        .org 0x6cbf
-        .int 0xa025
-        .org 0x6cc0
+        .int 0x3290
+        .org 0x3291
         .int 0xdb96
-        .org 0x6cc1
-        .int 0x73a0
-        .org 0x6cc2
-        .int 0x27c3
-        .org 0x6cc3
-        .int 0xc37a
-        .org 0x6cc4
-        .int 0x89bd
-        .org 0x60a1
-        .int 0x5125
-        .org 0xdcf
-        .int 0x3e55
-        .org 0xc4bc
+        .org 0x85f5
+        .int 0xefa8
+        .org 0xe0d1
+        .int 0x9a2f
+        .org 0xf22f
         .int 0xb576
         .org 0x8d39
         .int 0x6c02
-        .org 0x89bc
-        .int 0xbd81
-        .org 0xa101
+        .org 0xd631
         .int 0x1797
-        .org 0xc37a
-        .int 0x993c
-        .org 0xcd7a
-        .int 0x5270
-        .org 0x422c
-        .int 0x25e4
-        .org 0xb575
+        .org 0xb576
+        .int 0xa966
+        .org 0xbfb1
+        .int 0x4c32
+        .org 0xf95a
+        .int 0xcaa1
+        .org 0x9a2e
         .int 0xf866
-        .org 0x6f39
-        .int 0x3ca0
-        .org 0x6c02
-        .int 0xe484
-        .org 0x6f0e
+        .org 0x9346
+        .int 0x1370
+        .org 0x9347
+        .int 0x9ef5
+        .org 0x9348
+        .int 0xc495
+        .org 0x9349
+        .int 0x4602
+        .org 0x934a
+        .int 0xf7a8
+        .org 0x934b
+        .int 0x9b19
+        .org 0x934c
         .int 0xc78b
-        .org 0x2073
+        .org 0x934d
+        .int 0x9604
+        .org 0x934e
+        .int 0x679d
+        .org 0x934f
+        .int 0x105
+        .org 0x9350
+        .int 0x2073
+        .org 0x9351
         .int 0x3d1d
-        .org 0x5270
-        .int 0x873e
-        .org 0xdd4
-        .int 0x4f44
-        .org 0x58c
-        .int 0xcde1
-        .org 0xb574
+        .org 0x9352
+        .int 0x8c72
+        .org 0x9353
+        .int 0xb3e3
+        .org 0xfae3
+        .int 0x88a8
+        .org 0x9a2d
         .int 0x74e1
-        .org 0x6238
-        .int 0xdb16
-        .org 0xb883
-        .int 0x6301
-        .org 0xdb15
+        .org 0x3d1d
+        .int 0xd87c
+        .org 0xd87b
         .int 0xd4b5
-        .org 0x4f44
-        .int 0x3d84
-        .org 0x6301
+        .org 0xd0ca
+        .int 0x3c3f
+        .org 0xd4b5
+        .int 0x7a80
+        .org 0xc78a
         .int 0x3b08
-        .org 0x3b07
-        .int 0xaddc
-        .org 0x4f43
-        .int 0xbee6
-        .org 0xf730
-        .int 0x7c0f
-        .org 0xe8e4
-        .int 0xccb9
-        .org 0xc78b
+        .org 0x442
+        .int 0x8a32
+        .org 0x522c
+        .int 0xd65a
+        .org 0x7a36
+        .int 0x51c2
+        .org 0x8a33
+        .int 0x8391
+        .org 0x7a80
         .int 0x9583
-        .org 0xc78c
+        .org 0x7a81
         .int 0x7b3e
-        .org 0xc78d
+        .org 0x7a82
         .int 0x8483
-        .org 0xc78e
+        .org 0x7a83
         .int 0x8b8f
-        .org 0xc78f
+        .org 0x7a84
         .int 0x2299
-        .org 0xc790
+        .org 0x7a85
         .int 0xa65c
-        .org 0xc791
+        .org 0x7a86
         .int 0xe57e
         .org 0x9583
         .int 0xbe13
@@ -1924,213 +1955,141 @@
         .int 0x62c7
         .org 0x62c6
         .int 0xbc10
-        .org 0x6111
-        .int 0x7c46
-        .org 0x1496
-        .int 0x7e0e
-        .org 0x7418
-        .int 0xbd54
-        .org 0x7419
-        .int 0xf7a9
-        .org 0x741a
-        .int 0x6213
-        .org 0x741b
-        .int 0xf04a
-        .org 0x741c
-        .int 0x490d
-        .org 0x741d
-        .int 0xca38
-        .org 0x741e
-        .int 0x96f0
-        .org 0x741f
-        .int 0x93d9
-        .org 0x7420
-        .int 0x9dda
-        .org 0x7421
-        .int 0x2a
-        .org 0x7422
-        .int 0x2155
-        .org 0x7423
-        .int 0x970e
-        .org 0x7424
-        .int 0xd693
-        .org 0x7425
-        .int 0xd70e
-        .org 0x7426
-        .int 0x39e8
-        .org 0xe0bf
+        .org 0xeac9
+        .int 0xd69b
+        .org 0xbb08
+        .int 0xb953
+        .org 0x4853
+        .int 0x806a
+        .org 0x74e1
+        .int 0x51a5
+        .org 0x7564
+        .int 0xfaa0
+        .org 0x7565
+        .int 0x84b
+        .org 0x7566
         .int 0x6792
-        .org 0x8eb7
-        .int 0xa7cf
-        .org 0x39e7
+        .org 0x7567
+        .int 0x4383
+        .org 0x7568
+        .int 0xfa87
+        .org 0x7569
+        .int 0x18b0
+        .org 0x756a
+        .int 0x9086
+        .org 0x756b
+        .int 0x7d78
+        .org 0x9085
         .int 0x8283
-        .org 0x8424
+        .org 0x32f2
         .int 0x460
-        .org 0xf7a9
-        .int 0xbb08
-        .org 0xd693
+        .org 0x7719
+        .int 0x7af3
+        .org 0xfa88
         .int 0xc3c4
-        .org 0xf04b
-        .int 0xd9bb
-        .org 0xc052
-        .int 0xd2de
-        .org 0x1150
-        .int 0xa425
-        .org 0xa283
-        .int 0x1f48
-        .org 0x19b5
+        .org 0x84a
+        .int 0x64f6
+        .org 0x97cd
+        .int 0xe8ff
+        .org 0xc5cd
+        .int 0x81a0
+        .org 0x3bf8
+        .int 0xfe4d
+        .org 0x2ca9
         .int 0xa1d9
-        .org 0x6793
+        .org 0x4b8c
         .int 0xfccf
-        .org 0x23c6
+        .org 0x79c3
         .int 0x3c0e
-        .org 0xd2dd
-        .int 0x35c4
-        .org 0x3c0e
-        .int 0x7751
-        .org 0x1f48
-        .int 0x59f7
-        .org 0x1f49
+        .org 0x1b52
+        .int 0xca0f
+        .org 0xab9d
         .int 0x8a28
-        .org 0x1f4a
-        .int 0x3249
-        .org 0x1f4b
-        .int 0xe831
-        .org 0x1f4c
-        .int 0xb813
-        .org 0x1f4d
-        .int 0xab54
-        .org 0x1f4e
-        .int 0x1fa5
-        .org 0x1f4f
-        .int 0xe903
-        .org 0x1f50
-        .int 0x329f
-        .org 0x1f51
-        .int 0x6bc8
-        .org 0x1f52
-        .int 0x9c15
-        .org 0x1f53
+        .org 0x6955
         .int 0x6886
-        .org 0x1f54
-        .int 0xfb5a
-        .org 0x1f55
-        .int 0x21e1
-        .org 0xdba9
-        .int 0xe8d5
-        .org 0xe8d6
-        .int 0xae64
-        .org 0x59f6
-        .int 0xfbb8
-        .org 0x7d55
+        .org 0xca0f
+        .int 0xe050
+        .org 0xff8b
+        .int 0xae07
+        .org 0x8607
+        .int 0x9d20
+        .org 0xa212
         .int 0x527b
-        .org 0x50d5
-        .int 0x42bb
-        .org 0x48cf
-        .int 0x684
-        .org 0x3d53
-        .int 0x23c0
-        .org 0xb8c7
-        .int 0xd71
-        .org 0x8445
-        .int 0xa85d
-        .org 0xd71
-        .int 0xc753
-        .org 0xd72
-        .int 0x2184
-        .org 0xd73
+        .org 0xcd7f
+        .int 0x48cf
+        .org 0xe0a7
+        .int 0xa66e
+        .org 0xc7f2
         .int 0x1ead
-        .org 0xd74
-        .int 0x7ea
-        .org 0xd75
-        .int 0xa90
-        .org 0xd76
-        .int 0x67d2
-        .org 0xd77
-        .int 0x4dd7
-        .org 0xd78
-        .int 0x6e7a
-        .org 0xd79
-        .int 0x9d2d
-        .org 0xd7a
-        .int 0xf624
-        .org 0xd7b
-        .int 0x6587
-        .org 0x9a4c
-        .int 0x8585
-        .org 0xc752
-        .int 0xbb27
-        .org 0x1eae
-        .int 0xf29a
-        .org 0x8585
-        .int 0x72a0
-        .org 0x329f
-        .int 0xe109
-        .org 0x1b4c
+        .org 0x527a
+        .int 0x850d
+        .org 0xae07
+        .int 0x8d43
+        .org 0x4512
+        .int 0xf05b
+        .org 0x7f95
+        .int 0x1b4c
+        .org 0x7f96
         .int 0xc376
-        .org 0x3b4d
-        .int 0xa418
-        .org 0xfd2a
+        .org 0x222d
         .int 0x3d99
-        .org 0xecd6
-        .int 0xb4fb
-        .org 0x3d98
-        .int 0x1da3
-        .org 0xb1c6
-        .int 0xe47e
-        .org 0x9d43
-        .int 0x9e45
-        .org 0x5ce2
-        .int 0x68a9
-        .org 0xa90
+        .org 0x37b9
+        .int 0x91c0
+        .org 0xc06d
+        .int 0xfb83
+        .org 0xc94f
+        .int 0x6370
+        .org 0x850d
+        .int 0x51c8
+        .org 0xf05b
+        .int 0xa18b
+        .org 0x850c
         .int 0x85af
-        .org 0x9e44
+        .org 0xa18a
         .int 0xeb31
-        .org 0x7036
-        .int 0xab38
-        .org 0xd09e
-        .int 0x4a5f
-        .org 0x5c7a
-        .int 0x4595
-        .org 0x3d97
-        .int 0xe2ae
-        .org 0x2074
-        .int 0xa8bf
-        .org 0xc214
-        .int 0xba17
-        .org 0x7eb2
+        .org 0x8d42
+        .int 0xcc1d
+        .org 0x6f93
+        .int 0x3fe2
+        .org 0x4314
+        .int 0xbe36
+        .org 0x5279
+        .int 0x2e10
+        .org 0x2f1c
+        .int 0x287b
+        .org 0x819f
         .int 0x41d6
-        .org 0xab38
+        .org 0xcc1d
         .int 0x6e13
-        .org 0xab39
+        .org 0xcc1e
         .int 0xcdc2
-        .org 0xab3a
+        .org 0xcc1f
         .int 0xd777
-        .org 0xab3b
+        .org 0xcc20
         .int 0x79ac
-        .org 0xab3c
+        .org 0xcc21
         .int 0x1343
-        .org 0xab3d
+        .org 0xcc22
         .int 0xe83a
-        .org 0xab3e
+        .org 0xcc23
         .int 0xdc19
-        .org 0xab3f
+        .org 0xcc24
         .int 0xe5e4
-        .org 0xab40
+        .org 0xcc25
         .int 0xd654
-        .org 0xab41
+        .org 0xcc26
         .int 0xe363
-        .org 0xab42
+        .org 0xcc27
         .int 0xbe4a
-        .org 0xab43
+        .org 0xcc28
         .int 0xd182
-        .org 0xab44
+        .org 0xcc29
         .int 0xfac8
-        .org 0xab45
+        .org 0xcc2a
         .int 0x641e
-        .org 0xab46
+        .org 0xcc2b
         .int 0xe78a
-        .org 0xab47
+        .org 0xcc2c
         .int 0x730e
         .org 0x1bbe
         .int 0xeb96
@@ -2152,175 +2111,91 @@
         .int 0xa811
         .org 0x710e
         .int 0x1f7b
-        .org 0x7e1a
-        .int 0xe824
-        .org 0xcb10
-        .int 0x1917
-        .org 0xaee0
-        .int 0xd359
-        .org 0xaee1
-        .int 0x5339
-        .org 0xaee2
-        .int 0xcc10
-        .org 0xaee3
+        .org 0xcb9c
+        .int 0x95e0
+        .org 0x8b73
+        .int 0x3ffe
+        .org 0xd182
+        .int 0xf270
+        .org 0x1f7c
+        .int 0xdc3
+        .org 0xd181
+        .int 0xeb28
+        .org 0x95e0
         .int 0x965a
-        .org 0xaee4
-        .int 0x38ba
-        .org 0xaee5
-        .int 0xfb31
-        .org 0xaee6
-        .int 0x436a
-        .org 0xaee7
-        .int 0x75a2
-        .org 0xaee8
-        .int 0x14a3
-        .org 0xaee9
-        .int 0x5546
-        .org 0xaeea
-        .int 0x33f1
-        .org 0xaeeb
-        .int 0xad13
-        .org 0xaeec
-        .int 0x61df
-        .org 0x14a4
+        .org 0xe5e5
         .int 0xd62b
-        .org 0x965a
-        .int 0xa9f7
-        .org 0x965b
+        .org 0x6840
         .int 0xa8f9
-        .org 0x965c
-        .int 0xbff
-        .org 0x965d
-        .int 0xcb3d
-        .org 0x965e
-        .int 0x9a4b
-        .org 0x38ba
+        .org 0xa43b
         .int 0x9152
-        .org 0x38bb
-        .int 0x3af4
-        .org 0x38bc
-        .int 0x434d
-        .org 0x38bd
-        .int 0x6066
-        .org 0x38be
-        .int 0xa1bc
-        .org 0x38bf
-        .int 0xc804
-        .org 0x3af5
+        .org 0xa811
         .int 0x8419
-        .org 0x434d
+        .org 0x95df
         .int 0xdf1b
-        .org 0x4e8a
+        .org 0xa11c
         .int 0xac4f
-        .org 0xcb0f
+        .org 0x9659
         .int 0xfe20
-        .org 0xeb95
-        .int 0x348
-        .org 0x8536
-        .int 0x3f98
-        .org 0x3f98
+        .org 0xfe20
+        .int 0x6aaf
+        .org 0xeb96
+        .int 0x6b62
+        .org 0xeb97
         .int 0x4925
-        .org 0x3f99
+        .org 0xeb98
         .int 0x811f
-        .org 0x3f9a
+        .org 0xeb99
         .int 0xb971
-        .org 0x3f9b
+        .org 0xeb9a
         .int 0x55b1
-        .org 0x3f9c
+        .org 0xeb9b
         .int 0x3672
-        .org 0x3f9d
+        .org 0xeb9c
         .int 0xb824
-        .org 0x3f9e
+        .org 0xeb9d
         .int 0xd38f
-        .org 0x3f9f
+        .org 0xeb9e
         .int 0xeec0
-        .org 0x3fa0
+        .org 0xeb9f
         .int 0xf9fc
-        .org 0x3fa1
+        .org 0xeba0
         .int 0xec7f
-        .org 0x3fa2
+        .org 0xeba1
         .int 0xf019
-        .org 0x3fa3
+        .org 0xeba2
         .int 0x80f7
-        .org 0x3fa4
+        .org 0xeba3
         .int 0xad38
-        .org 0x3fa5
+        .org 0xeba4
         .int 0xcebd
-        .org 0x3fa6
+        .org 0xeba5
         .int 0x21a8
-        .org 0x61dd
+        .org 0xd17e
         .int 0x8705
         .org 0xd38f
         .int 0x32fb
         .org 0x55b2
         .int 0x7c4c
-        .org 0xbd77
-        .int 0xbea
         .org 0x21a8
         .int 0xd1b0
-        .org 0x21a9
-        .int 0xae0
-        .org 0x21aa
-        .int 0xa43a
-        .org 0x21ab
-        .int 0x6744
-        .org 0x21ac
-        .int 0x273d
-        .org 0x21ad
-        .int 0xbe8c
-        .org 0x21ae
-        .int 0x6662
-        .org 0x21af
-        .int 0x88b6
-        .org 0x21b0
-        .int 0xe86e
-        .org 0x21b1
-        .int 0xc94a
-        .org 0x21b2
-        .int 0xa50d
-        .org 0x21b3
-        .int 0xe85f
-        .org 0x21b4
-        .int 0xd858
-        .org 0x21b5
-        .int 0xe20b
-        .org 0x273d
-        .int 0x546d
-        .org 0x273e
+        .org 0x9d91
         .int 0x59a5
-        .org 0x273f
-        .int 0x8f3d
-        .org 0x2740
-        .int 0x2f5c
-        .org 0x2741
-        .int 0x5e84
-        .org 0x2742
+        .org 0x8120
         .int 0xcf65
-        .org 0x2743
-        .int 0x7229
-        .org 0x2744
-        .int 0x2d1b
-        .org 0x2745
-        .int 0x21a7
-        .org 0x2746
-        .int 0x926b
-        .org 0x2747
+        .org 0x8705
         .int 0xdaa0
-        .org 0x2748
-        .int 0x9f8b
-        .org 0x2749
-        .int 0x44b1
-        .org 0x274a
-        .int 0x3861
-        .org 0x274b
-        .int 0x678e
-        .org 0x722a
-        .int 0x5192
-        .org 0x3860
+        .org 0x59a6
+        .int 0xad06
+        .org 0x7b1c
+        .int 0x306a
+        .org 0x39b
+        .int 0x3479
+        .org 0xad06
         .int 0x3ba3
-        .org 0x9f8b
+        .org 0x32fb
         .int 0xcdca
-        .org 0x678d
+        .org 0x4923
         .int 0x441a
         .org 0x441a
         .int 0xbe8b
@@ -2340,387 +2215,309 @@
         .int 0x6775
         .org 0x28bd
         .int 0x9002
-        .org 0x8f3d
+        .org 0x3479
         .int 0xd324
-        .org 0x5e0f
-        .int 0x40d6
-        .org 0x44b3
-        .int 0x8cb7
+        .org 0x55b1
+        .int 0x46a
+        .org 0xa9a9
+        .int 0xea0a
         .org 0xc769
         .int 0xf007
         .org 0x5aa4
         .int 0xa837
-        .org 0x5aa5
-        .int 0xbbb9
-        .org 0xe75c
+        .org 0x71b1
+        .int 0x8957
+        .org 0xf4d
         .int 0x68a6
-        .org 0x9002
+        .org 0x8957
         .int 0x4e7e
-        .org 0x6cf4
-        .int 0xf967
-        .org 0x4e7e
-        .int 0x66a
-        .org 0x455e
+        .org 0xea0b
+        .int 0x28db
+        .org 0x362d
         .int 0x715
-        .org 0xf2c4
+        .org 0xf2c5
         .int 0xb02a
-        .org 0xf967
-        .int 0xa514
-        .org 0xf968
+        .org 0x7838
         .int 0xc0d3
-        .org 0xf969
-        .int 0xbf8a
-        .org 0xf96a
-        .int 0x8560
-        .org 0xf96b
-        .int 0xcba9
-        .org 0xf96c
-        .int 0xaa67
-        .org 0xf96d
-        .int 0x20fb
-        .org 0xf96e
-        .int 0x4fe8
-        .org 0xf96f
-        .int 0x3308
-        .org 0xf970
-        .int 0xebd3
-        .org 0xf971
-        .int 0x5415
-        .org 0xf972
-        .int 0x1a99
-        .org 0xf973
-        .int 0xc937
-        .org 0xf974
-        .int 0x807f
-        .org 0xaa68
-        .int 0x1241
-        .org 0xbf8a
-        .int 0x5a8e
-        .org 0xcbaa
-        .int 0xcdce
-        .org 0xebd3
+        .org 0x1fd1
+        .int 0xf68d
+        .org 0x57e3
+        .int 0x95f4
+        .org 0xd237
+        .int 0x34e4
+        .org 0xb4a7
+        .int 0x5259
+        .org 0x80d2
         .int 0x10f7
-        .org 0x9619
-        .int 0xf811
-        .org 0x1240
-        .int 0xbcfa
-        .org 0x807e
-        .int 0x2dc6
-        .org 0xf812
-        .int 0x473d
-        .org 0x473d
-        .int 0x75cc
-        .org 0x6b74
-        .int 0x5291
         .org 0xc0d3
+        .int 0xf104
+        .org 0xccaa
+        .int 0xe7a2
+        .org 0x9ea7
+        .int 0x691e
+        .org 0x95f4
         .int 0x2260
-        .org 0xb9a1
+        .org 0x95f5
+        .int 0x681a
+        .org 0x95f6
+        .int 0xb5d
+        .org 0x95f7
+        .int 0x267f
+        .org 0x95f8
+        .int 0x3b54
+        .org 0x95f9
+        .int 0x24a7
+        .org 0x95fa
+        .int 0x9e46
+        .org 0x95fb
+        .int 0xcbe4
+        .org 0x95fc
+        .int 0xd99c
+        .org 0x95fd
+        .int 0xab6e
+        .org 0x95fe
         .int 0xb185
-        .org 0x2dc5
-        .int 0xcef
-        .org 0x5292
-        .int 0x2196
-        .org 0xf3e3
+        .org 0x95ff
+        .int 0xf95b
+        .org 0x9600
+        .int 0x210f
+        .org 0x8cc1
         .int 0x51eb
-        .org 0xb185
+        .org 0xb5d
         .int 0x740d
-        .org 0x9a97
+        .org 0xf103
+        .int 0xc4e8
+        .org 0xd99c
+        .int 0x764f
+        .org 0xd99d
+        .int 0x7bb4
+        .org 0xd99e
+        .int 0xbffb
+        .org 0xd99f
+        .int 0x1536
+        .org 0xd9a0
         .int 0x89a2
-        .org 0xad98
-        .int 0x42c8
-        .org 0x5df
+        .org 0xd9a1
+        .int 0x52f2
+        .org 0xd9a2
+        .int 0x4e5a
+        .org 0x52f2
+        .int 0x681d
+        .org 0x52f3
+        .int 0x1688
+        .org 0x52f4
+        .int 0x766a
+        .org 0x52f5
         .int 0xf99b
-        .org 0xf99a
+        .org 0x52f6
+        .int 0xe36b
+        .org 0x52f7
+        .int 0x8adf
+        .org 0x52f8
+        .int 0x6a22
+        .org 0x52f9
         .int 0x8e5d
-        .org 0x490c
-        .int 0xfb62
-        .org 0x7957
-        .int 0xac83
-        .org 0xcb36
-        .int 0x6ef3
-        .org 0x17ff
-        .int 0xc908
-        .org 0xc0d2
-        .int 0x4802
-        .org 0x807d
+        .org 0x52fa
+        .int 0x5b89
+        .org 0x52fb
+        .int 0x7c87
+        .org 0x52fc
+        .int 0xb8b3
+        .org 0x52fd
+        .int 0xa1f0
+        .org 0x8e5c
+        .int 0xb825
+        .org 0xde8f
+        .int 0x52af
+        .org 0x1c5c
+        .int 0xd36c
+        .org 0x766b
+        .int 0x7cad
+        .org 0xb822
         .int 0x3c31
-        .org 0x8cfb
-        .int 0xefbc
-        .org 0x740d
+        .org 0x1d7f
+        .int 0x3077
+        .org 0x766a
+        .int 0x7152
+        .org 0x6a22
+        .int 0x2f54
+        .org 0x3e19
         .int 0x8a86
-        .org 0x740e
-        .int 0x6546
-        .org 0x740f
-        .int 0xe2d8
-        .org 0x7410
-        .int 0xc0ca
-        .org 0x7411
-        .int 0xfd32
-        .org 0x7412
-        .int 0x9063
-        .org 0xacba
+        .org 0x7cad
+        .int 0x2234
+        .org 0x7cae
         .int 0x3df1
-        .org 0xe2d8
-        .int 0xe6dc
-        .org 0xfd32
-        .int 0x9b7
-        .org 0x8a85
-        .int 0xbf8
-        .org 0xcd4d
-        .int 0x3161
-        .org 0x3160
-        .int 0x5286
-        .org 0xe2e4
-        .int 0x4c15
-        .org 0x5286
-        .int 0xf2d5
-        .org 0x4c15
+        .org 0x7caf
+        .int 0x6995
+        .org 0x7cb0
+        .int 0x6c06
+        .org 0x7cb1
+        .int 0x7eab
+        .org 0xe36a
+        .int 0x9cb2
+        .org 0x4b40
+        .int 0xfcbe
+        .org 0x693f
+        .int 0x1ac
+        .org 0x3def
         .int 0x3a2d
-        .org 0x4c16
-        .int 0x3a6a
-        .org 0x4c17
-        .int 0x33a5
-        .org 0x4c18
-        .int 0x6f40
-        .org 0xc17e
-        .int 0x5b6
-        .org 0xfd33
-        .int 0x3748
-        .org 0xfd34
-        .int 0x677a
-        .org 0xfd35
-        .int 0x3d79
-        .org 0xfd36
-        .int 0x8163
-        .org 0xfd37
-        .int 0x36e6
-        .org 0x681b
-        .int 0xe42a
-        .org 0xe2da
+        .org 0x6673
+        .int 0x84e5
+        .org 0xf1a6
+        .int 0x6ae8
+        .org 0x3076
         .int 0x1743
-        .org 0xac84
-        .int 0x98b5
-        .org 0x1b10
-        .int 0x20e8
-        .org 0x36e6
+        .org 0x2711
+        .int 0x52d3
+        .org 0x6ae9
+        .int 0xe31e
+        .org 0x6c06
+        .int 0xe4a9
+        .org 0xe12f
+        .int 0xcf33
+        .org 0x7ea5
+        .int 0x1c7e
+        .org 0x7ea6
         .int 0xa91
-        .org 0x6f42
+        .org 0x7ea7
+        .int 0x9877
+        .org 0x7ea8
+        .int 0xc2fc
+        .org 0x7ea9
+        .int 0x7edf
+        .org 0x7eaa
+        .int 0x68d8
+        .org 0x7eab
         .int 0x7274
-        .org 0x33a4
-        .int 0xe204
-        .org 0x795d
-        .int 0x13ae
-        .org 0x7273
-        .int 0x5388
-        .org 0x1a0d
-        .int 0x5725
-        .org 0x51ac
-        .int 0xf379
-        .org 0xe42a
-        .int 0xc4c
-        .org 0xa248
-        .int 0xef10
-        .org 0x99bf
-        .int 0x979f
-        .org 0x1742
-        .int 0xc367
-        .org 0xc367
-        .int 0xa335
-        .org 0xa335
-        .int 0x439e
-        .org 0xcee8
+        .org 0x7eac
+        .int 0xdf0b
+        .org 0x7ead
+        .int 0x8afb
+        .org 0x8611
+        .int 0xe8f9
+        .org 0xe369
+        .int 0xd2d3
+        .org 0x6a20
+        .int 0xc805
+        .org 0x5725
+        .int 0x89c0
+        .org 0x7274
+        .int 0x4fd0
+        .org 0x7ede
+        .int 0x7c73
+        .org 0x8afa
+        .int 0x52b2
+        .org 0x7735
+        .int 0xc684
+        .org 0x6fec
+        .int 0x8dce
+        .org 0x7c74
+        .int 0xbc4d
+        .org 0x8dcf
+        .int 0x2689
+        .org 0x402e
+        .int 0x9f75
+        .org 0x5136
+        .int 0x2f
+        .org 0x9890
+        .int 0x4beb
+        .org 0x1bce
+        .int 0xc6d0
+        .org 0xae87
+        .int 0xa14a
+        .org 0x2689
+        .int 0xd66f
+        .org 0x268a
         .int 0x162f
-        .org 0xd1cc
+        .org 0x268b
+        .int 0x36c3
+        .org 0x268c
+        .int 0x9f0
+        .org 0x268d
+        .int 0xfc72
+        .org 0x268e
+        .int 0x1805
+        .org 0x268f
+        .int 0x929a
+        .org 0x2690
+        .int 0xcee3
+        .org 0x2691
+        .int 0x3044
+        .org 0x2692
+        .int 0x7390
+        .org 0x2693
         .int 0xd7c
-        .org 0x46ef
-        .int 0xe6b6
-        .org 0xd7d
+        .org 0x2694
+        .int 0x6d63
+        .org 0x2695
+        .int 0xd0b
+        .org 0x2696
+        .int 0xf490
+        .org 0xfc73
+        .int 0x5a80
+        .org 0x9f1
         .int 0x51ff
-        .org 0x5728
-        .int 0xbb17
-        .org 0x979f
-        .int 0x3c04
-        .org 0x5be5
-        .int 0xdf5
-        .org 0x9da0
-        .int 0x78cb
-        .org 0x4582
-        .int 0x5981
-        .org 0xb014
-        .int 0x800d
-        .org 0x78cb
-        .int 0x9a21
-        .org 0x78cc
-        .int 0x4fa0
-        .org 0x78cd
+        .org 0x6d63
+        .int 0x1cbf
+        .org 0x929a
+        .int 0x48d2
+        .org 0x5a7f
+        .int 0x865d
+        .org 0xd66f
+        .int 0xca96
+        .org 0xd0b
+        .int 0x769b
+        .org 0x929b
+        .int 0x3358
+        .org 0x929c
+        .int 0x8744
+        .org 0x929d
+        .int 0x7586
+        .org 0x6d62
         .int 0x58b3
-        .org 0x78ce
-        .int 0x9cfa
-        .org 0x78cf
-        .int 0xbded
-        .org 0x78d0
-        .int 0x1297
-        .org 0x78d1
-        .int 0x9ff0
-        .org 0x78d2
+        .org 0x58b4
         .int 0xe69f
-        .org 0x78d3
-        .int 0x7959
-        .org 0x78d4
-        .int 0x4a77
-        .org 0x78d5
-        .int 0x9b46
-        .org 0xe69f
-        .int 0xe489
-        .org 0xe6a0
-        .int 0xdad8
-        .org 0xe6a1
+        .org 0xe4c8
         .int 0x24e9
-        .org 0xe6a2
-        .int 0x46e4
-        .org 0xe6a3
-        .int 0x3d55
-        .org 0xe6a4
-        .int 0x4fd9
-        .org 0xe6a5
-        .int 0x3e79
-        .org 0xe6a6
-        .int 0x10ed
-        .org 0xe6a7
-        .int 0x3956
-        .org 0xe6a8
-        .int 0xc360
-        .org 0xe6a9
-        .int 0xcf84
-        .org 0xe6aa
-        .int 0xfee5
-        .org 0xe6ab
-        .int 0xf540
-        .org 0xe6ac
-        .int 0x18d8
-        .org 0xe6ad
-        .int 0x8711
-        .org 0x33b9
-        .int 0x9453
-        .org 0x3d55
-        .int 0x72b9
-        .org 0xb89f
-        .int 0xa7f2
-        .org 0x1d44
-        .int 0x8c33
-        .org 0xdc38
-        .int 0x3fec
-        .org 0x10ed
+        .org 0x3b65
+        .int 0xc38b
+        .org 0xf915
+        .int 0xe544
+        .org 0xc38b
+        .int 0xed20
+        .org 0xfc74
+        .int 0xe5fb
+        .org 0x3359
+        .int 0xb0c6
+        .org 0xe0db
         .int 0xa25c
-        .org 0x10ee
+        .org 0xe0dc
         .int 0x23f7
-        .org 0x10ef
+        .org 0xe0dd
         .int 0x6391
-        .org 0x10f0
+        .org 0xe0de
         .int 0x2382
-        .org 0x10f1
+        .org 0xe0df
         .int 0x263c
-        .org 0x10f2
+        .org 0xe0e0
         .int 0x4e7
-        .org 0x10f3
+        .org 0xe0e1
         .int 0x7ccb
-        .org 0x10f4
+        .org 0xe0e2
         .int 0x8d90
-        .org 0x86c0
+        .org 0x66b2
         .int 0x7723
         .org 0x7724
         .int 0xd053
-        .org 0x7aa8
+        .org 0xcb8
         .int 0x3d82
-        .org 0xd64a
+        .org 0x50b1
         .int 0x14e5
         .org 0x7725
         .int 0x941c
-        .org 0x4fd8
-        .int 0x89e5
+        .org 0xd2b7
+        .int 0xa0a7
         .org 0xa1b6
         .int 0x847f
-        .org 0x2fec
-        .int 0x8f8e
-        .org 0xed39
-        .int 0x5db5
-        .org 0x33e3
-        .int 0x76e4
-        .org 0xc256
-        .int 0x31a4
-        .org 0x72b9
-        .int 0xb483
-        .org 0x263c
-        .int 0xa819
-        .org 0x263d
-        .int 0xfe39
-        .org 0x263e
-        .int 0xc450
-        .org 0x263f
-        .int 0x1677
-        .org 0x2640
-        .int 0x5881
-        .org 0x2641
-        .int 0x310b
-        .org 0x2642
-        .int 0x4cae
-        .org 0x2643
-        .int 0xe9e4
-        .org 0x2644
-        .int 0x6ecc
-        .org 0x2645
-        .int 0xc645
-        .org 0x2646
-        .int 0x8135
-        .org 0x2647
-        .int 0xfaf
-        .org 0x2648
-        .int 0x158f
-        .org 0x2649
-        .int 0xa8a7
-        .org 0x264a
-        .int 0xa2dc
-        .org 0xc450
-        .int 0x5fa5
-        .org 0xa819
-        .int 0x1c09
-        .org 0xa81a
-        .int 0xa462
-        .org 0xa81b
-        .int 0x9987
-        .org 0xa81c
-        .int 0x9984
-        .org 0xa81d
-        .int 0x39ab
-        .org 0xa81e
-        .int 0x9104
-        .org 0xa81f
-        .int 0x2217
-        .org 0xa2dc
-        .int 0x9fc6
-        .org 0xa2dd
-        .int 0x6179
-        .org 0xa2de
-        .int 0xf612
-        .org 0xa2df
-        .int 0xc1c4
-        .org 0xa2e0
-        .int 0xd1df
-        .org 0xa2e1
-        .int 0x6f05
-        .org 0xa2e2
-        .int 0x8a50
-        .org 0xa2e3
-        .int 0x4d36
-        .org 0xa2e4
-        .int 0x376
-        .org 0xa2e5
-        .int 0x9d6d
-        .org 0xa2e6
-        .int 0x8ccc
-        .org 0xc1c5
-        .int 0xd2e8
-        .org 0x9988
-        .int 0x2ef4
-        .org 0xa1a
-        .int 0x2458
+        .org 0x573
+        .int 0x9883

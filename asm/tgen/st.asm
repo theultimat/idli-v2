@@ -262,13 +262,16 @@
     st r7, r11, 0xc319
     st r1, r3, 0xb409
     jl 0xaeda
+        .int 0xca1f
+        .int 0x83de
         .org 0xaeda
-    st r12, r10, 0x2ffd
-    st r6, r11, 0xac35
-    st r8, r2, r2
-    st r12, r3, 0x5c03
-    st r11, r13, 0x2b23
-    st zr, r4, 0xc5bc
+    st r10, r2, 0x6bd8
+    st r10, r2, 0x7a2f
+    st r2, r2, 0xd60
+    st r12, r3, 0xc61
+    -st r5, r11
+    st sp, r2, 0x805a
+    st r4, r11, 0xc5bc
     st r6, r4, 0x9815
     st r11, zr, 0x4bd0
     st r4, r1, 0x4be2
@@ -395,10 +398,11 @@
     st lr, sp, 0xb25
     st r13, r3, 0xe8f6
     st lr, lr, 0x5bb
-    st r5, r11, 0xcc28
-    -st r2, sp
-    st zr, r2, 0xada8
-    st zr, r10, 0x2729
+    st r5, r11, 0xa489
+    -st r12, r13
+    st sp, zr, 0x28c0
+    st r10, r3, 0x1d8
+    -st r9, r2
     st r2, zr, 0x1271
     st lr, r1, lr
     -st lr, r11
@@ -407,11 +411,12 @@
     -st r9, r10
     st r8, r1, r13
     st r2, lr, 0xbd11
-    st r11, r2, 0xd14
-    st r5, r11, 0x6526
-    st r11, r11, r8
-    st r6, zr, 0xfcd6
-    st r5, r10, 0x8c42
+    st r11, r2, r4
+    st zr, r7, 0x5064
+    st r6, r2, 0xc376
+    st r8, r6, 0xad9
+    st sp, r9, 0x5cab
+    st r13, r8, 0xab41
     st r7, r3, 0x329a
     -st r2, r11
     st r4, r1, 0xe3da
@@ -455,11 +460,11 @@
     st sp, r9, 0x7c08
     st r1, r11, 0xd0fd
     -st sp, r9
-    st r7, r11, 0xbe6f
-    st lr, r6, 0xf6cf
-    st lr, r2, 0x5f06
-    st r5, r8, 0xa556
-    st r1, r12, 0x6328
+    st r7, r11, 0xa8f7
+    st r11, lr, 0x65fc
+    st lr, r2, 0x60d0
+    st r3, r5, 0x5694
+    st r9, r1, 0x6328
     st r6, r9, 0x4218
     st r7, r4, 0xc6ef
     -st r7, r2
@@ -570,14 +575,14 @@
     st r10, r2, 0xcbfc
     st r8, r3, r6
     st r12, r7, 0x5418
-    st r12, sp, 0xc851
-    st r11, r4, 0x705d
-    -st r7, r9
-    st zr, r7, 0x946b
-    st r6, zr, 0x62fe
-    st r8, zr, 0x599e
-    st r8, r8, 0x71bf
-    st sp, r3, 0xdea9
+    st r12, sp, 0xbdaf
+    st r7, sp, r7
+    -st r9, r11
+    st r7, r9, 0x6b3e
+    st r1, r6, 0x82d7
+    st r5, r7, r11
+    -st r8, r11
+    st r6, sp, 0xdea9
     st r3, zr, 0xba82
     st r11, sp, 0x35d7
     st r5, r6, 0x40ad
@@ -610,23 +615,23 @@
     st r7, r5, 0x53fb
     st r3, r3, r8
     st zr, r11, r1
-    st r12, r7, 0x413
-    -st zr, r12
-    st lr, r3, 0xe53
-    st r5, r8, r11
-    st r9, r6, 0x9a4b
+    st r12, r7, 0xcfc2
+    st r13, zr, 0x3846
+    st r3, zr, 0x1751
+    st r5, r8, 0x94d4
+    -st r6, r9
     st r10, r7, r7
-    st zr, r4, 0xfe08
-    -st sp, r10
-    st sp, r11, 0x5387
-    st r10, r2, 0x248c
+    st zr, r4, 0x6c0d
+    st r10, r3, 0xf4dc
+    -st r11, r10
+    st r10, r2, r11
     st r2, zr, 0x58b8
     st sp, lr, 0xc626
     st r13, r3, 0x3161
     st zr, sp, 0xec22
     st r6, r8, 0x6c81
-    st r4, r8, 0x1bc1
-    +st r3, r5
+    st r4, r8, r11
+    st lr, r3, r5
     st r6, lr, 0x4037
     st lr, r6, 0x4c59
     st r12, r5, 0xf15b
@@ -644,12 +649,11 @@
     st r5, sp, 0xde32
     st r10, r8, 0x2de6
     st r10, r2, 0x9b4e
-    st r8, r2, r5
-    -st r1, sp
-    st r13, r11, 0x44f0
-    st r8, zr, 0x45ed
-    st r11, r5, 0xfa36
-    -st r10, r13
+    st r8, r2, 0x41b3
+    st r9, r9, r13
+    st r4, sp, 0x818c
+    -st r4, r11
+    st sp, r10, 0xdbbc
     st r8, lr, 0x3515
     st r10, lr, 0xcd30
     st r13, r13, 0x2821
@@ -708,10 +712,10 @@
     st r8, r2, 0xc2f
     st r7, r5, 0xbc2f
     st zr, r3, 0x7f90
-    st r13, r2, 0xba7c
-    st r13, zr, 0xbd85
-    st r6, r1, 0xc176
-    st r7, lr, 0x867c
+    st r13, r2, 0xf39c
+    st zr, r11, 0x63e8
+    st r1, r6, 0x4acf
+    st lr, r1, 0x5ea6
     st r13, r13, 0x8b8
     st r3, r13, 0xbd3b
     -st r1, r2
@@ -746,15 +750,14 @@
     st r11, r10, 0x95e3
     st r5, zr, 0xa294
     st r9, sp, 0x6c3d
-    st r3, r11, 0xe823
-    st r3, r8, 0x76cd
-    +st r8, r5
-    st lr, r12, 0xb4c3
-    -st r6, r6
-    -st r4, r8
-    st lr, r8, 0x2a4
-    st sp, zr, 0xdbe8
-    st sp, r12, 0xe786
+    st r3, r11, 0xd21e
+    st r10, r3, 0x86f5
+    st r7, r7, 0xcc1e
+    st r8, r5, 0x755d
+    st r12, r11, 0x689e
+    st r12, r4, 0xa45
+    st r8, zr, 0xfb2f
+    st r13, sp, 0xca91
     st lr, r13, 0x42ed
     st r3, r11, 0xa1fd
     st r12, r8, 0x53d3
@@ -763,8 +766,8 @@
     st r8, r7, r12
     st r11, r12, 0x10fd
     st sp, r1, 0x301b
-    st r12, r13, 0x4693
-    st r13, sp, r13
+    st r12, r13, 0x4038
+    st r13, sp, 0xd869
     st r7, r4, 0xc4e2
     st sp, r12, 0xdf6
     st r5, r9, 0xa526
@@ -804,8 +807,9 @@
     st r5, r1, 0x45b0
     st r13, r2, 0x3c5f
     st zr, r13, 0x7eec
-    st r1, r11, 0x703b
-    st r13, r3, 0xd641
+    st r1, r11, 0xe025
+    st r7, r4, 0xd1a6
+    st r13, r3, 0xc94
     st r1, sp, 0x1aa1
     st sp, r1, 0x5ab
     st sp, r8, 0x11ad
@@ -819,12 +823,12 @@
     st r1, r5, 0x5873
     st lr, r8, 0x42f3
     -st r11, r2
-    st r4, r5, 0xdb72
-    st r1, r9, 0x9c08
-    st r13, r4, 0x2a8e
-    st r4, r2, 0x9900
-    st r8, r2, 0x6c1b
-    st r4, r12, 0xb196
+    st r4, r5, r13
+    +st lr, r1
+    st r6, r4, 0x4aba
+    st r2, r9, 0x4deb
+    st r8, r9, 0x8784
+    st r4, r12, r11
     st r10, r5, 0x278f
     st r6, lr, r13
     st r11, r11, 0x655
@@ -846,20 +850,24 @@
     st sp, r9, 0xf091
     st r7, sp, 0x5c94
     +st r8, r5
-    st r3, sp, 0x3929
-    st r3, r13, 0x665b
-    st r1, lr, 0xba3a
+    st r3, sp, 0x47bc
+    -st r3, r13
+    -st r6, r10
+    st lr, r2, 0xba3a
     st r13, r7, 0xcbd0
     st r6, r1, 0xef19
     st sp, r3, 0x5a69
     st r8, zr, 0x214f
     st r8, r3, 0xcf82
     st r5, r8, 0xa4bd
-    st r1, r12, 0x6537
-    jl 0x3b22
-        .org 0x3b22
-    st r5, r3, 0x667c
-    stm r7..r12, lr
+    b r12
+        .int 0x498e
+        .int 0x6537
+        .org 0x26b3
+    st r13, r8, 0xc4e9
+    st r2, r5, r3
+    st r7, r6, 0x9c43
+    st r7, r12, 0xef9b
     st r9, r7, r6
     st r4, r10, 0xd997
     st lr, r13, 0x135a
@@ -870,24 +878,29 @@
     st r10, r9, 0xfc08
     st r3, r11, 0x60d0
     st lr, r9, 0x6556
-    st r13, r11, 0xe539
-    st r7, r10, 0xdee2
-    -st r3, r11
-    st zr, r1, 0x8879
-    +st lr, r5
-    st r3, r6, 0x9c72
+    jl 0xe539
+        .int 0x51d
+        .int 0x2ac3
+        .org 0xe539
+    st r10, sp, 0xd3fb
+    st r11, sp, 0xfa86
+    st r4, r8, lr
+    st zr, r3, 0x9c72
     st r9, zr, 0xeb28
     st zr, r9, 0x1793
     st sp, r3, 0xdad4
-    st sp, lr, 0xbeb
+    st+ sp, lr
     st r10, r7, 0x393
-    st r1, r10, 0x6757
-    st lr, r12, 0x776c
-    st r11, r11, 0xb540
-    st r6, r11, 0x3bed
-    st r8, r10, 0x8ba0
-    st r1, r9, 0x2e2
-    st r9, r7, 0x4f7
+    b r10
+        .int 0xc197
+        .int 0xace3
+        .org 0xe74b
+    st r8, lr, 0xcce9
+    st r7, r11, 0xb2d1
+    st r11, r6, 0x644b
+    st r3, r8, 0xa1a9
+    st r10, r1, 0x9da0
+    st r9, r7, lr
     st r10, r7, 0xdd99
     -st r4, r6
     st r1, r11, 0x4da
@@ -896,17 +909,17 @@
     st r8, zr, 0xa325
     st r8, r2, 0xcf3d
     st r5, r2, 0x90e1
-    st r12, zr, 0xa01e
-    st r9, r2, 0xbee
+    st r12, zr, lr
+    st r11, r9, 0xbee
     st r3, r3, 0xb60d
     st r5, r3, 0x6453
     st zr, r4, 0x83f5
     st r4, r11, 0x625
-    st r13, r4, 0xd762
-    -st r7, r6
-    st r11, r7, 0x272c
-    st r2, r6, 0xca88
-    st r6, r3, 0xf21e
+    st r13, r4, 0xa2c1
+    st r7, r6, 0xbe7a
+    st r7, r2, 0xf7d2
+    st r6, r12, r6
+    -st r3, sp
     st r7, r13, 0xb0f4
     st r10, r11, 0x3ae5
     st zr, r13, 0x7cdc
@@ -916,65 +929,66 @@
     st r11, r11, 0xebc4
     st r7, r4, r13
     st r13, r5, 0xa6aa
-    st r3, r6, r5
-    st r3, r6, 0x4002
+    st r3, r6, 0x8d70
+    st r6, lr, 0x4002
     st r9, zr, 0xd7da
     st r1, r7, 0x42c3
-    b r9
-        .org 0x9548
+    st zr, r9, 0xd5ff
     st r11, r2, 0xa630
-    j 0x1ac2
-        .org 0x1ac2
-    st r8, r1, 0x3c5a
-    st r6, sp, 0xeaf5
+    st r6, r1, r1
+    st r8, r1, 0x7cd4
+    st r6, sp, 0x7f7e
     st sp, zr, 0x8beb
-    st r1, lr, 0x269c
-    st r13, r2, r9
-    st r1, r2, 0x4e9e
-    st r4, r12, 0xfbf7
-    st zr, r6, 0x4433
-    st r10, r10, 0x8250
-    st r13, r9, 0x37bc
-    -st r7, r11
-    st r2, r1, 0x5a8b
-    st r8, r8, 0x7cbb
-    st r12, r7, 0x3e4c
-    -st r10, r2
-    st r9, r2, 0xce14
-    st sp, sp, 0x5185
-    st r8, r8, 0xc6cc
-    st r10, r4, r11
-    st r3, r3, 0x8bd4
+    b lr
+        .int 0x269c
+        .int 0x1a78
+        .org 0xe6a
+    st r13, r2, 0x6388
+    st r1, r2, 0xd4d2
+    st zr, r4, 0xc947
+    st sp, sp, 0x6045
+    -st r4, r10
+    st r10, r8, 0xdf44
+    st r5, r7, 0xe075
+    -st r1, r12
+    st r5, r10, 0x8c01
+    -st r8, r11
+    st r7, r13, 0xc30e
+    st r13, r10, 0xbc27
+    st r9, r2, 0xf79c
+    st r5, r10, 0x87eb
+    st r12, r3, 0xa19f
+    st r3, r3, r8
     -st r5, sp
     st r6, lr, 0x92ac
     st r9, r1, 0xea08
-    st zr, lr, 0xf0f4
-    -st r7, r8
+    st zr, lr, 0x77aa
     st r3, r2, 0x45e4
     st r5, r4, 0xc11f
-    st r5, r1, 0x6fdf
-    st r13, zr, 0x7ca7
-    st r1, lr, 0x9817
-    st r12, r12, 0x4f0b
-    st r7, r10, r3
-    -st zr, sp
-    st r11, r3, 0xd8b3
-    st lr, r9, r9
-    st r6, r3, 0x31dc
-    st r3, r7, 0xc9e0
+    j 0x6fdf
+        .int 0xdce0
+        .int 0x313
+        .org 0x6fdf
+    st r7, r8, 0x17cc
+    st r1, r9, 0x79c9
+    st r12, r12, 0x7730
+    st r2, r7, 0xa35f
+    st zr, sp, r9
+    +st r3, r1
+    st r4, lr, 0x92b7
+    st r6, r3, 0x6721
+    st r7, lr, 0xc9e0
     -st r13, r11
     -st r5, r2
     st r10, r10, 0xf560
     st r10, r2, 0xced9
-    b r7
-        .org 0xdb14
-    st r5, r11, 0xe6c2
-    st r3, r6, 0x5424
-    st r4, r1, 0x350d
-    st r13, r7, 0xc4e3
-    st lr, lr, 0x2c7
-    st sp, r9, 0x2e92
-    st r4, sp, 0x6d2e
+    st r1, r7, 0x3417
+    st lr, r7, 0x3948
+    st r10, r5, 0xc0c5
+    st r1, r3, 0x4db1
+    st r7, r12, 0xeb74
+    st lr, zr, 0xf7c7
+    st r9, r4, 0xa5f8
     st r11, r4, 0x4f0a
     st r3, r4, 0x2286
     st r13, r9, 0xc13
@@ -996,15 +1010,17 @@
     st r7, r12, 0x432e
     st r4, r9, 0x532d
     -st r6, r2
-    st r4, r6, 0x4957
-    st r12, r8, 0x602
+    st r4, r6, 0x126e
+    -st r12, r8
+    st r5, zr, 0xa8a9
     st r12, r1, 0xbe15
     +st r10, r5
     st zr, r12, r10
     st r6, r8, 0xc46f
-    st r5, lr, 0xa436
-    st r6, r13, 0xb9b8
-    st zr, sp, 0x3fb3
+    +st r5, lr
+    st r10, r10, 0x6d28
+    -st r6, r13
+    st r1, zr, 0x3fb3
     st sp, lr, 0xb61a
     -st r12, r11
     st lr, sp, 0x9da2
@@ -1014,11 +1030,8 @@
     st r7, r2, 0xe31f
     -st r6, r11
     st zr, r1, 0x77a5
-    st r12, lr, 0xe996
-    st lr, r9, 0x8b89
-    st r4, r4, 0x2e53
-    st r3, r13, 0xbef8
-    st sp, lr, 0xc1d0
+    st r12, lr, 0xe5ae
+    st r12, r8, 0x448b
     utx 0x40
     utx 0x40
     utx 0x45

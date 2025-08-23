@@ -136,3 +136,15 @@ regress:
 	./scripts/regress.sh
 
 .PHONY: regress
+
+
+# Write the specified binary to memories via connected the RP2040.
+BOOTER := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/pico.py
+
+BOOT_PORT ?= /dev/tty.usbmodem1301
+BOOT_BAUD ?= 115200
+
+pico_boot: $(SIM_TEST)
+	$(BOOTER) $< --port $(BOOT_PORT) --baud $(BOOT_BAUD)
+
+.PHONY: pico_boot

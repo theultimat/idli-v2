@@ -34,7 +34,7 @@ $(VENV_DIR):
 	$(PYTHON) -m venv $@
 
 $(VENV): $(VENV_REQ) $(VENV_DIR)
-	source $(VENV_ACTIVATE) && $(PIP) install -r $<
+	. $(VENV_ACTIVATE) && $(PIP) install -r $<
 	touch $@
 
 .PHONY: venv
@@ -48,8 +48,8 @@ ASM_BINS    := $(patsubst %.asm,$(BUILD_ROOT)/%.out,$(ASM_SOURCES))
 
 AS_DEBUG := $(if $(DEBUG),--verbose,)
 
-AS      := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/asm.py $(AS_DEBUG)
-OBJDUMP := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/objdump.py
+AS      := . $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/asm.py $(AS_DEBUG)
+OBJDUMP := . $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/objdump.py
 
 asm: venv $(ASM_BINS)
 
@@ -92,7 +92,7 @@ export SIM_TIMEOUT ?= 500000
 export SIM_DEBUG   ?= $(if $(DEBUG),--verbose,)
 export SIM_YAML    ?= $(patsubst $(BUILD_ROOT)/%.out,%.yaml,$(SIM_TEST))
 
-SIM := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/sim.py $(SIM_DEBUG)
+SIM := . $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/sim.py $(SIM_DEBUG)
 
 run_sim: $(SIM_TEST) $(VENV)
 	$(SIM) $< --timeout $(SIM_TIMEOUT) --yaml $(SIM_YAML)
@@ -105,11 +105,11 @@ VERI_DEBUG   := $(if $(DEBUG),gtkwave $(TEST_ROOT)/*.fst,)
 ICARUS_DEBUG := $(if $(DEBUG),gtkwave $(BUILD_ROOT)/test/sim_build/*.fst,)
 
 run_veri: $(SIM_TEST) $(VENV) lint
-	source $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=verilator
+	. $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=verilator
 	$(VERI_DEBUG)
 
 run_icarus: $(SIM_TEST) $(VENV) sv2v
-	source $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=icarus
+	. $(VENV_ACTIVATE) && make -C $(TEST_ROOT) RTL_SIM=icarus
 	$(ICARUS_DEBUG)
 
 .PHONY: run_veri run_icarus
@@ -117,14 +117,14 @@ run_icarus: $(SIM_TEST) $(VENV) sv2v
 
 # Regenerate random tests.
 TGEN_DEBUG := $(if $(DEBUG),--verbose,)
-TGEN       := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/tgen.py
+TGEN       := . $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/tgen.py
 
 TEST_BIAS := $(wildcard $(TEST_ROOT)/bias/*.yaml)
 TEST_ASM  := $(patsubst $(TEST_ROOT)/bias/%.yaml,$(ASM_ROOT)/tgen/%.asm,$(TEST_BIAS))
 
 $(ASM_ROOT)/tgen/%.asm: $(TEST_ROOT)/bias/%.yaml
 	@mkdir -p $(@D)
-	$(TGEN) $(TGEN_DEBUG) --bias $< --output $@ --seed 0x$(shell md5sum --quiet $<)
+	$(TGEN) $(TGEN_DEBUG) --bias $< --output $@ --seed 0x$(shell cat $(patsubst %.yaml,%.seed,$<))
 
 tgen: $(TEST_ASM)
 
@@ -139,7 +139,7 @@ regress:
 
 
 # Write the specified binary to memories via connected the RP2040.
-BOOTER := source $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/pico.py
+BOOTER := . $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/pico.py
 
 BOOT_PORT ?= /dev/tty.usbmodem1301
 BOOT_BAUD ?= 115200

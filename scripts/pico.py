@@ -9,172 +9,169 @@ import serial
 import struct
 
 
-# Pins used for each of the SPI modules. These are given in terms of the RP2040
-# GPIO numberings.
-CS  = 0
-SCK = [2, 14]
-TX  = [3, 15]
-RX  = [4, 12]
+# Pins for connecting to the SPI memories. The RP2040 will only access each
+# memory indivdually so they share the same pins except for CS.
+CS_LO = 0
+CS_HI = 1
+SCK   = 2
+TX    = 3
+RX    = 4
+PWR   = 6
+NC    = 7
+HOLD  = 8
+
+# Commands supported by the 23LC512 memories.
+CMD_READ  = 0x03
+CMD_WRITE = 0x02
+CMD_EQIO  = 0x38
 
 
-# Functions to create commands return a list of micropython commands that will
-# be sent to the RP2040 via the serial port.
+# Class for running commands on the RP2040 via the serial port.
+class Pico:
+    def __init__(self, port, baud):
+        # Open the serial port connection.
+        self.tty = serial.Serial(port, baudrate=baud)
 
-# Initialise the two memories. Creates the various pins and SPI interfaces.
-# We use a pair of 23LC512 which start in SPI sequential mode.
-def cmd_init():
-    out = [
-        'from machine import Pin, SPI',
-        f'cs = Pin({CS}, Pin.OUT)',
-        'cs(1)',
-    ]
+        # Run the initilisation commands to import any required modules and
+        # initialise the ports.
 
-    for i in range(2):
-        out += [
-            f'sck{i} = Pin({SCK[i]}, Pin.OUT)',
-            f'tx{i} = Pin({TX[i]}, Pin.OUT)',
-            f'rx{i} = Pin({RX[i]}, Pin.IN)',
-            f'spi{i} = SPI({i}, sck=sck{i}, mosi=tx{i}, miso=rx{i})',
-        ]
+        # Reset to ensure we start in the default initial state.
+        self.reset()
 
-    return out
+    # Run a single command on the serial port and wait for completion. Returns
+    # any output from the command decoded to a UTF-8 string.
+    def run(self, cmd):
+        # Append "@@DONE@@" to the command as a comment so that we can wait
+        # until this appears in the output stream and as a result know the
+        # actual command we sent has finished.
+        cmd += '\r\n#@@DONE@@\r\n'
 
+        # Send the command to the serial port.
+        self.tty.write(cmd.encode('utf-8'))
+        self.tty.flush()
 
-# Write data to both memories by splitting low and high nibbles of each byte
-# between the two.
-def cmd_write(addr, data):
-    if len(data) % 2:
-        raise Exception(f'Length not divisble by two: {len(data)}')
+        output = ''
 
-    # Start new transaction.
-    out = ['cs(0)']
+        # Wait until we see the end string in the output.
+        while True:
+            output += self.tty.read(self.tty.in_waiting).decode('utf-8')
 
-    addr_hi = (addr >> 8) & 0xff
-    addr_lo = (addr >> 0) & 0xff
+            try:
+                idx = output.index('#@@DONE@@')
+                break
+            except ValueError:
+                continue
 
-    # Start WRITE command at specified address.
-    for i in range(2):
-        out += [f'spi{i}.write(b"\\x02\\x{addr_hi:02x}\\x{addr_lo:02x}")']
+        # Strip off the extra dummy command and return the output.
+        return output[:idx]
 
-    # Iterate through data in 16b chunks and split high and low nibbles.
-    for chunk, in struct.iter_unpack('>H', data):
-        lo = ((chunk & 0x0f) >> 0) | ((chunk & 0x0f00) >> 4)
-        hi = ((chunk & 0xf0) >> 4) | ((chunk & 0xf000) >> 8)
+    # Write data to the memory using the specified CS pin.
+    def mem_write(self, cs, addr, data, check=True):
+        # Pull CS for the memory low to select it.
+        self.run(f'cs[{cs}](0)')
 
-        out += [
-            f'spi0.write(b"\\x{lo:02x}")',
-            f'spi1.write(b"\\x{hi:02x}")',
-        ]
+        # Build up data buffer composed of the WRITE command and the data.
+        buf = struct.pack('>BH', CMD_WRITE, addr) + data
 
-    # Finish transaction.
-    out += ['cs(1)']
+        # Run the SPI command.
+        self.run(f'spi.write({buf})')
 
-    return out
+        # Set CS high again to end transaction.
+        self.run(f'cs[{cs}](1)')
 
+        # If checking read back the data and assert that it's correct.
+        if check:
+            read = self.mem_read(cs, addr, len(data))
+            if read != data:
+                raise Exception(
+                    f'Data mismatch data != read:\n'
+                    f'{data} != {read}'
+                )
 
-# Read data back from the two memories at the specified address and save data
-# into variables with the specified names.
-def cmd_read(addr, n, var_lo, var_hi):
-    out = ['cs(0)']
+    # Read data from the specified memory.
+    def mem_read(self, cs, addr, n):
+        # Start new transaction.
+        self.run(f'cs[{cs}](0)')
 
-    addr_hi = (addr >> 8) & 0xff
-    addr_lo = (addr >> 0) & 0xff
+        # Send READ command and address to the memory.
+        data = struct.pack('>BH', CMD_READ, addr)
+        self.run(f'spi.write({data})')
 
-    var_names = [var_lo, var_hi]
+        # Read back the data into a temporary buffer.
+        self.run(f'__tmp_mem_read = spi.read({n})')
 
-    # Read back the data.
-    for i, name in enumerate(var_names):
-        out += [
-            f'spi{i}.write(b"\\x03\\x{addr_hi:02x}\\x{addr_lo:02x}")',
-            f'{name} = spi{i}.read({n})',
-        ]
+        # End the transaction.
+        self.run(f'cs[{cs}](1)')
 
-    out += ['cs(1)']
+        # Print out the data and extract the value from the output.
+        output = self.run(f'print("DATA:", __tmp_mem_read.hex())')
+        m = re.search(r'DATA: (?P<data>[0-9a-f]+)', output)
+        assert m
 
-    return out
+        return bytes.fromhex(m.group('data'))
 
+    # Enter SQI mode in both memories.
+    def sqi(self):
+        cmd = struct.pack('>B', CMD_EQIO)
 
-# Dump the specified variable to stdout. Assumes the variable is bytes().
-def cmd_dump(var_name):
-    return [f'print("DUMP__{var_name}:", {var_name}.hex())']
+        for cs in (CS_LO, CS_HI):
+            self.run(f'cs[{cs}](0)')
+            self.run(f'spi.write({cmd})')
+            self.run(f'cs[{cs}](1)')
 
+    # Reset the memory by powering everything off then returning to the initial
+    # state.
+    def reset(self):
+        init_cmds = (
+            'from machine import Pin, SPI',
+            f'cs_lo = Pin({CS_LO}, Pin.OUT, value=0)',
+            f'cs_hi = Pin({CS_HI}, Pin.OUT, value=0)',
+            f'cs = [cs_lo, cs_hi]',
+            f'sck = Pin({SCK}, Pin.OUT, value=0)',
+            f'tx = Pin({TX}, Pin.OUTm value=0)',
+            f'rx = Pin({RX}, Pin.IN)',
+            f'pwr = Pin({PWR}, Pin.OUT, value=0)',
+            f'nc = Pin({NC}, Pin.OUT, value=0)',
+            f'hold = Pin({HOLD}, Pin.OUT, value=0)',
+            f'spi = SPI(0, sck=sck, mosi=tx, miso=rx)',
+            'hold(1)',
+            'cs_lo(1)',
+            'cs_hi(1)',
+            'pwr(1)',
+        )
 
-# Connect to the serial port at the specified baud rate.
-def connect(port, baud):
-    return serial.Serial(port, baudrate=baud)
+        for cmd in init_cmds:
+            self.run(cmd)
 
+    # Run through the boot sequence and enter the state such that the processor
+    # can take over.
+    def boot(self, path):
+        # Load binary from file and split by low and high nibbles.
+        data_lo = b''
+        data_hi = b''
 
-# Run list of commands over the serial port.
-def run(tty, cmds):
-    output = ''
+        with open(path, 'rb') as f:
+            while data := f.read(2):
+                data, = struct.unpack('>H', data)
 
-    # Run commands provided by the user.
-    for cmd in cmds:
-        tty.write(f'{cmd}\r\n'.encode('utf-8'))
-        tty.flush()
-        output += tty.read(tty.in_waiting).decode('utf-8')
+                lo = ((data & 0x0f) >> 0) | ((data & 0x0f00) >> 4)
+                hi = ((data & 0xf0) >> 4) | ((data & 0xf000) >> 8)
 
-    # Run a dummy command to wait for the final command to finish.
-    tty.write('#@@DONE@@\r\n'.encode('utf-8'))
-    tty.flush()
+                data_lo += struct.pack('>B', lo)
+                data_hi += struct.pack('>B', hi)
 
-    while True:
-        output += tty.read(tty.in_waiting).decode('utf-8')
+        # Write the data into the two memories.
+        self.mem_write(CS_LO, 0, data_lo, check=True)
+        self.mem_write(CS_HI, 0, data_hi, check=True)
 
-        if '@@DONE@@' in output:
-            break
+        # Switch into SQI mode.
+        self.sqi()
 
-    return output
-
-
-# Get dump of a specified variable. Assumes each variable was only dumped once
-# in the output stream!
-def get_dump_bytes(output, var_name):
-    m = re.search(f'DUMP__{var_name}: (?P<data>[0-9a-f]+)', output)
-
-    if not m:
-        raise Exception(f'No dump for variable: {var_name}')
-
-    return bytes.fromhex(m.group('data'))
-
-
-# Write binary into the two memories and check it's correct via the serial port.
-def boot(path, port, baud):
-    # Load binary from file.
-    with open(path, 'rb') as f:
-        data = f.read()
-
-    # Build up the command stream for the RP2040.
-    cmd = cmd_init()
-    cmd += cmd_write(0, data)
-    cmd += cmd_read(0, len(data) // 2, 'bin_lo', 'bin_hi')
-    cmd += cmd_dump('bin_lo')
-    cmd += cmd_dump('bin_hi')
-
-    # Connect via the serial port and run the commands.
-    tty = connect(port, baud)
-    output = run(tty, cmd)
-
-    # Get the bytes read back from each memory.
-    bin_lo = get_dump_bytes(output, 'bin_lo')
-    bin_hi = get_dump_bytes(output, 'bin_hi')
-
-    # Check the data that was read back from the memory matches what was
-    # originally written.
-    for i, (lo, hi) in enumerate(zip(bin_lo, bin_hi)):
-        read = 0
-        read |= (lo & 0x0f) << 0
-        read |= (hi & 0x0f) << 4
-        read |= (lo & 0xf0) << 4
-        read |= (hi & 0xf0) << 8
-
-        ref, = struct.unpack('>H', data[i*2:i*2+2])
-
-        if ref != read:
-            raise Exception(
-                f'Read back data does not match at offset {i}: '
-                f'0x{read:04x} != 0x{ref:04x}'
-            )
+        # Set all of the pins to floating so the CPU can set the values, with
+        # the one exception being PWR as we want the memories to stay powered.
+        # We can set the pin to 'z by changing them to inputs.
+        for pin in (CS_LO, CS_HI, SCK, TX, RX, NC, HOLD):
+            self.run(f'Pin({pin}, Pin.IN)')
 
 
 # Parse argument when running this script.
@@ -214,6 +211,6 @@ def parse_args():
 # When running this script directly write the binary to the two memories.
 if __name__ == '__main__':
     args = parse_args()
-    boot(args.bin, args.port, args.baud)
-
+    pico = Pico(args.port, args.baud)
+    pico.boot(args.bin)
     print('BOOT OKAY')

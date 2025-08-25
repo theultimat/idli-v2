@@ -11,6 +11,8 @@ make clean
 make -j8 asm
 make -j8 sv2v
 
+export COCOTB_LOG_LEVEL=WARNING
+
 TESTS=$(find build/asm -type f -name '*.out')
 
 for TEST in $TESTS; do

@@ -128,7 +128,7 @@ class Pico:
             f'cs_hi = Pin({CS_HI}, Pin.OUT, value=0)',
             f'cs = [cs_lo, cs_hi]',
             f'sck = Pin({SCK}, Pin.OUT, value=0)',
-            f'tx = Pin({TX}, Pin.OUTm value=0)',
+            f'tx = Pin({TX}, Pin.OUT, value=0)',
             f'rx = Pin({RX}, Pin.IN)',
             f'pwr = Pin({PWR}, Pin.OUT, value=0)',
             f'nc = Pin({NC}, Pin.OUT, value=0)',

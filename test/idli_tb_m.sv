@@ -22,6 +22,12 @@ module idli_tb_m import idli_pkg::*; ();
   slice_t mem_hi_out;
   slice_t mem_lo_in;
   slice_t mem_hi_in;
+  logic   mem_lo_wr_en;
+  logic   mem_hi_wr_en;
+  slice_t mem_lo_out_top;
+  slice_t mem_hi_out_top;
+  slice_t mem_lo_in_top;
+  slice_t mem_hi_in_top;
 
   // UART signals.
   logic uart_rx;
@@ -62,13 +68,15 @@ module idli_tb_m import idli_pkg::*; ();
 
     .o_top_mem_lo_sck (mem_lo_sck),
     .o_top_mem_lo_cs  (mem_lo_cs),
-    .i_top_mem_lo_sio (mem_lo_in),
-    .o_top_mem_lo_sio (mem_lo_out),
+    .i_top_mem_lo_sio (mem_lo_in_top),
+    .o_top_mem_lo_sio (mem_lo_out_top),
+    .o_top_mem_lo_en  (mem_lo_wr_en),
 
     .o_top_mem_hi_sck (mem_hi_sck),
     .o_top_mem_hi_cs  (mem_hi_cs),
-    .i_top_mem_hi_sio (mem_hi_in),
-    .o_top_mem_hi_sio (mem_hi_out),
+    .i_top_mem_hi_sio (mem_hi_in_top),
+    .o_top_mem_hi_sio (mem_hi_out_top),
+    .o_top_mem_hi_en  (mem_hi_wr_en),
 
     .i_top_uart_rx    (uart_rx),
     .o_top_uart_tx    (uart_tx),
@@ -76,6 +84,15 @@ module idli_tb_m import idli_pkg::*; ();
     .i_top_io_pins    (pins_in),
     .o_top_io_pins    (pins_out)
   );
+
+  // Adjust signals visible to the bench based on the output enable for each
+  // of the memories. When the output enable is set we forward on the output
+  // pins and X out the inputs and vice versa.
+  always_comb mem_lo_in_top = mem_lo_wr_en ? 'x : mem_lo_in;
+  always_comb mem_hi_in_top = mem_hi_wr_en ? 'x : mem_hi_in;
+
+  always_comb mem_lo_out = mem_lo_wr_en ? mem_lo_out_top : 'x;
+  always_comb mem_hi_out = mem_hi_wr_en ? mem_hi_out_top : 'x;
 
 
   // Grab sync counter from inside the core.

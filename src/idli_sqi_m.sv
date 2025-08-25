@@ -28,12 +28,14 @@ module idli_sqi_m import idli_pkg::*; (
   output var logic    o_sqi_lo_cs,
   input  var slice_t  i_sqi_lo_sio,
   output var slice_t  o_sqi_lo_sio,
+  output var logic    o_sqi_lo_en,
 
   // Interface with the high memory.
   output var logic    o_sqi_hi_sck,
   output var logic    o_sqi_hi_cs,
   input  var slice_t  i_sqi_hi_sio,
-  output var slice_t  o_sqi_hi_sio
+  output var slice_t  o_sqi_hi_sio,
+  output var logic    o_sqi_hi_en
 );
 
   // States for controlling the SQI transaction. The general sequence of
@@ -177,6 +179,7 @@ module idli_sqi_m import idli_pkg::*; (
     o_sqi_lo_cs  <= o_sqi_hi_cs;
     hi_sio_q     <= o_sqi_hi_sio;
     lo_sio_q     <= o_sqi_lo_sio;
+    o_sqi_lo_en  <= o_sqi_hi_en;
   end
 
   // LO memory shadows the HI memory with cycle of delay for INSTR and ADDR,
@@ -259,5 +262,13 @@ module idli_sqi_m import idli_pkg::*; (
 
   // Hold off memory writes until we're in the DUMMY or DATA states.
   always_comb o_sqi_wr_acp = state_q == STATE_DUMMY || state_q == STATE_DATA;
+
+  // Whether the output pins for each memory are enabled. This depends on the
+  // current state and whether or not the write enable is set.
+  always_comb case (state_q)
+    STATE_DUMMY:  o_sqi_hi_en = '0;
+    STATE_DATA:   o_sqi_hi_en = wr_en_q;
+    default:      o_sqi_hi_en = '1;
+  endcase
 
 endmodule

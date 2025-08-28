@@ -3,3 +3,4 @@ build
 *.pyc
 *.fst
 *.vcd
+.DS_Store

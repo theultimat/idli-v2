@@ -3,6 +3,7 @@ SOURCE_ROOT := src
 SCRIPT_ROOT := scripts
 ASM_ROOT    := asm
 TEST_ROOT   := test
+PODI_ROOT   := podi
 
 
 PYTHON := python
@@ -148,3 +149,17 @@ pico_boot: $(SIM_TEST)
 	$(BOOTER) $< --port $(BOOT_PORT) --baud $(BOOT_BAUD)
 
 .PHONY: pico_boot
+
+
+# Build the podi executable for controlling the chip from a Pi Pico.
+PODI_BUILD := $(BUILD_ROOT)/$(PODI_ROOT)
+PODI_UF2   := $(PODI_BUILD)/$(PODI).uf2
+
+$(PODI_UF2):
+	@mkdir -p $(PODI_BUILD)
+	cmake -S $(PODI_ROOT) -B $(PODI_BUILD) -DPICO_BOARD=pico
+	cmake --build $(PODI_BUILD) --target podi
+
+podi: $(PODI_UF2)
+
+.PHONY: podi

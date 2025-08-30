@@ -155,6 +155,11 @@ pico_boot: $(SIM_TEST)
 PODI_BUILD := $(BUILD_ROOT)/$(PODI_ROOT)
 PODI_UF2   := $(PODI_BUILD)/$(PODI).uf2
 
+PODI_PORT ?= /dev/tty.usbmodem1301
+PODI_BAUD ?= 115200
+
+PODI := . $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/podi.py
+
 $(PODI_UF2):
 	@mkdir -p $(PODI_BUILD)
 	cmake -S $(PODI_ROOT) -B $(PODI_BUILD) -DPICO_BOARD=pico
@@ -162,4 +167,7 @@ $(PODI_UF2):
 
 podi: $(PODI_UF2)
 
-.PHONY: podi
+run_podi: $(SIM_TEST) podi
+	$(PODI) $< --port $(PODI_PORT) --baud $(PODI_BAUD)
+
+.PHONY: podi run_podi

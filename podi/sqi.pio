@@ -1,0 +1,88 @@
+    ; SIO   = 0..3
+    ; SCK   = 4
+    ; CS    = JMP
+
+    ; Data is pushed into the TX FIFO by the host with 4b data followed by 4b
+    ; indicating the pin direction mode (IN = 0, OUT = 1). New data must be
+    ; continually pushed to the FIFO so the direction can be updated.
+    ;
+    ; Data is pushed into the RX FIFO by PIO, 4b per cycle.
+    ;
+    ; Autopush/pull is set for everu 8b. For RX this is all data, for TX this
+    ; is 4b direction + 4b data.
+
+    .program    sqi
+
+reset:
+    mov     isr, null       ; Clear and reset ISR
+    mov     osr, null       ; Clear and reset OSR
+    set     pindirs, 0      ; Set all SIO to inputs
+    jmp     check_cs        ; Wait for CS low
+
+    .wrap_target
+
+data:
+    wait    0 pin 4         ; Wait SCK = 0
+    out     pins, 4         ; Output next 4b of data
+    wait    1 pin 4         ; Wait SCK = 1
+    in      pins, 4         ; Read next 4b of data
+
+check_cs:
+    jmp     pin, reset      ; Reset while CS high
+    out     x, 4            ; Read next PINDIRS
+    jmp     !x, data        ; If pins remain inputs then loop
+    set     pindirs, 0xf    ; Switch pins to outputs
+
+    .wrap
+
+
+% c-sdk {
+
+static inline void sqi_pio_init(
+    PIO pio,
+    uint sm,
+    uint offset,
+    uint base_pin,
+    uint cs_pin
+)
+{
+    pio_sm_config cfg = sqi_program_get_default_config(offset);
+
+    // Pins start at SIO0 and end at SCK. Everything should start as an input,
+    // but SIO pins also need to be mapped as outputs.
+    sm_config_set_out_pins(&cfg, base_pin, 4);
+    sm_config_set_in_pins(&cfg, base_pin);
+    pio_sm_set_consecutive_pindirs(pio, sm, base_pin, 5, false);
+
+    // CS is the jump pin for reset.
+    sm_config_set_jmp_pin(&cfg, cs_pin);
+
+    // Configure the GPIO pins for PIO.
+    pio_gpio_init(pio, base_pin + 0);   // SIO_0
+    pio_gpio_init(pio, base_pin + 1);   // SIO_1
+    pio_gpio_init(pio, base_pin + 2);   // SIO_2
+    pio_gpio_init(pio, base_pin + 3);   // SIO_3
+    pio_gpio_init(pio, base_pin + 4);   // SCK
+
+    // Input shifts MSB first and autopushes when a byte has been received.
+    sm_config_set_in_shift(
+        &cfg,
+        false,  // Shift left
+        true,   // Autopush enabled
+        8       // Push at 8b
+    );
+
+    // Output shifts MSB first with autopull every 8b
+    sm_config_set_out_shift(
+        &cfg,
+        false,  // Shift left
+        true,   // Autopull enabled
+        8       // Pull at 16b
+    );
+
+    // Configure and start.
+    pio_sm_init(pio, sm, offset, &cfg);
+    pio_sm_set_enabled(pio, sm, true);
+}
+
+%}

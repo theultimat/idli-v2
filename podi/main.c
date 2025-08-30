@@ -1,27 +1,26 @@
 #include <stdint.h>
 
 #include "hardware/gpio.h"
+#include "hardware/pio.h"
 #include "pico/stdio.h"
-#include "pico/time.h"
 
 #include "sqi.h"
 
 
 // GPIO pins to use for communication with idli.
-#define IDLI_MEM_LO_SCK     (2)
-#define IDLI_MEM_HI_SCK     (3)
-#define IDLI_MEM_LO_CS      (4)
-#define IDLI_MEM_HI_CS      (5)
+#define IDLI_MEM_LO_SIO_0   (2)
+#define IDLI_MEM_LO_SIO_1   (3)
+#define IDLI_MEM_LO_SIO_2   (4)
+#define IDLI_MEM_LO_SIO_3   (5)
+#define IDLI_MEM_LO_SCK     (6)
+#define IDLI_MEM_LO_CS      (7)
 
-#define IDLI_MEM_LO_SIO_0   (6)
-#define IDLI_MEM_LO_SIO_1   (7)
-#define IDLI_MEM_LO_SIO_2   (8)
-#define IDLI_MEM_LO_SIO_3   (9)
-
-#define IDLI_MEM_HI_SIO_0   (10)
-#define IDLI_MEM_HI_SIO_1   (11)
-#define IDLI_MEM_HI_SIO_2   (12)
-#define IDLI_MEM_HI_SIO_3   (13)
+#define IDLI_MEM_HI_SIO_0   (8)
+#define IDLI_MEM_HI_SIO_1   (9)
+#define IDLI_MEM_HI_SIO_2   (10)
+#define IDLI_MEM_HI_SIO_3   (11)
+#define IDLI_MEM_HI_SCK     (12)
+#define IDLI_MEM_HI_CS      (13)
 
 #define IDLI_RST_N          (16)
 
@@ -34,6 +33,7 @@ typedef enum
 {
     CMD_PING,
     CMD_FLASH,
+    CMD_RUN,
 
     CMD__NUM
 } cmd_t;
@@ -49,12 +49,13 @@ static const char* CMD_STR[CMD__NUM] =
 {
     "PING",
     "FLASH",
+    "RUN",
 };
 
 
 // Ping command just prints out a simple message for testing the serial
 // connection to the host.
-void cmd_ping(void)
+static void cmd_ping(void)
 {
     stdio_puts("Ping!");
 }
@@ -63,8 +64,8 @@ void cmd_ping(void)
 // takes a payload of the following format:
 //  - u16   Number of bytes to write to each memory, little endian.
 //  - u8*n  Bytes to write into low memory.
-//  - u8*n  Bytes to writ einto high memory.
-void cmd_flash(void)
+//  - u8*n  Bytes to write into high memory.
+static void cmd_flash(void)
 {
     // Read in number of bytes to write.
     uint16_t n = 0;
@@ -81,7 +82,7 @@ void cmd_flash(void)
         n |= (data & 0xff) << (i * 8);
     }
 
-    stdio_printf("Flashing %u bytes to each memory.", n);
+    stdio_printf("Flashing %u bytes to each memory.\n", n);
 
     // Read bytes into each of the memories.
     sqi_t *mems[] = { &mem_lo, &mem_hi };
@@ -104,12 +105,27 @@ void cmd_flash(void)
     stdio_puts("Flashing complete.");
 }
 
+// Run whatever is currently programmed into the memories by coming out of
+// reset and servicing memory accesses.
+static void cmd_run(void)
+{
+    gpio_put(IDLI_RST_N, 1);
+
+    // TODO Need an end condition! Wait for UART end of test?
+    while (1)
+    {
+        sqi_tick(&mem_hi);
+        sqi_tick(&mem_lo);
+    }
+}
+
 
 // Function pointers for each of the commands.
 static void (*CMD_FUNCS[CMD__NUM])(void) =
 {
     cmd_ping,
     cmd_flash,
+    cmd_run,
 };
 
 
@@ -118,39 +134,17 @@ int main(void)
     // Receive commands via stdin from host.
     stdio_init_all();
 
-    // Configure the GPIO pins. SIO pins start as input but are bidirectional
-    // and controlled by PIO.
+    // Configure GPIO pins excluding those controlled by PIO.
     gpio_init(IDLI_RST_N);
-
-    gpio_init(IDLI_MEM_LO_SCK);
     gpio_init(IDLI_MEM_LO_CS);
-    gpio_init(IDLI_MEM_LO_SIO_0);
-    gpio_init(IDLI_MEM_LO_SIO_1);
-    gpio_init(IDLI_MEM_LO_SIO_2);
-    gpio_init(IDLI_MEM_LO_SIO_3);
-
-    gpio_init(IDLI_MEM_HI_SCK);
     gpio_init(IDLI_MEM_HI_CS);
-    gpio_init(IDLI_MEM_HI_SIO_0);
-    gpio_init(IDLI_MEM_HI_SIO_1);
-    gpio_init(IDLI_MEM_HI_SIO_2);
-    gpio_init(IDLI_MEM_HI_SIO_3);
 
     gpio_set_dir(IDLI_RST_N, GPIO_OUT);
-
-    gpio_set_dir(IDLI_MEM_LO_SCK, GPIO_IN);
     gpio_set_dir(IDLI_MEM_LO_CS, GPIO_IN);
-    gpio_set_dir(IDLI_MEM_LO_SIO_0, GPIO_IN);
-    gpio_set_dir(IDLI_MEM_LO_SIO_1, GPIO_IN);
-    gpio_set_dir(IDLI_MEM_LO_SIO_2, GPIO_IN);
-    gpio_set_dir(IDLI_MEM_LO_SIO_3, GPIO_IN);
-
-    gpio_set_dir(IDLI_MEM_HI_SCK, GPIO_IN);
     gpio_set_dir(IDLI_MEM_HI_CS, GPIO_IN);
-    gpio_set_dir(IDLI_MEM_HI_SIO_0, GPIO_IN);
-    gpio_set_dir(IDLI_MEM_HI_SIO_1, GPIO_IN);
-    gpio_set_dir(IDLI_MEM_HI_SIO_2, GPIO_IN);
-    gpio_set_dir(IDLI_MEM_HI_SIO_3, GPIO_IN);
+
+    gpio_pull_up(IDLI_MEM_LO_CS);
+    gpio_pull_up(IDLI_MEM_HI_CS);
 
     // TODO Init UART.
 
@@ -161,6 +155,10 @@ int main(void)
 
     // Hold idli in reset until a command wakes it up.
     gpio_put(IDLI_RST_N, 0);
+
+    // Initialise the PIO state machines for running the SQI interfaces.
+    sqi_init(&mem_lo, pio0, IDLI_MEM_LO_SIO_0, IDLI_MEM_LO_CS);
+    sqi_init(&mem_hi, pio1, IDLI_MEM_HI_SIO_0, IDLI_MEM_HI_CS);
 
     // Enter the main command loop.
     while (1)

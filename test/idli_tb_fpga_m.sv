@@ -1,7 +1,14 @@
 `include "idli_pkg.svh"
 
 
-// Default to smoke test for hex files.
+// Empty paths -- these must be overridden for each individual test.
+`ifndef idli_tb_mem_lo_d
+`define idli_tb_mem_lo_d ""
+`endif
+
+`ifndef idli_tb_mem_hi_d
+`define idli_tb_mem_hi_d ""
+`endif
 
 
 // Bench for running on FPGA. This instantiates the two memories internally to
@@ -79,5 +86,12 @@ module idli_tb_fpga_m import idli_pkg::*; (
     .i_sqi_sio  (mem_hi_sio_out),
     .o_sqi_sio  (mem_hi_sio_in)
   );
+
+
+  // Load the memories from file.
+  initial begin
+    $readmemh(`idli_tb_mem_lo_d, mem_lo_u.data_q);
+    $readmemh(`idli_tb_mem_hi_d, mem_hi_u.data_q);
+  end
 
 endmodule

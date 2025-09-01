@@ -51,6 +51,7 @@ AS_DEBUG := $(if $(DEBUG),--verbose,)
 
 AS      := . $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/asm.py $(AS_DEBUG)
 OBJDUMP := . $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/objdump.py
+HEXDUMP := . $(VENV_ACTIVATE) && $(PYTHON) $(SCRIPT_ROOT)/hexdump.py
 
 asm: venv $(ASM_BINS)
 
@@ -58,6 +59,7 @@ $(BUILD_ROOT)/%.out: %.asm $(ASM_WRAPPER) $(VENV)
 	@mkdir -p $(@D)
 	$(AS) -o $@ $<
 	$(OBJDUMP) $@ > $@.txt
+	$(HEXDUMP) --lo $@.lo.hex --hi $@.hi.hex $@
 
 .PHONY: asm
 

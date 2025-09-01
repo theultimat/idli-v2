@@ -67,7 +67,7 @@ SV_SOURCES := $(wildcard $(SOURCE_ROOT)/*.sv $(TEST_ROOT)/*.sv)
 SV_HEADERS := $(wildcard $(SOURCE_ROOT)/*.svh $(TEST_ROOT)/*.svh)
 
 lint: $(SV_SOURCES) $(SV_HEADERS)
-	verilator -Wall --lint-only -I$(SOURCE_ROOT) $(SV_SOURCES)
+	verilator -Wall --lint-only -Wno-MULTITOP -I$(SOURCE_ROOT) $(SV_SOURCES)
 
 .PHONY: lint
 

@@ -65,7 +65,7 @@ module idli_tb_fpga_m import idli_pkg::*; (
     .i_top_uart_rx    (i_tb_uart_rx),
     .o_top_uart_tx    (o_tb_uart_tx),
 
-    .i_top_io_pins    ('0),
+    .i_top_io_pins    (io_pins_t'('0)),
     .o_top_io_pins    (o_tb_pins)
   );
 

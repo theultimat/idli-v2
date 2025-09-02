@@ -14,16 +14,17 @@ endif
 
 # Gather all the sources and indicate we're using (System)Verilog.
 TOPLEVEL_LANG   := verilog
-BENCH_SOURCE    := $(TEST_ROOT)/idli_tb_m.sv
+BENCH_SOURCE    ?= $(TEST_ROOT)/idli_tb_m.sv
 
 VERILOG_SOURCES := $(wildcard $(SOURCE_ROOT)/*.sv)
 VERILOG_SOURCES += $(wildcard $(SOURCE_ROOT)/*.svh)
 VERILOG_SOURCES += $(BENCH_SOURCE)
+VERILOG_SOURCES += $(EXTRA_SOURCES)
 
 # Configure simulator flags, specialising for simulator if required.
 COMPILE_ARGS := -I$(SOURCE_ROOT)
 PLUSARGS     :=
-EXTRA_ARGS   :=
+EXTRA_ARGS   ?=
 
 ifeq ($(RTL_SIM),verilator)
 
@@ -48,8 +49,8 @@ endif
 # Configure test to run.
 COCOTB_RESULTS_FILE := $(BUILD_ROOT)/test/results.xml
 SIM_BUILD           := $(BUILD_ROOT)/test/sim_build
-TOPLEVEL            := $(notdir $(basename $(BENCH_SOURCE)))
-MODULE              ?= run_test
+TOPLEVEL            ?= $(notdir $(basename $(BENCH_SOURCE)))
+MODULE              := run_test
 SIM                 := $(RTL_SIM)
 
 # Make sure python path includes the scripts area.

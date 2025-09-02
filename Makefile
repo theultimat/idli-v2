@@ -173,3 +173,46 @@ run_podi: $(SIM_TEST) podi
 	$(PODI) $< --port $(PODI_PORT) --baud $(PODI_BAUD)
 
 .PHONY: podi run_podi
+
+
+# FPGA testing. Memories are initialised using $readmemh with the paths
+# specified by preprocessor defines. For icarus and quartus we need to pass the
+# define to sv2v and generate a separate bench file with the appropriate path,
+# while verilator can just take a +define arg.
+FPGA_BENCH_SV := $(TEST_ROOT)/idli_tb_fpga_m.sv
+FPGA_BENCH_V  := $(BUILD_ROOT)/sv2v/test/idli_tb_fpga_m.spec.v
+
+FPGA_MEM_LO ?= $(SIM_TEST).lo.hex
+FPGA_MEM_HI ?= $(SIM_TEST).hi.hex
+
+FPGA_SV2V_ARGS := -Didli_tb_mem_lo_d=\"$(abspath $(FPGA_MEM_LO))\"
+FPGA_SV2V_ARGS += -Didli_tb_mem_hi_d=\"$(abspath $(FPGA_MEM_HI))\"
+
+FPGA_EXTRA_SOURCES := ../$(TEST_ROOT)/idli_sqi_mem_m.sv
+
+FPGA_VERI_EXTRA_ARGS := +define+idli_tb_mem_lo_d=\"$(abspath $(FPGA_MEM_LO))\"
+FPGA_VERI_EXTRA_ARGS += +define+idli_tb_mem_hi_d=\"$(abspath $(FPGA_MEM_HI))\"
+
+FPGA_VERI_ARGS := RTL_SIM=verilator
+FPGA_VERI_ARGS += BENCH_SOURCE=../$(FPGA_BENCH_SV)
+FPGA_VERI_ARGS += EXTRA_ARGS='$(FPGA_VERI_EXTRA_ARGS)'
+FPGA_VERI_ARGS += EXTRA_SOURCES=$(FPGA_EXTRA_SOURCES)
+
+FPGA_ICARUS_ARGS := RTL_SIM=icarus
+FPGA_ICARUS_ARGS += BENCH_SOURCE=../$(FPGA_BENCH_V)
+FPGA_ICARUS_ARGS += TOPLEVEL=idli_tb_fpga_m
+FPGA_ICARUS_ARGS += EXTRA_SOURCES=$(FPGA_EXTRA_SOURCES)
+
+$(FPGA_BENCH_V): $(FPGA_BENCH_SV) $(FPGA_MEM_LO) $(FPGA_MEM_HI) FORCE
+	@mkdir -p $(@D)
+	$(SV2V) $< $(FPGA_SV2V_ARGS) > $@
+
+FORCE:
+
+run_fpga_veri: $(SIM_TEST) $(VENV) lint $(FPGA_BENCH_SV)
+	. $(VENV_ACTIVATE) && make -C $(TEST_ROOT) $(FPGA_VERI_ARGS)
+
+run_fpga_icarus: $(SIM_TEST) $(VENV) sv2v $(FPGA_BENCH_V)
+	. $(VENV_ACTIVATE) && make -C $(TEST_ROOT) $(FPGA_ICARUS_ARGS)
+
+.PHONY: run_fpga_veri run_fpga_icarus

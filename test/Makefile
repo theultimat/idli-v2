@@ -24,7 +24,7 @@ VERILOG_SOURCES += $(EXTRA_SOURCES)
 # Configure simulator flags, specialising for simulator if required.
 COMPILE_ARGS := -I$(SOURCE_ROOT)
 PLUSARGS     :=
-EXTRA_ARGS   ?=
+EXTRA_ARGS   := $(EXTRA_EXTRA_ARGS)
 
 ifeq ($(RTL_SIM),verilator)
 

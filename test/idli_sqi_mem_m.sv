@@ -42,6 +42,11 @@ module idli_sqi_mem_m import idli_pkg::*; #(
   // Data is stored in 8b bytes.
   logic [7:0] data_q [0:SIZE-1];
 
+  // Snapshot of the bottom part of the memory. Useful for debug.
+  // verilator lint_off UNUSEDSIGNAL
+  logic [7:0] data_sel;
+  // verilator lint_on UNUSEDSIGNAL
+
   // Current and next state of the state machine.
   state_t state_q;
   state_t state_d;
@@ -94,13 +99,13 @@ module idli_sqi_mem_m import idli_pkg::*; #(
   endcase
 
   // Output data from memory, high MSBs first, when in READ mode. Ouput junk in
-  // DUMMY or high impedance when inactive.
+  // DUMMY or when inactive.
   always_comb unique case (state_q)
     STATE_DUMMY_0,
     STATE_DUMMY_1:  o_sqi_sio = slice_t'('x);
-    STATE_DATA_0:   o_sqi_sio = slice_t'(wr_en ? 'z : data_q[addr_q][7:4]);
-    STATE_DATA_1:   o_sqi_sio = slice_t'(wr_en ? 'z : data_q[addr_q][3:0]);
-    default:        o_sqi_sio = slice_t'('z);
+    STATE_DATA_0:   o_sqi_sio = slice_t'(wr_en ? 'x : data_q[addr_q][7:4]);
+    STATE_DATA_1:   o_sqi_sio = slice_t'(wr_en ? 'x : data_q[addr_q][3:0]);
+    default:        o_sqi_sio = slice_t'('x);
   endcase
 
   // Enable writes based on instruction.
@@ -117,5 +122,8 @@ module idli_sqi_mem_m import idli_pkg::*; #(
       end
     end
   end
+
+  // Grab the low bytes for debug.
+  always_comb data_sel = data_q[addr_q];
 
 endmodule

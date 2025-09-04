@@ -21,6 +21,7 @@ module idli_tb_fpga_m import idli_pkg::*; (
 
   // UART TX and RX.
   input  var logic      i_tb_uart_rx,
+  output var logic      o_tb_uart_rx_rdy,
   output var logic      o_tb_uart_tx,
 
   // Output pins.
@@ -86,6 +87,12 @@ module idli_tb_fpga_m import idli_pkg::*; (
     .i_sqi_sio  (mem_hi_sio_out),
     .o_sqi_sio  (mem_hi_sio_in)
   );
+
+
+  // Wait until we're stalled waiting for UART RX data before sending.
+  always_comb o_tb_uart_rx_rdy = idli_top_u.ex_u.stall_urx
+                              && idli_top_u.urx_u.bits_q != 4'd15
+                              && idli_top_u.ex_u.enc_vld_q;
 
 
   // Load the memories from file.

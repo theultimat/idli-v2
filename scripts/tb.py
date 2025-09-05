@@ -91,15 +91,18 @@ class Callback(sim.Callback):
 
 # Bench used with cocotb to run tests on the RTL.
 class TestBench:
-    def __init__(self, dut, path, config, timeout):
+    def __init__(self, dut, path, config, timeout, fpga):
         self.dut = dut
         self.config = config
         self.timeout = timeout
         self.log = dut._log.info
+        self.fpga = fpga
 
         # Create the two memories, one for low nibbles and one for high.
-        self.mem_lo = sqi.Memory(log=lambda x: self.log(f'SQI_LO: {x}'))
-        self.mem_hi = sqi.Memory(log=lambda x: self.log(f'SQI_HI: {x}'))
+        # Not required in FPGA mode as memories are driven by the verilog.
+        if not self.fpga:
+            self.mem_lo = sqi.Memory(log=lambda x: self.log(f'SQI_LO: {x}'))
+            self.mem_hi = sqi.Memory(log=lambda x: self.log(f'SQI_HI: {x}'))
 
         # Create behavioural model for comparison with the RTL.
         self.cb = Callback(self, path)
@@ -149,9 +152,14 @@ class TestBench:
 
         self.log('BENCH: INIT BEGIN')
 
-        self._load_binary(path)
+        if not self.fpga:
+            self._load_binary(path)
 
         self.log('BENCH: INIT COMPLETE')
+
+    # Get bench root. This may not be the DUT root when running in FPGA mode.
+    def tb(self):
+        return self.dut.tb_u if self.fpga else self.dut
 
     # Load the input binary from file into the two memories.
     def _load_binary(self, path):
@@ -172,8 +180,10 @@ class TestBench:
     async def run(self):
         cocotb.start_soon(Clock(self.dut.i_tb_gck, 2, 'ns').start())
 
-        cocotb.start_soon(self._run_mem(self.mem_lo))
-        cocotb.start_soon(self._run_mem(self.mem_hi))
+        if not self.fpga:
+            cocotb.start_soon(self._run_mem(self.mem_lo))
+            cocotb.start_soon(self._run_mem(self.mem_hi))
+
         cocotb.start_soon(self._check_instr())
         cocotb.start_soon(self._check_uart())
         cocotb.start_soon(self._send_uart())
@@ -230,7 +240,7 @@ class TestBench:
     # Check instructions perform perform the same operations as the behavioural
     # model implementation.
     async def _check_instr(self):
-        done = self.dut.instr_done_q
+        done = self.tb().instr_done_q
         time = 0
 
         # Reset pins to zero.
@@ -255,8 +265,10 @@ class TestBench:
             self.sim.tick()
             self._check_reg_writes()
             self._check_pred_writes()
-            self._check_mem_writes()
             self._check_pin_writes()
+
+            if not self.fpga:
+                self._check_mem_writes()
 
             # Update input pins.
             while self.in_pins_next and time >= self.in_pins_next[0]['time']:
@@ -271,7 +283,7 @@ class TestBench:
 
     # Check outstanding register writes match.
     def _check_reg_writes(self):
-        rtl_sb = self.dut.reg_sb
+        rtl_sb = self.tb().reg_sb
 
         # Skip ZR as RTL never sets write enable for it.
         for i in range(1, 16):
@@ -286,7 +298,7 @@ class TestBench:
 
             # Check the value written matches.
             sim = f'{self.sim_reg_sb[i]:016b}'
-            rtl = self.dut.reg_data[i].value.binstr
+            rtl = self.tb().reg_data[i].value.binstr
             assert sim == rtl, f'{isa.REGS_INV[i]} data'
 
         # Clear the scoreboards for the next cycle.
@@ -295,7 +307,7 @@ class TestBench:
 
     # Check outstanding predicate writes match.
     def _check_pred_writes(self):
-        rtl_sb = self.dut.pred_sb
+        rtl_sb = self.tb().pred_sb
 
         # Check both agreed on whether a write was performed.
         sim = self.sim_pred is not None
@@ -307,7 +319,7 @@ class TestBench:
 
         # Make sure the values were the same.
         sim = f'{self.sim_pred:01b}'
-        rtl = self.dut.pred.value.binstr
+        rtl = self.tb().pred.value.binstr
         assert sim == rtl, f'predicate write data'
 
         # Clear for next cycle.
@@ -317,7 +329,7 @@ class TestBench:
     # Check PC matches.
     def _check_pc(self):
         sim = f'{self.sim.pc:016b}'
-        rtl = self.dut.pc.value.binstr
+        rtl = self.tb().pc.value.binstr
         assert sim == rtl, 'pc'
 
     # Check data received from the UART.
@@ -409,7 +421,7 @@ class TestBench:
 
     # Check sim and RTL both wrote the same pins with the same values.
     def _check_pin_writes(self):
-        rtl_sb = self.dut.pins_out_sb
+        rtl_sb = self.tb().pins_out_sb
 
         # Check both thought a write had occurred.
         sim = (1 << next(iter(self.sim_out_pin))) if self.sim_out_pin else 0

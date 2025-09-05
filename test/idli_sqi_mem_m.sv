@@ -108,8 +108,8 @@ module idli_sqi_mem_m import idli_pkg::*; #(
     default:        o_sqi_sio = slice_t'('x);
   endcase
 
-  // Enable writes based on instruction.
-  always_comb wr_en = instr_q == INSTR_WRITE;
+  // Enable writes based on instruction when not in reset.
+  always_comb wr_en = instr_q == INSTR_WRITE && !i_sqi_cs;
 
   // Write new data into memory, high MSBs first.
   always_ff @(posedge i_sqi_sck) begin

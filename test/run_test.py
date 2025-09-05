@@ -23,4 +23,6 @@ async def run_test(dut):
     if config is None:
         config = {}
 
-    await TestBench(dut, path, config, timeout).run()
+    # If running FPGA sim don't drive memories.
+    fpga = 'fpga' in str(dut)
+    await TestBench(dut, path, config, timeout, fpga).run()

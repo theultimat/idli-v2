@@ -25,7 +25,7 @@ module idli_tb_fpga_m import idli_pkg::*; (
   output var logic      o_tb_uart_tx,
 
   // Output pins.
-  // TODO Input pins driven by Pi?
+  input  var io_pins_t  i_tb_pins,
   output var io_pins_t  o_tb_pins
 );
 
@@ -42,32 +42,27 @@ module idli_tb_fpga_m import idli_pkg::*; (
   slice_t mem_hi_sio_out;
 
 
-  // Core.
-  idli_top_m idli_top_u (
-    .i_top_gck        (i_tb_gck),
-    .i_top_rst_n      (i_tb_rst_n),
+  // Bench containing core.
+  idli_tb_m tb_u (
+    .i_tb_gck,
+    .i_tb_rst_n,
 
-    .o_top_mem_lo_sck (mem_lo_sck),
-    .o_top_mem_lo_cs  (mem_lo_cs),
-    .i_top_mem_lo_sio (mem_lo_sio_in),
-    .o_top_mem_lo_sio (mem_lo_sio_out),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_top_mem_lo_en  (),
-    // verilator lint_on PINCONNECTEMPTY
+    .i_tb_uart_rx,
+    .o_tb_uart_rx_rdy,
+    .o_tb_uart_tx,
 
-    .o_top_mem_hi_sck (mem_hi_sck),
-    .o_top_mem_hi_cs  (mem_hi_cs),
-    .i_top_mem_hi_sio (mem_hi_sio_in),
-    .o_top_mem_hi_sio (mem_hi_sio_out),
-    // verilator lint_off PINCONNECTEMPTY
-    .o_top_mem_hi_en  (),
-    // verilator lint_on PINCONNECTEMPTY
+    .i_tb_pins,
+    .o_tb_pins,
 
-    .i_top_uart_rx    (i_tb_uart_rx),
-    .o_top_uart_tx    (o_tb_uart_tx),
+    .o_tb_mem_lo_sck    (mem_lo_sck),
+    .o_tb_mem_lo_cs     (mem_lo_cs),
+    .i_tb_mem_lo_sio    (mem_lo_sio_in),
+    .o_tb_mem_lo_sio    (mem_lo_sio_out),
 
-    .i_top_io_pins    (io_pins_t'('0)),
-    .o_top_io_pins    (o_tb_pins)
+    .o_tb_mem_hi_sck    (mem_hi_sck),
+    .o_tb_mem_hi_cs     (mem_hi_cs),
+    .i_tb_mem_hi_sio    (mem_hi_sio_in),
+    .o_tb_mem_hi_sio    (mem_hi_sio_out)
   );
 
   // Low memory.
@@ -87,12 +82,6 @@ module idli_tb_fpga_m import idli_pkg::*; (
     .i_sqi_sio  (mem_hi_sio_out),
     .o_sqi_sio  (mem_hi_sio_in)
   );
-
-
-  // Wait until we're stalled waiting for UART RX data before sending.
-  always_comb o_tb_uart_rx_rdy = idli_top_u.ex_u.stall_urx
-                              && idli_top_u.urx_u.bits_q != 4'd15
-                              && idli_top_u.ex_u.enc_vld_q;
 
 
   // Load the memories from file.

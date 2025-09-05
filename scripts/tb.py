@@ -170,7 +170,7 @@ class TestBench:
 
     # Run the simulation and checkers.
     async def run(self):
-        cocotb.start_soon(Clock(self.dut.gck, 2, 'ns').start())
+        cocotb.start_soon(Clock(self.dut.i_tb_gck, 2, 'ns').start())
 
         cocotb.start_soon(self._run_mem(self.mem_lo))
         cocotb.start_soon(self._run_mem(self.mem_hi))
@@ -181,11 +181,11 @@ class TestBench:
         self.log('BENCH: RESET BEGIN')
 
         # Reset sequence pulls the reset pin low for two cycles.
-        self.dut.rst_n.setimmediatevalue(1)
-        await ClockCycles(self.dut.gck, 2)
-        self.dut.rst_n.value = 0
-        await ClockCycles(self.dut.gck, 2)
-        self.dut.rst_n.value = 1
+        self.dut.i_tb_rst_n.setimmediatevalue(1)
+        await ClockCycles(self.dut.i_tb_gck, 2)
+        self.dut.i_tb_rst_n.value = 0
+        await ClockCycles(self.dut.i_tb_gck, 2)
+        self.dut.i_tb_rst_n.value = 1
 
         self.log('BENCH: RESET COMPLETE')
 
@@ -203,20 +203,20 @@ class TestBench:
     async def _run_mem(self, mem):
         # Select appropriate signals in the test bench to use for the memory.
         if mem == self.mem_lo:
-            sck = self.dut.mem_lo_sck
-            cs = self.dut.mem_lo_cs
-            sio_in = self.dut.mem_lo_in
-            sio_out = self.dut.mem_lo_out
+            sck = self.dut.o_tb_mem_lo_sck
+            cs = self.dut.o_tb_mem_lo_cs
+            sio_in = self.dut.i_tb_mem_lo_sio
+            sio_out = self.dut.o_tb_mem_lo_sio
             st_data = self.rtl_st_data_lo
         else:
-            sck = self.dut.mem_hi_sck
-            cs = self.dut.mem_hi_cs
-            sio_in = self.dut.mem_hi_in
-            sio_out = self.dut.mem_hi_out
+            sck = self.dut.o_tb_mem_hi_sck
+            cs = self.dut.o_tb_mem_hi_cs
+            sio_in = self.dut.i_tb_mem_hi_sio
+            sio_out = self.dut.o_tb_mem_hi_sio
             st_data = self.rtl_st_data_hi
 
         # Wait for chip to come out of reset.
-        await RisingEdge(self.dut.rst_n)
+        await RisingEdge(self.dut.i_tb_rst_n)
 
         while True:
             await RisingEdge(sck)
@@ -234,14 +234,14 @@ class TestBench:
         time = 0
 
         # Reset pins to zero.
-        pins = self.dut.pins_in
+        pins = self.dut.i_tb_pins
         pins.setimmediatevalue(self.in_pins)
 
         # Wait for reset to finish.
-        await RisingEdge(self.dut.rst_n)
+        await RisingEdge(self.dut.i_tb_rst_n)
 
         while True:
-            await RisingEdge(self.dut.gck)
+            await RisingEdge(self.dut.i_tb_gck)
 
             # Wait for an instruction to complete in the RTL.
             if not done.value:
@@ -350,30 +350,30 @@ class TestBench:
 
     # Continuously check UART data.
     async def _check_uart(self):
-        tx = self.dut.uart_tx
+        tx = self.dut.o_tb_uart_tx
 
         # Wait for reset.
-        await RisingEdge(self.dut.rst_n)
+        await RisingEdge(self.dut.i_tb_rst_n)
 
         while True:
-            await RisingEdge(self.dut.gck)
+            await RisingEdge(self.dut.i_tb_gck)
 
             self.urx.rising_edge(tx.value)
             self._check_uart_data()
 
     # Send new data into the chip via UART as requested by the ready signal.
     async def _send_uart(self):
-        ready = self.dut.uart_rx_rdy
-        data = self.dut.uart_rx
+        ready = self.dut.o_tb_uart_rx_rdy
+        data = self.dut.i_tb_uart_rx
 
         # Make sure data starts as IDLE before reset.
         data.setimmediatevalue(1)
 
         # Wait for reset then stream in data as requested.
-        await RisingEdge(self.dut.rst_n)
+        await RisingEdge(self.dut.i_tb_rst_n)
 
         while True:
-            await RisingEdge(self.dut.gck)
+            await RisingEdge(self.dut.i_tb_gck)
             data.value = self.utx.rising_edge(ready.value)
 
     # Check store data is correct.
@@ -422,7 +422,7 @@ class TestBench:
         # Check values are the same.
         sim = f'{next(iter(self.sim_out_pin.values())):01b}'
         rtl = (rtl.integer & -rtl.integer).bit_length() - 1
-        rtl = self.dut.pins_out[rtl].value.binstr
+        rtl = self.dut.o_tb_pins[rtl].value.binstr
         assert sim == rtl, 'out pin value'
 
         # Clear for next cycle.

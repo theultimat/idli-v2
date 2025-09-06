@@ -28,7 +28,10 @@ module idli_top_m import idli_pkg::*; (
 
   // Input and output pin interface.
   input  var io_pins_t  i_top_io_pins,
-  output var io_pins_t  o_top_io_pins
+  output var io_pins_t  o_top_io_pins,
+
+  // Debug probes for the bench.
+  output var debug_t    o_top_debug
 );
 
   data_t  instr;
@@ -54,6 +57,8 @@ module idli_top_m import idli_pkg::*; (
     if (!i_top_rst_n) ctr_q <= '0;
     else              ctr_q <= ctr_q + 2'b1;
   end
+
+always_comb o_top_debug.ctr = ctr_q;
 
 
   idli_sqi_m sqi_u (
@@ -109,7 +114,9 @@ module idli_top_m import idli_pkg::*; (
     .o_ex_urx_acp   (urx_acp),
 
     .i_ex_io_pins   (i_top_io_pins),
-    .o_ex_io_pins   (o_top_io_pins)
+    .o_ex_io_pins   (o_top_io_pins),
+
+    .o_ex_debug     (o_top_debug.ex)
   );
 
 
@@ -135,7 +142,9 @@ module idli_top_m import idli_pkg::*; (
     .o_urx_vld    (urx_vld),
     .i_urx_acp    (urx_acp),
 
-    .i_urx_data   (i_top_uart_rx)
+    .i_urx_data   (i_top_uart_rx),
+
+    .o_urx_debug  (o_top_debug.urx)
   );
 
 endmodule

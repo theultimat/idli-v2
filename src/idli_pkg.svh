@@ -110,6 +110,37 @@ typedef enum logic [1:0] {
   PIN_OP_OUTP
 } pin_op_t;
 
+// Debug signals used by the bench.
+typedef struct packed {
+  logic                   run_instr;
+  logic                   skip_instr;
+  dst_t                   dst;
+  reg_t                   dst_reg;
+  logic                   dst_reg_wr;
+  logic                   run_pin_op;
+  pin_op_t                pin_op;
+  logic   [1:0]           pin_idx;
+  logic                   enc_vld;
+  logic                   enc_new;
+  data_t                  pc;
+  data_t  [NUM_REGS-1:1]  regs;
+  logic                   pred;
+  logic                   stall_urx;
+  logic                   mem_state;
+  logic                   mem_end_redirect;
+  logic                   mem_op;
+} ex_debug_t;
+
+typedef struct packed {
+  logic [3:0] bits;
+} urx_debug_t;
+
+typedef struct packed {
+  ctr_t       ctr;
+  ex_debug_t  ex;
+  urx_debug_t urx;
+} debug_t;
+
 endpackage
 
 `endif // idli_pkg_svh

@@ -33,7 +33,10 @@ module idli_ex_m import idli_pkg::*; (
 
   // IO pin interface.
   input  var io_pins_t  i_ex_io_pins,
-  output var io_pins_t  o_ex_io_pins
+  output var io_pins_t  o_ex_io_pins,
+
+  // Debug probes.
+  output var ex_debug_t o_ex_debug
 );
 
   // Memory operations occur over the course of multiple cycles, so we need
@@ -235,7 +238,9 @@ module idli_ex_m import idli_pkg::*; (
 
     .i_rf_dst       (dst_reg),
     .i_rf_dst_en    (dst_reg_wr),
-    .i_rf_dst_data  (dst_data)
+    .i_rf_dst_data  (dst_data),
+
+    .o_rf_debug     (o_ex_debug.regs)
   );
 
   // ALU.
@@ -268,7 +273,9 @@ module idli_ex_m import idli_pkg::*; (
     .i_pc_data      (alu_out),
 
     .o_pc           (pc),
-    .o_pc_next      (pc_next)
+    .o_pc_next      (pc_next),
+
+    .o_pc_debug     (o_ex_debug.pc)
   );
 
   // Shift unit.
@@ -750,5 +757,23 @@ module idli_ex_m import idli_pkg::*; (
 
   // Data to set for output pin on OUT/OUTN, optionally coming from SQI.
   always_comb pin_reg_sqi_data = pin_sqi ? i_ex_enc[0][0] : lhs_data_reg[0];
+
+
+  // Grab any debug signals for the bench.
+  always_comb o_ex_debug.run_instr        = run_instr;
+  always_comb o_ex_debug.skip_instr       = skip_instr;
+  always_comb o_ex_debug.dst              = dst;
+  always_comb o_ex_debug.dst_reg          = dst_reg;
+  always_comb o_ex_debug.dst_reg_wr       = dst_reg_wr;
+  always_comb o_ex_debug.run_pin_op       = run_pin_op;
+  always_comb o_ex_debug.pin_op           = pin_op;
+  always_comb o_ex_debug.pin_idx          = pin_idx;
+  always_comb o_ex_debug.enc_vld          = enc_vld_q;
+  always_comb o_ex_debug.enc_new          = enc_new_q;
+  always_comb o_ex_debug.pred             = pred_q;
+  always_comb o_ex_debug.stall_urx        = stall_urx;
+  always_comb o_ex_debug.mem_state        = mem_state_q;
+  always_comb o_ex_debug.mem_end_redirect = mem_end_redirect;
+  always_comb o_ex_debug.mem_op           = mem_op;
 
 endmodule

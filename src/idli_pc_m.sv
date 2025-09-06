@@ -15,7 +15,10 @@ module idli_pc_m import idli_pkg::*; (
 
   // Current slice of the PC and next sequential PC.
   output var slice_t    o_pc,
-  output var slice_t    o_pc_next
+  output var slice_t    o_pc_next,
+
+  // Debug probe.
+  output var data_t     o_pc_debug
 );
 
   // Current and next PC value.
@@ -60,5 +63,8 @@ module idli_pc_m import idli_pkg::*; (
 
   // Ouput the current slice of the PC.
   always_comb o_pc = pc_q[0];
+
+  // Output PC for use by bench.
+  always_comb o_pc_debug = pc_q;
 
 endmodule

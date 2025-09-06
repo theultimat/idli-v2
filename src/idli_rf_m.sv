@@ -5,23 +5,26 @@
 // switching to a latch based design.
 module idli_rf_m import idli_pkg::*; (
   // Clock - no reset.
-  input  var logic    i_rf_gck,
+  input  var logic                  i_rf_gck,
 
   // LHS and RHS read ports. We get access to a 4b slice and the bit below and
   // above the current slice (for shifts).
-  input  var reg_t    i_rf_lhs,
-  output var slice_t  o_rf_lhs_data,
-  output var logic    o_rf_lhs_next,
-  output var logic    o_rf_lhs_prev,
-  input  var reg_t    i_rf_rhs,
-  output var slice_t  o_rf_rhs_data,
-  output var logic    o_rf_rhs_next,
-  output var logic    o_rf_rhs_prev,
+  input  var reg_t                  i_rf_lhs,
+  output var slice_t                o_rf_lhs_data,
+  output var logic                  o_rf_lhs_next,
+  output var logic                  o_rf_lhs_prev,
+  input  var reg_t                  i_rf_rhs,
+  output var slice_t                o_rf_rhs_data,
+  output var logic                  o_rf_rhs_next,
+  output var logic                  o_rf_rhs_prev,
 
   // Write slice of data into destination register.
-  input  var reg_t    i_rf_dst,
-  input  var logic    i_rf_dst_en,
-  input  var slice_t  i_rf_dst_data
+  input  var reg_t                  i_rf_dst,
+  input  var logic                  i_rf_dst_en,
+  input  var slice_t                i_rf_dst_data,
+
+  // Debug probes for all register values.
+  output var data_t [NUM_REGS-1:1]  o_rf_debug
 );
 
   // Storage for registers. R0/ZR is always zero so no need to back it.
@@ -44,6 +47,9 @@ module idli_rf_m import idli_pkg::*; (
         regs_q[REG] <= {regs_q[REG][0], regs_q[REG][3:1]};
       end
     end
+
+    // Output state for debug by bench.
+    always_comb o_rf_debug[REG] = regs_q[REG];
   end : num_reg_b
 
 

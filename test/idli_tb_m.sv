@@ -34,6 +34,9 @@ module idli_tb_m import idli_pkg::*; (
   // verilator lint_off UNDRIVEN
   // verilator lint_off UNUSEDSIGNAL
 
+  // Debug probes from inside the core to avoid internal references.
+  debug_t debug;
+
   // Signals connected to the low and high SQI memories.
   logic   mem_lo_wr_en;
   logic   mem_hi_wr_en;
@@ -84,7 +87,9 @@ module idli_tb_m import idli_pkg::*; (
     .o_top_uart_tx    (o_tb_uart_tx),
 
     .i_top_io_pins    (i_tb_pins),
-    .o_top_io_pins    (o_tb_pins)
+    .o_top_io_pins    (o_tb_pins),
+
+    .o_top_debug      (debug)
   );
 
   // Adjust signals visible to the bench based on the output enable for each
@@ -98,14 +103,14 @@ module idli_tb_m import idli_pkg::*; (
 
 
   // Grab sync counter from inside the core.
-  always_comb ctr = top_u.ctr_q;
+  always_comb ctr = debug.ctr;
 
   // Instruction has just finished if we're at the end of a 4 GCK period and
   // run_instr was set in the execution wrapper. Special handling for memory
   // operations as these span multiple cycles.
-  always_comb instr_done_d = &ctr && top_u.ex_u.run_instr
-                          && (~|top_u.ex_u.mem_state_q || top_u.ex_u.mem_end_redirect)
-                          && !top_u.ex_u.mem_op;
+  always_comb instr_done_d = &ctr && debug.ex.run_instr
+                          && (~|debug.ex.mem_state || debug.ex.mem_end_redirect)
+                          && !debug.ex.mem_op;
 
   // Flop and reset required values.
   always_ff @(posedge i_tb_gck, negedge i_tb_rst_n) begin
@@ -121,23 +126,23 @@ module idli_tb_m import idli_pkg::*; (
 
       // On the first cycle of an instruction that's being run record whether
       // a register was written.
-      if (ctr == '0 && top_u.ex_u.dst_reg_wr) begin
-        reg_sb[top_u.ex_u.dst_reg] <= '1;
+      if (ctr == '0 && debug.ex.dst_reg_wr) begin
+        reg_sb[debug.ex.dst_reg] <= '1;
       end
 
       // As above for predicate register.
-      if (ctr == '0 && top_u.ex_u.run_instr && top_u.ex_u.dst == DST_P) begin
-        pred_sb <= !top_u.ex_u.skip_instr;
+      if (ctr == '0 && debug.ex.run_instr && debug.ex.dst == DST_P) begin
+        pred_sb <= !debug.ex.skip_instr;
       end
 
       // As above for output pins.
-      if (ctr == '0 && top_u.ex_u.run_pin_op && top_u.ex_u.pin_op != PIN_OP_IN) begin
-        pins_out_sb[top_u.ex_u.pin_idx] <= '1;
+      if (ctr == '0 && debug.ex.run_pin_op && debug.ex.pin_op != PIN_OP_IN) begin
+        pins_out_sb[debug.ex.pin_idx] <= '1;
       end
 
       // PC should be saved when instruction is new in EX.
-      if (ctr == '0 && top_u.ex_u.enc_vld_q && top_u.ex_u.enc_new_q) begin
-        pc <= top_u.ex_u.pc_u.pc_q;
+      if (ctr == '0 && debug.ex.enc_vld && debug.ex.enc_new) begin
+        pc <= debug.ex.pc;
       end
     end
   end
@@ -145,17 +150,17 @@ module idli_tb_m import idli_pkg::*; (
   // Read out register state for use when checking instructions.
   always_comb begin
     for (int unsigned REG = 1; REG < NUM_REGS; REG++) begin
-      reg_data[REG] = top_u.ex_u.rf_u.regs_q[REG];
+      reg_data[REG] = debug.ex.regs[REG];
     end
   end
 
   // Predicate register state.
-  always_comb pred = top_u.ex_u.pred_q;
+  always_comb pred = debug.ex.pred;
 
   // Wait until EX is stalled waiting for UART data and we're not about to
   // have a full buffer to process.
-  always_comb o_tb_uart_rx_rdy = top_u.ex_u.stall_urx
-                         && top_u.urx_u.bits_q != 4'd15
-                         && top_u.ex_u.enc_vld_q;
+  always_comb o_tb_uart_rx_rdy = debug.ex.stall_urx
+                              && debug.urx.bits != 4'd15
+                              && debug.ex.enc_vld;
 
 endmodule

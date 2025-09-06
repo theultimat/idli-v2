@@ -4,17 +4,20 @@
 // Receive 16b of UART data from outside then present it to the core.
 module idli_urx_m import idli_pkg::*; (
   // Clock and reset.
-  input  var logic    i_urx_gck,
-  input  var logic    i_urx_rst_n,
+  input  var logic        i_urx_gck,
+  input  var logic        i_urx_rst_n,
 
   // Sync counter an EX interface.
-  input  var ctr_t    i_urx_ctr,
-  output var slice_t  o_urx_data,
-  output var logic    o_urx_vld,
-  input  var logic    i_urx_acp,
+  input  var ctr_t        i_urx_ctr,
+  output var slice_t      o_urx_data,
+  output var logic        o_urx_vld,
+  input  var logic        i_urx_acp,
 
   // External interface.
-  input  var logic    i_urx_data
+  input  var logic        i_urx_data,
+
+  // Debug probes for bench.
+  output var urx_debug_t  o_urx_debug
 );
 
   // UART will be waiting for external data, receiving data from the outside,
@@ -94,5 +97,9 @@ module idli_urx_m import idli_pkg::*; (
       end
     end
   end
+
+
+  // Debug probes.
+  always_comb o_urx_debug.bits = bits_q;
 
 endmodule

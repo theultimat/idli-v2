@@ -3,6 +3,7 @@
 
 // Simualtes a single 25LC512 SQI memory. Useful for testing on e.g. FPGA.
 module idli_sqi_mem_m import idli_pkg::*; #(
+  parameter string       PATH = "",
   parameter int unsigned SIZE = 64 * 1024
 ) (
   // SCK and CS.
@@ -125,5 +126,8 @@ module idli_sqi_mem_m import idli_pkg::*; #(
 
   // Grab the low bytes for debug.
   always_comb data_sel = data_q[addr_q];
+
+  // Load data from file.
+  initial $readmemh(PATH, data_q);
 
 endmodule

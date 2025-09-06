@@ -66,7 +66,9 @@ module idli_tb_fpga_m import idli_pkg::*; (
   );
 
   // Low memory.
-  idli_sqi_mem_m mem_lo_u (
+  idli_sqi_mem_m #(
+    .PATH (`idli_tb_mem_lo_d)
+  )mem_lo_u (
     .i_sqi_sck  (mem_lo_sck),
     .i_sqi_cs   (mem_lo_cs),
 
@@ -75,19 +77,14 @@ module idli_tb_fpga_m import idli_pkg::*; (
   );
 
   // High memory.
-  idli_sqi_mem_m mem_hi_u (
+  idli_sqi_mem_m #(
+    .PATH (`idli_tb_mem_hi_d)
+  ) mem_hi_u (
     .i_sqi_sck  (mem_hi_sck),
     .i_sqi_cs   (mem_hi_cs),
 
     .i_sqi_sio  (mem_hi_sio_out),
     .o_sqi_sio  (mem_hi_sio_in)
   );
-
-
-  // Load the memories from file.
-  initial begin
-    $readmemh(`idli_tb_mem_lo_d, mem_lo_u.data_q);
-    $readmemh(`idli_tb_mem_hi_d, mem_hi_u.data_q);
-  end
 
 endmodule
